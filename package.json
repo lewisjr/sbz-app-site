@@ -1,7 +1,7 @@
 {
 	"name": "sbz-app-site",
 	"private": true,
-	"version": "0.0.1",
+	"version": "0.2.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev --host",
@@ -26,6 +26,7 @@
 		"prettier-plugin-svelte": "^3.3.3",
 		"prettier-plugin-tailwindcss": "^0.6.11",
 		"sass": "^1.90.0",
+		"supabase": "^2.34.3",
 		"svelte": "^5.0.0",
 		"svelte-check": "^4.0.0",
 		"svelte-sonner": "^1.0.5",
@@ -37,6 +38,7 @@
 		"vite": "^7.0.4"
 	},
 	"dependencies": {
+		"@supabase/supabase-js": "^2.55.0",
 		"mode-watcher": "^1.1.0"
 	}
 }
