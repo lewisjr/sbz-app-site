@@ -1,11 +1,32 @@
 <script lang="ts">
-	import favicon from '$lib/assets/favicon.svg';
+	//functions
+	import { setMode } from "mode-watcher";
+
+	//components - other
+	import { ModeWatcher } from "mode-watcher";
+	import { Toaster } from "$lib/components/ui/sonner";
+
+	// styles
+	import "../app.css";
 
 	let { children } = $props();
 </script>
 
-<svelte:head>
-	<link rel="icon" href={favicon} />
-</svelte:head>
+<ModeWatcher track />
+<Toaster position="top-right" />
 
-{@render children?.()}
+<main>
+	{@render children?.()}
+</main>
+
+<style lang="scss">
+	main {
+		height: 100%;
+		width: 100vw;
+		overflow-y: auto;
+
+		@media screen and (max-width: 1024px) {
+			height: 100dvh;
+		}
+	}
+</style>
