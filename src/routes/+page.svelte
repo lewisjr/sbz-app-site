@@ -138,7 +138,7 @@
 	<section class="content">
 		<div class="-mt-10 w-[100%]">
 			<h3>What's the Holdup?</h3>
-			<p>Link your account <b>NOW</b> and take your investments to the next level!</p>
+			<p>Create your account <b>NOW</b> and take your investments to the next level!</p>
 			<Button
 				href="/sign-in"
 				style="text-decoration: none; font-weight: 600;"

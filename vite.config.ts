@@ -9,6 +9,6 @@ export default defineConfig(({ mode }) => {
 
 	return {
 		plugins: [tailwindcss(), sveltekit()],
-		server: DEV && DEV === "y" ? { allowedHosts: ["8590944f9d0d.ngrok-free.app"] } : undefined,
+		server: DEV && DEV === "y" ? { allowedHosts: ["93d8079bd50e.ngrok-free.app"] } : undefined,
 	};
 });

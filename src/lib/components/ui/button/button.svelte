@@ -49,6 +49,7 @@
 		type = "button",
 		disabled,
 		children,
+		onclick,
 		...restProps
 	}: ButtonProps = $props();
 </script>
@@ -62,6 +63,7 @@
 		aria-disabled={disabled}
 		role={disabled ? "link" : undefined}
 		tabindex={disabled ? -1 : undefined}
+		{onclick}
 		{...restProps}
 	>
 		{@render children?.()}
@@ -73,6 +75,7 @@
 		class={cn(buttonVariants({ variant, size }), className)}
 		{type}
 		{disabled}
+		{onclick}
 		{...restProps}
 	>
 		{@render children?.()}
