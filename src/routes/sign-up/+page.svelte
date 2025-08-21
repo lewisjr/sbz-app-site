@@ -165,24 +165,36 @@
 		}
 	};
 
-	let blockReqAttemptWManager = $derived<boolean>(
-		!fnameValueManager.length ||
-			!lnameValueManager.length ||
-			!dobValueManager ||
-			(dobValueManager && !dobValueManager.length) ||
-			!genderValueManager.length ||
-			!maritalValueManager.length ||
-			!nationalityValueManager.length ||
-			!phoneValueManager.length ||
-			!isEmail(emailValueManager) ||
-			!streetValueManager.length ||
-			!cityValueManager.length ||
-			!countryValueManager.length ||
-			!poaValueManager ||
-			!idTypeValueManager.length ||
-			!idNumValueManager.length ||
-			!poiValueManager,
-	);
+	let blockReqAttemptWManager = $derived.by(() => {
+		const isNonEmpty = (v: unknown) => (typeof v === "string" ? v.trim().length > 0 : !!v);
+
+		const hasFile = (v: unknown) =>
+			v instanceof File || (v && typeof (v as any).length === "number" && (v as any).length > 0);
+
+		const checks = [
+			!isNonEmpty(fnameValueManager),
+			!isNonEmpty(lnameValueManager),
+			// date input is a string; empty string means “not set”
+			!(typeof dobValueManager === "string" && dobValueManager.length > 0),
+			!isNonEmpty(genderValueManager),
+			!isNonEmpty(maritalValueManager),
+			!isNonEmpty(nationalityValueManager),
+			!isNonEmpty(phoneValueManager),
+			!isEmail(emailValueManager),
+			!isNonEmpty(streetValueManager),
+			!isNonEmpty(cityValueManager),
+			!isNonEmpty(countryValueManager),
+			!hasFile(poaValueManager),
+			!isNonEmpty(idTypeValueManager),
+			!isNonEmpty(idNumValueManager),
+			!hasFile(poiValueManager),
+		];
+
+		// optional: log which check fired
+		// console.log("checks", checks);
+
+		return checks.some(Boolean);
+	});
 
 	//udf joint vars
 	let jointSigningValue = $state<string>("");
@@ -209,8 +221,6 @@
 	}
 
 	let jointUsers = $state<UserObj[]>([]);
-
-	$effect(() => console.log({ jointUsers }));
 
 	let blockReqAttemptJoint = $derived<boolean>(
 		!jointSigningValue.length ||
@@ -300,29 +310,45 @@
 			!poiValue,
 	);
 
-	let blockReqAttemptInstitution = $derived<boolean>(
-		!instituteSigningValue.length ||
-			directors.length < 2 ||
-			!instituteManagers.length ||
-			!fnameValueInstitute.length ||
-			!phoneValueInstitute.length ||
-			!emailValueInstitute.length ||
-			!streetValueInstitute.length ||
-			!cityValueInstitute.length ||
-			!countryValueInstitute.length ||
-			!poaValueInstitute ||
-			!idTypeValueInstitute.length ||
-			!idNumValueInstitute.length ||
-			!poiValueInstitute ||
-			!bankNameValue.length ||
-			!bankAccName.length ||
-			!bankAccValue.length ||
-			!branchNameValue.length ||
-			!branchNumValue.length ||
+	let blockReqAttemptInstitution = $derived.by(() => {
+		const checks = [
+			!instituteSigningValue.length,
+			directors.length < 2,
+			!instituteManagers.length,
+			!fnameValueInstitute.length,
+			!phoneValueInstitute.length,
+			!emailValueInstitute.length,
+			!streetValueInstitute.length,
+			!cityValueInstitute.length,
+			!countryValueInstitute.length,
+			!poaValueInstitute,
+			!idTypeValueInstitute.length,
+			!idNumValueInstitute.length,
+			!poiValueInstitute,
+			!bankNameValue.length,
+			!bankAccName.length,
+			!bankAccValue.length,
+			!branchNameValue.length,
+			!branchNumValue.length,
 			!swiftCodealue.length,
-	);
+		];
 
-	const reset = () => {
+		// optional: log which check fired
+		// console.log("checks", checks);
+
+		return checks.some(Boolean);
+	});
+
+	/**
+	 * @param wBank is whether or not the function should clear the bank details. **DEFAULTS** to true
+	 * @param clearJoint is whether or not the function should clear the `jointUsers` array. **DEFAULTS** to true
+	 * @param clearInsitute is whether or not the function should clear the `directors` and `managers` array. **DEFAULTS** to true
+	 */
+	const reset = (
+		wBank: boolean = true,
+		clearJoint: boolean = true,
+		clearInsitute: boolean = true,
+	) => {
 		fnameValue = "";
 		lnameValue = "";
 		genderValue = "male";
@@ -338,12 +364,15 @@
 		idTypeValue = "id-card";
 		idNumValue = "";
 		poiValue = null;
-		bankNameValue = "";
-		bankAccName = "";
-		bankAccValue = "";
-		branchNameValue = "";
-		branchNumValue = "";
-		swiftCodealue = "";
+
+		if (wBank) {
+			bankNameValue = "";
+			bankAccName = "";
+			bankAccValue = "";
+			branchNameValue = "";
+			branchNumValue = "";
+			swiftCodealue = "";
+		}
 
 		fnameValueManager = "";
 		lnameValueManager = "";
@@ -361,31 +390,35 @@
 		idNumValueManager = "";
 		poiValueManager = null;
 
-		jointSigningValue = "";
+		if (clearJoint) {
+			jointSigningValue = "";
 
-		jointUsers = [];
+			jointUsers = [];
+		}
 
-		fnameValueInstitute = "";
+		if (clearInsitute) {
+			fnameValueInstitute = "";
 
-		phoneValueInstitute = "";
-		emailValueInstitute = "";
-		streetValueInstitute = "";
-		cityValueInstitute = "";
+			phoneValueInstitute = "";
+			emailValueInstitute = "";
+			streetValueInstitute = "";
+			cityValueInstitute = "";
 
-		countryValueInstitute = "zambia";
+			countryValueInstitute = "zambia";
 
-		poaValueInstitute = null;
+			poaValueInstitute = null;
 
-		idTypeValueInstitute = "coi";
+			idTypeValueInstitute = "coi";
 
-		idNumValueInstitute = "";
+			idNumValueInstitute = "";
 
-		poiValueInstitute = null;
+			poiValueInstitute = null;
 
-		instituteSigningValue = "";
+			instituteSigningValue = "";
 
-		directors = [];
-		instituteManagers = [];
+			directors = [];
+			instituteManagers = [];
+		}
 	};
 
 	// reset fields if someone changes tab
@@ -418,7 +451,7 @@
 
 		jointUsers = temp;
 
-		reset();
+		reset(false, false);
 	};
 
 	/**For joint accounts*/
@@ -455,7 +488,7 @@
 
 		directors = temp;
 
-		reset();
+		reset(false, true, false);
 	};
 
 	/**For institute accounts*/
@@ -473,26 +506,26 @@
 		const f = new File([], "");
 
 		temp.push({
-			fname: fnameValue,
-			lname: lnameValue,
-			phone: phoneValue,
-			email: emailValue,
-			dob: dobValue ? dobValue : "",
-			gender: genderValue,
-			mstatus: maritalValue,
-			nationality: nationalityValue,
-			street: streetValue,
-			city: cityValue,
-			country: countryValue,
-			poa: poaValue ? poaValue : f,
-			idNum: idNumValue,
-			idType: idTypeValue,
-			poi: poiValue ? poiValue : f,
+			fname: fnameValueManager,
+			lname: lnameValueManager,
+			phone: phoneValueManager,
+			email: emailValueManager,
+			dob: dobValueManager ? dobValueManager : "",
+			gender: genderValueManager,
+			mstatus: maritalValueManager,
+			nationality: nationalityValueManager,
+			street: streetValueManager,
+			city: cityValueManager,
+			country: countryValueManager,
+			poa: poaValueManager ? poaValueManager : f,
+			idNum: idNumValueManager,
+			idType: idTypeValueManager,
+			poi: poiValueManager ? poiValueManager : f,
 		});
 
 		instituteManagers = temp;
 
-		reset();
+		reset(false, true, false);
 	};
 
 	/**For institute accounts*/
@@ -506,7 +539,7 @@
 
 	let disabled = $derived.by(() => {
 		if (activeTab === "individual") {
-			if (isInTrustOf) return blockReqAttemptIndividual || blockReqAttemptWManager;
+			if (isInTrustOf !== "no") return blockReqAttemptIndividual || blockReqAttemptWManager;
 			else return blockReqAttemptIndividual;
 		}
 
@@ -514,7 +547,7 @@
 			return blockReqAttemptJoint;
 		}
 
-		if (activeTab === "institute") {
+		if (activeTab === "institution") {
 			return blockReqAttemptInstitution;
 		}
 
@@ -525,6 +558,48 @@
 		if (disabled) {
 			toast.error("One or more of your inputs is incorrect!");
 			return;
+		}
+
+		const managerEmails: string[] = [];
+		const managerPhones: string[] = [];
+
+		if (activeTab === "individual" && isInTrustOf === "no") {
+			managerEmails.push(emailValue.trim());
+			managerPhones.push(phoneValue.trim());
+		}
+
+		if (isInTrustOf !== "no") {
+			managerEmails.push(emailValueManager.trim());
+			managerPhones.push(phoneValueManager.trim());
+		}
+
+		if (activeTab === "joint") {
+			managerEmails.push(...jointUsers.map((user) => user.email.trim()));
+			managerPhones.push(...jointUsers.map((user) => user.phone.trim()));
+		}
+
+		if (activeTab === "institution") {
+			managerEmails.push(...instituteManagers.map((user) => user.email.trim()));
+			managerPhones.push(...instituteManagers.map((user) => user.phone.trim()));
+		}
+
+		try {
+			/**
+			const req = await fetch("/api/su", {
+				method: "PUT",
+				body: JSON.stringify({ emails: managerEmail, phones: managerPhone }),
+			});
+			*/
+			console.log({ managerEmails, managerPhones });
+		} catch (ex: any) {
+			const message =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex?.message || JSON.stringify(ex);
+
+			toast.error(message);
 		}
 	};
 </script>
@@ -540,7 +615,7 @@
 	<div class="img">
 		<img src="/img/kyc.png" alt="infographic" />
 		<h2>Sign Up</h2>
-		<p class="text-center">Create your Stockbrokers accounts and get started in just 5 minutes!</p>
+		<p class="text-center">Create your Stockbrokers account and get started in just 5 minutes!</p>
 		<p class="mt-8 text-justify text-sm">
 			Already have an account? <span class="font-bold italic"><a href="/sign-in">Sign In.</a></span>
 		</p>
@@ -881,7 +956,7 @@
 							}}
 							oninput={(e) => {
 								//@ts-ignore
-								bankAccValue = toTitleCase(e.target.value);
+								bankAccName = toTitleCase(e.target.value);
 							}}
 						/>
 						<p class="text-justify text-sm text-muted-foreground">The account number/IBAN.</p>
@@ -1451,8 +1526,10 @@
 					</div>
 				</div>
 
-				<Button class="mt-5" disabled={blockReqAttemptJointPartner} onclick={() => addToJointList()}
-					>Add to List<SquarePlus class="ml-2 h-4 w-4" /></Button
+				<Button
+					class="mt-5 cursor-pointer"
+					disabled={blockReqAttemptJointPartner}
+					onclick={() => addToJointList()}>Add to List<SquarePlus class="ml-2 h-4 w-4" /></Button
 				>
 			</section>
 
@@ -1539,7 +1616,7 @@
 							}}
 							oninput={(e) => {
 								//@ts-ignore
-								bankAccValue = toTitleCase(e.target.value);
+								bankAccName = toTitleCase(e.target.value);
 							}}
 						/>
 						<p class="text-justify text-sm text-muted-foreground">The account number/IBAN.</p>
@@ -1750,7 +1827,7 @@
 					<div class="cntnt-l flex flex-col gap-1.5">
 						<Label class="mb-1">ID Type</Label>
 						<AnyPicker
-							data={[{ label: "Certificate of Incorporation", value: "coi" }]}
+							data={[{ label: "Cert. of Incorp.", value: "coi" }]}
 							handler={updateIdTypeInstitute}
 							value={idTypeValueInstitute}
 							pickerTitle="ID Type"
@@ -2016,7 +2093,10 @@
 					</div>
 				</div>
 
-				<Button class="mt-5" disabled={blockReqAttemptDirector} onclick={() => addToDirectorsList()}
+				<Button
+					class="mt-5 cursor-pointer"
+					disabled={blockReqAttemptDirector}
+					onclick={() => addToDirectorsList()}
 					>Add to List<SquarePlus class="ml-2 h-4 w-4" /></Button
 				>
 			</section>
@@ -2191,7 +2271,7 @@
 							disabled={loading}
 							oninput={(e) => {
 								//@ts-ignore
-								cityValue = toTitleCase(e.target.value);
+								cityValueManager = toTitleCase(e.target.value);
 							}}
 						/>
 						<p class="text-justify text-sm text-muted-foreground">
@@ -2275,8 +2355,10 @@
 					</div>
 				</div>
 
-				<Button class="mt-5" disabled={blockReqAttemptWManager} onclick={() => addToManagersList()}
-					>Add to List<SquarePlus class="ml-2 h-4 w-4" /></Button
+				<Button
+					class="mt-5 cursor-pointer"
+					disabled={blockReqAttemptWManager}
+					onclick={() => addToManagersList()}>Add to List<SquarePlus class="ml-2 h-4 w-4" /></Button
 				>
 			</section>
 
@@ -2362,7 +2444,7 @@
 							}}
 							oninput={(e) => {
 								//@ts-ignore
-								bankAccValue = toTitleCase(e.target.value);
+								bankAccName = toTitleCase(e.target.value);
 							}}
 						/>
 						<p class="text-justify text-sm text-muted-foreground">The account number/IBAN.</p>
@@ -2435,8 +2517,10 @@
 			</section>
 		{/if}
 
-		<Button class={`mt-10${!isMobile ? " mx-auto w-[200px]" : ""}`} {disabled}
-			>Sign Up<CirclePlus class="ml-2 h-4 w-4" /></Button
+		<Button
+			class={`mt-10 cursor-pointer${!isMobile ? " mx-auto w-[200px]" : ""}`}
+			{disabled}
+			onclick={getOtp}>Sign Up<CirclePlus class="ml-2 h-4 w-4" /></Button
 		>
 
 		<div class="footer my-10">
