@@ -554,6 +554,8 @@
 		return true;
 	});
 
+	let otpLayout: boolean = false;
+
 	const getOtp = async () => {
 		if (disabled) {
 			toast.error("One or more of your inputs is incorrect!");
@@ -583,15 +585,27 @@
 			managerPhones.push(...instituteManagers.map((user) => user.phone.trim()));
 		}
 
+		loading = true;
+
 		try {
-			/**
 			const req = await fetch("/api/su", {
 				method: "PUT",
-				body: JSON.stringify({ emails: managerEmail, phones: managerPhone }),
+				body: JSON.stringify({ emails: managerEmails, phones: managerPhones }),
 			});
-			*/
-			console.log({ managerEmails, managerPhones });
+
+			const res: { success: boolean; message: string } = await req.json();
+
+			loading = false;
+
+			if (!res.success) {
+				toast.error(res.message);
+				return;
+			}
+
+			toast.success(res.message);
+			otpLayout = true;
 		} catch (ex: any) {
+			loading = false;
 			const message =
 				typeof ex === "string"
 					? ex
@@ -622,434 +636,64 @@
 	</div>
 
 	<div class="tainer">
-		<h3 class="tmid mb-2">Account Type</h3>
-		<p class="tmid mb-3">
-			An <b>individual</b> account is for local and foreign individuals, as well as an
-			<i>in trust of</i> account for minors under 16 years old.
-		</p>
-		<p class="tmid mb-3">
-			A <b>joint</b> account is for local or foreign individuals who intend to co-own an account.
-		</p>
-		<p class="tmid mb-3">
-			An <b>institution</b> account is for local or foreign companies and institutions who intend to
-			invest under the company.
-		</p>
-		<p class="tmid mb-5"><u>Select an account type below:</u></p>
+		{#if otpLayout}{:else}
+			<h3 class="tmid mb-2">Account Type</h3>
+			<p class="tmid mb-3">
+				An <b>individual</b> account is for local and foreign individuals, as well as an
+				<i>in trust of</i> account for minors under 16 years old.
+			</p>
+			<p class="tmid mb-3">
+				A <b>joint</b> account is for local or foreign individuals who intend to co-own an account.
+			</p>
+			<p class="tmid mb-3">
+				An <b>institution</b> account is for local or foreign companies and institutions who intend to
+				invest under the company.
+			</p>
+			<p class="tmid mb-5"><u>Select an account type below:</u></p>
 
-		<Tabs.Root bind:value={activeTab} class="mx-auto mb-5">
-			<Tabs.List>
-				<Tabs.Trigger class="cursor-pointer" value="individual">Individual</Tabs.Trigger>
-				<Tabs.Trigger class="cursor-pointer" value="joint">Joint</Tabs.Trigger>
-				<Tabs.Trigger class="cursor-pointer" value="institution">Institution</Tabs.Trigger>
-			</Tabs.List>
-		</Tabs.Root>
+			<Tabs.Root bind:value={activeTab} class="mx-auto mb-5">
+				<Tabs.List>
+					<Tabs.Trigger class="cursor-pointer" value="individual">Individual</Tabs.Trigger>
+					<Tabs.Trigger class="cursor-pointer" value="joint">Joint</Tabs.Trigger>
+					<Tabs.Trigger class="cursor-pointer" value="institution">Institution</Tabs.Trigger>
+				</Tabs.List>
+			</Tabs.Root>
 
-		<h3 class="mb-4">Existing Portfolio</h3>
-		<section class="inputs mb-5">
-			<div class="items tp flex">
-				<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-					<Label>LuSE ID</Label>
-					<Input
-						class="my-2"
-						bind:value={luseId}
-						placeholder="465345"
-						disabled={loading}
-						oninput={(e) => {
-							//@ts-ignore
-							luseId = e.target.value.replace(/[^0-9]/g, "");
-						}}
-						inputmode="numeric"
-					/>
-					<p class="text-justify text-sm text-muted-foreground">
-						If you already have a LuSE ID, please enter it here. We will link the LuSE ID to
-						Stockbrokers, however, we will not transfer the shares.
-					</p>
-					<p class="mt-2 text-justify text-sm text-muted-foreground">
-						You can request a share transfer through your account dashboard.
-					</p>
-				</div>
-			</div>
-		</section>
-
-		{#if activeTab === "individual"}
-			<h3 class="mb-4">Account Owner Details</h3>
-			<section class="inputs">
+			<h3 class="mb-4">Existing Portfolio</h3>
+			<section class="inputs mb-5">
 				<div class="items tp flex">
 					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>First Name</Label>
+						<Label>LuSE ID</Label>
 						<Input
-							bind:value={fnameValue}
-							placeholder="Bwalya"
+							class="my-2"
+							bind:value={luseId}
+							placeholder="465345"
 							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
 							oninput={(e) => {
 								//@ts-ignore
-								fnameValue = toTitleCase(e.target.value);
+								luseId = e.target.value.replace(/[^0-9]/g, "");
 							}}
+							inputmode="numeric"
 						/>
 						<p class="text-justify text-sm text-muted-foreground">
-							Your first name as it appears on your ID.
+							If you already have a LuSE ID, please enter it here. We will link the LuSE ID to
+							Stockbrokers, however, we will not transfer the shares.
 						</p>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Last Name</Label>
-						<Input
-							bind:value={lnameValue}
-							placeholder="Mutale"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								lnameValue = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							Your last name as it appears on your ID.
-						</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Phone</Label>
-						<Input
-							bind:value={phoneValue}
-							placeholder="260776574628"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								phoneValue = e.target.value.replace(/[^0-9]/g, "");
-							}}
-							inputmode="tel"
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							Include the international code.
-						</p>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Email</Label>
-						<Input
-							bind:value={emailValue}
-							placeholder="bmutale@gmail.com"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							inputmode="email"
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							We'll use this to send notifications.
-						</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="flex w-[100%] flex-col gap-1.5">
-						<Label class="mb-1">Date of Birth</Label>
-						<DatePicker handler={updateDob} dropdown />
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex justify-between">
-					<div class="flex flex-col gap-1.5">
-						<Label class="mb-1">Gender</Label>
-						<AnyPicker
-							data={[
-								{ label: "Male", value: "male" },
-								{ label: "Female", value: "female" },
-							]}
-							handler={updateGender}
-							value={genderValue}
-							pickerTitle="Gender"
-						/>
-					</div>
-
-					<div class="tp flex flex-col gap-1.5">
-						<Label class="mb-1">Marital Status</Label>
-						<AnyPicker
-							data={[
-								{ label: "Single", value: "single" },
-								{ label: "Married", value: "married" },
-								{ label: "Divorced", value: "divorced" },
-								{ label: "Widowed", value: "widowed" },
-							]}
-							handler={updateMarital}
-							value={maritalValue}
-							pickerTitle="Marital Status"
-						/>
-					</div>
-
-					<div class="tp flex flex-col gap-1.5">
-						<Label class="mb-1">Nationality</Label>
-						<AnyPicker
-							data={nationalities.map((n) => {
-								return { label: n, value: n.toLowerCase() };
-							})}
-							handler={updateNationality}
-							value={nationalityValue}
-							pickerTitle="Nationality"
-						/>
-					</div>
-				</div>
-			</section>
-
-			<h3 class="mt-10 mb-4">Account Owner Address</h3>
-			<section class="inputs">
-				<div class="items tp flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label class="mb-1">Street</Label>
-						<Textarea
-							bind:value={streetValue}
-							placeholder="36 Mwapona Road, Woodlands"
-							disabled={loading}
-							class="h-[100px]"
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							Your street address as it appears on your proof of address.
-						</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex justify-between">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>City</Label>
-						<Input
-							bind:value={cityValue}
-							placeholder="Lusaka"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								cityValue = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							Your city of residence as it appears on your proof of address.
-						</p>
-					</div>
-
-					<div class="tp flex flex-col gap-1.5">
-						<Label class="mb-1">Country</Label>
-						<AnyPicker
-							data={countries.map((c) => {
-								return { label: c, value: c.toLowerCase() };
-							})}
-							handler={updateCountry}
-							value={countryValue}
-							pickerTitle="Country"
-						/>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label class="mb-1">Proof of Address</Label>
-						<Input type="file" onchange={handlePoaUpload} accept=".pdf" />
-						<p class="mb-4 text-justify text-sm text-muted-foreground">
-							Upload a tenancy agreement, tax certificate, utility bill, or bank statement from the
-							past three months.
-						</p>
-						<p class="text-justify text-sm text-muted-foreground">
-							<b>Ensure</b> they are certified by the police, court, church, or commisioner of oaths,
-							and that they cleary show your official names and address.
+						<p class="mt-2 text-justify text-sm text-muted-foreground">
+							You can request a share transfer through your account dashboard.
 						</p>
 					</div>
 				</div>
 			</section>
 
-			<h3 class="mt-10 mb-4">Account Owner Identity</h3>
-			<section class="inputs">
-				<div class="items tp flex justify-between">
-					<div class="cntnt-l flex flex-col gap-1.5">
-						<Label class="mb-1">ID Type</Label>
-						<AnyPicker
-							data={[
-								{ label: "ID Card", value: "id-card" },
-								{ label: "Passport", value: "passport" },
-								{ label: "Drivers License", value: "drivers-license" },
-								{ label: "Voters Card", value: "voters-card" },
-								{ label: "Birth Certificate", value: "birth-certificate" },
-							]}
-							handler={updateIdType}
-							value={idTypeValue}
-							pickerTitle="ID Type"
-						/>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>ID Number</Label>
-						<Input
-							bind:value={idNumValue}
-							placeholder="234976101"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								idNumValue = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "");
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							Leave out any special characters.
-						</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label class="mb-1">Proof of Identity</Label>
-						<Input type="file" onchange={handlePoiUpload} accept=".pdf" />
-						<p class="mb-4 text-justify text-sm text-muted-foreground">
-							Upload {poiComment}, passport, drivers license, voters card, or birth certificate.
-						</p>
-						<p class="text-justify text-sm text-muted-foreground">
-							<b>Ensure</b> they are certified by the police, court, church, or commisioner of oaths,
-							and that they cleary show your official names and address.
-						</p>
-					</div>
-				</div>
-			</section>
-
-			<h3 class="mt-10 mb-4">Account Owner Banking</h3>
-			<section class="inputs">
-				<div class="items tp flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Bank Name</Label>
-						<Input
-							bind:value={bankNameValue}
-							placeholder="Stanbic Bank"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								bankNameValue = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">The bank's full name.</p>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Account Name</Label>
-						<Input
-							bind:value={bankAccName}
-							placeholder="Bwalya Mutale"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								bankAccName = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">The account number/IBAN.</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Account Number</Label>
-						<Input
-							bind:value={bankAccValue}
-							placeholder="10321256444"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">The account number/IBAN.</p>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Branch Name</Label>
-						<Input
-							bind:value={branchNameValue}
-							placeholder="Commercial"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								branchNameValue = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">The branch's official name.</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Branch Code</Label>
-						<Input
-							bind:value={branchNumValue}
-							placeholder="260001"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">The branch/sort code in full.</p>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>SWIFT Code</Label>
-						<Input
-							bind:value={swiftCodealue}
-							placeholder="SBCZMXXX"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								swiftCodealue = e.target.value.toUpperCase();
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">The branch's official name.</p>
-					</div>
-				</div>
-			</section>
-
-			<div class={"mx-auto mt-5 flex flex-col"}>
-				<p>Is this an <b>In Trust Of</b> account?</p>
-				<RadioGroup.Root class="mt-2" bind:value={isInTrustOf}>
-					<div class="flex items-center space-x-2">
-						<RadioGroup.Item value="yes" />
-						<Label for="yes">Yes</Label>
-					</div>
-					<div class="flex items-center space-x-2">
-						<RadioGroup.Item value="no" />
-						<Label for="no">No</Label>
-					</div>
-				</RadioGroup.Root>
-			</div>
-
-			{#if isInTrustOf === "yes"}
-				<h3 class="mt-8 mb-4">Account Manager Details</h3>
+			{#if activeTab === "individual"}
+				<h3 class="mb-4">Account Owner Details</h3>
 				<section class="inputs">
 					<div class="items tp flex">
 						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
 							<Label>First Name</Label>
 							<Input
-								bind:value={fnameValueManager}
+								bind:value={fnameValue}
 								placeholder="Bwalya"
 								disabled={loading}
 								onkeypress={(e) => {
@@ -1057,7 +701,7 @@
 								}}
 								oninput={(e) => {
 									//@ts-ignore
-									fnameValueManager = toTitleCase(e.target.value);
+									fnameValue = toTitleCase(e.target.value);
 								}}
 							/>
 							<p class="text-justify text-sm text-muted-foreground">
@@ -1068,7 +712,7 @@
 						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
 							<Label>Last Name</Label>
 							<Input
-								bind:value={lnameValueManager}
+								bind:value={lnameValue}
 								placeholder="Mutale"
 								disabled={loading}
 								onkeypress={(e) => {
@@ -1076,7 +720,7 @@
 								}}
 								oninput={(e) => {
 									//@ts-ignore
-									lnameValueManager = toTitleCase(e.target.value);
+									lnameValue = toTitleCase(e.target.value);
 								}}
 							/>
 							<p class="text-justify text-sm text-muted-foreground">
@@ -1089,12 +733,1466 @@
 						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
 							<Label>Phone</Label>
 							<Input
-								bind:value={phoneValueManager}
+								bind:value={phoneValue}
 								placeholder="260776574628"
 								disabled={loading}
 								onkeypress={(e) => {
 									if (e.key === "Enter") getOtp();
 								}}
+								oninput={(e) => {
+									//@ts-ignore
+									phoneValue = e.target.value.replace(/[^0-9]/g, "");
+								}}
+								inputmode="tel"
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								Include the international code.
+							</p>
+						</div>
+
+						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Email</Label>
+							<Input
+								bind:value={emailValue}
+								placeholder="bmutale@gmail.com"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								inputmode="email"
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								We'll use this to send notifications.
+							</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="flex w-[100%] flex-col gap-1.5">
+							<Label class="mb-1">Date of Birth</Label>
+							<DatePicker handler={updateDob} dropdown />
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex justify-between">
+						<div class="flex flex-col gap-1.5">
+							<Label class="mb-1">Gender</Label>
+							<AnyPicker
+								data={[
+									{ label: "Male", value: "male" },
+									{ label: "Female", value: "female" },
+								]}
+								handler={updateGender}
+								value={genderValue}
+								pickerTitle="Gender"
+							/>
+						</div>
+
+						<div class="tp flex flex-col gap-1.5">
+							<Label class="mb-1">Marital Status</Label>
+							<AnyPicker
+								data={[
+									{ label: "Single", value: "single" },
+									{ label: "Married", value: "married" },
+									{ label: "Divorced", value: "divorced" },
+									{ label: "Widowed", value: "widowed" },
+								]}
+								handler={updateMarital}
+								value={maritalValue}
+								pickerTitle="Marital Status"
+							/>
+						</div>
+
+						<div class="tp flex flex-col gap-1.5">
+							<Label class="mb-1">Nationality</Label>
+							<AnyPicker
+								data={nationalities.map((n) => {
+									return { label: n, value: n.toLowerCase() };
+								})}
+								handler={updateNationality}
+								value={nationalityValue}
+								pickerTitle="Nationality"
+							/>
+						</div>
+					</div>
+				</section>
+
+				<h3 class="mt-10 mb-4">Account Owner Address</h3>
+				<section class="inputs">
+					<div class="items tp flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label class="mb-1">Street</Label>
+							<Textarea
+								bind:value={streetValue}
+								placeholder="36 Mwapona Road, Woodlands"
+								disabled={loading}
+								class="h-[100px]"
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								Your street address as it appears on your proof of address.
+							</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex justify-between">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>City</Label>
+							<Input
+								bind:value={cityValue}
+								placeholder="Lusaka"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								oninput={(e) => {
+									//@ts-ignore
+									cityValue = toTitleCase(e.target.value);
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								Your city of residence as it appears on your proof of address.
+							</p>
+						</div>
+
+						<div class="tp flex flex-col gap-1.5">
+							<Label class="mb-1">Country</Label>
+							<AnyPicker
+								data={countries.map((c) => {
+									return { label: c, value: c.toLowerCase() };
+								})}
+								handler={updateCountry}
+								value={countryValue}
+								pickerTitle="Country"
+							/>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label class="mb-1">Proof of Address</Label>
+							<Input type="file" onchange={handlePoaUpload} accept=".pdf" />
+							<p class="mb-4 text-justify text-sm text-muted-foreground">
+								Upload a tenancy agreement, tax certificate, utility bill, or bank statement from
+								the past three months.
+							</p>
+							<p class="text-justify text-sm text-muted-foreground">
+								<b>Ensure</b> they are certified by the police, court, church, or commisioner of oaths,
+								and that they cleary show your official names and address.
+							</p>
+						</div>
+					</div>
+				</section>
+
+				<h3 class="mt-10 mb-4">Account Owner Identity</h3>
+				<section class="inputs">
+					<div class="items tp flex justify-between">
+						<div class="cntnt-l flex flex-col gap-1.5">
+							<Label class="mb-1">ID Type</Label>
+							<AnyPicker
+								data={[
+									{ label: "ID Card", value: "id-card" },
+									{ label: "Passport", value: "passport" },
+									{ label: "Drivers License", value: "drivers-license" },
+									{ label: "Voters Card", value: "voters-card" },
+									{ label: "Birth Certificate", value: "birth-certificate" },
+								]}
+								handler={updateIdType}
+								value={idTypeValue}
+								pickerTitle="ID Type"
+							/>
+						</div>
+
+						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+							<Label>ID Number</Label>
+							<Input
+								bind:value={idNumValue}
+								placeholder="234976101"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								oninput={(e) => {
+									//@ts-ignore
+									idNumValue = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "");
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								Leave out any special characters.
+							</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label class="mb-1">Proof of Identity</Label>
+							<Input type="file" onchange={handlePoiUpload} accept=".pdf" />
+							<p class="mb-4 text-justify text-sm text-muted-foreground">
+								Upload {poiComment}, passport, drivers license, voters card, or birth certificate.
+							</p>
+							<p class="text-justify text-sm text-muted-foreground">
+								<b>Ensure</b> they are certified by the police, court, church, or commisioner of oaths,
+								and that they cleary show your official names and address.
+							</p>
+						</div>
+					</div>
+				</section>
+
+				<h3 class="mt-10 mb-4">Account Owner Banking</h3>
+				<section class="inputs">
+					<div class="items tp flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Bank Name</Label>
+							<Input
+								bind:value={bankNameValue}
+								placeholder="Stanbic Bank"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								oninput={(e) => {
+									//@ts-ignore
+									bankNameValue = toTitleCase(e.target.value);
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">The bank's full name.</p>
+						</div>
+
+						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Account Name</Label>
+							<Input
+								bind:value={bankAccName}
+								placeholder="Bwalya Mutale"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								oninput={(e) => {
+									//@ts-ignore
+									bankAccName = toTitleCase(e.target.value);
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">The account number/IBAN.</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Account Number</Label>
+							<Input
+								bind:value={bankAccValue}
+								placeholder="10321256444"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">The account number/IBAN.</p>
+						</div>
+
+						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Branch Name</Label>
+							<Input
+								bind:value={branchNameValue}
+								placeholder="Commercial"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								oninput={(e) => {
+									//@ts-ignore
+									branchNameValue = toTitleCase(e.target.value);
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">The branch's official name.</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Branch Code</Label>
+							<Input
+								bind:value={branchNumValue}
+								placeholder="260001"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								The branch/sort code in full.
+							</p>
+						</div>
+
+						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+							<Label>SWIFT Code</Label>
+							<Input
+								bind:value={swiftCodealue}
+								placeholder="SBCZMXXX"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								oninput={(e) => {
+									//@ts-ignore
+									swiftCodealue = e.target.value.toUpperCase();
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">The branch's official name.</p>
+						</div>
+					</div>
+				</section>
+
+				<div class={"mx-auto mt-5 flex flex-col"}>
+					<p>Is this an <b>In Trust Of</b> account?</p>
+					<RadioGroup.Root class="mt-2" bind:value={isInTrustOf}>
+						<div class="flex items-center space-x-2">
+							<RadioGroup.Item value="yes" />
+							<Label for="yes">Yes</Label>
+						</div>
+						<div class="flex items-center space-x-2">
+							<RadioGroup.Item value="no" />
+							<Label for="no">No</Label>
+						</div>
+					</RadioGroup.Root>
+				</div>
+
+				{#if isInTrustOf === "yes"}
+					<h3 class="mt-8 mb-4">Account Manager Details</h3>
+					<section class="inputs">
+						<div class="items tp flex">
+							<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+								<Label>First Name</Label>
+								<Input
+									bind:value={fnameValueManager}
+									placeholder="Bwalya"
+									disabled={loading}
+									onkeypress={(e) => {
+										if (e.key === "Enter") getOtp();
+									}}
+									oninput={(e) => {
+										//@ts-ignore
+										fnameValueManager = toTitleCase(e.target.value);
+									}}
+								/>
+								<p class="text-justify text-sm text-muted-foreground">
+									Your first name as it appears on your ID.
+								</p>
+							</div>
+
+							<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+								<Label>Last Name</Label>
+								<Input
+									bind:value={lnameValueManager}
+									placeholder="Mutale"
+									disabled={loading}
+									onkeypress={(e) => {
+										if (e.key === "Enter") getOtp();
+									}}
+									oninput={(e) => {
+										//@ts-ignore
+										lnameValueManager = toTitleCase(e.target.value);
+									}}
+								/>
+								<p class="text-justify text-sm text-muted-foreground">
+									Your last name as it appears on your ID.
+								</p>
+							</div>
+						</div>
+
+						<div class="items tp mt-7 flex">
+							<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+								<Label>Phone</Label>
+								<Input
+									bind:value={phoneValueManager}
+									placeholder="260776574628"
+									disabled={loading}
+									onkeypress={(e) => {
+										if (e.key === "Enter") getOtp();
+									}}
+									oninput={(e) => {
+										//@ts-ignore
+										phoneValueManager = e.target.value.replace(/[^0-9]/g, "");
+									}}
+									inputmode="tel"
+								/>
+								<p class="text-justify text-sm text-muted-foreground">
+									Include the international code.
+								</p>
+							</div>
+
+							<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+								<Label>Email</Label>
+								<Input
+									bind:value={emailValueManager}
+									placeholder="bmutale@gmail.com"
+									disabled={loading}
+									onkeypress={(e) => {
+										if (e.key === "Enter") getOtp();
+									}}
+									inputmode="email"
+								/>
+								<p class="text-justify text-sm text-muted-foreground">
+									We'll use this to send notifications.
+								</p>
+							</div>
+						</div>
+
+						<div class="items tp mt-7 flex">
+							<div class="flex w-[100%] flex-col gap-1.5">
+								<Label class="mb-1">Date of Birth</Label>
+								<DatePicker handler={updateDobManager} dropdown />
+							</div>
+						</div>
+
+						<div class="items tp mt-7 flex justify-between">
+							<div class="flex flex-col gap-1.5">
+								<Label class="mb-1">Gender</Label>
+								<AnyPicker
+									data={[
+										{ label: "Male", value: "male" },
+										{ label: "Female", value: "female" },
+									]}
+									handler={updateGenderManager}
+									value={genderValueManager}
+									pickerTitle="Gender"
+								/>
+							</div>
+
+							<div class="tp flex flex-col gap-1.5">
+								<Label class="mb-1">Marital Status</Label>
+								<AnyPicker
+									data={[
+										{ label: "Single", value: "single" },
+										{ label: "Married", value: "married" },
+										{ label: "Divorced", value: "divorced" },
+										{ label: "Widowed", value: "widowed" },
+									]}
+									handler={updateMaritalManager}
+									value={maritalValueManager}
+									pickerTitle="Marital Status"
+								/>
+							</div>
+
+							<div class="tp flex flex-col gap-1.5">
+								<Label class="mb-1">Nationality</Label>
+								<AnyPicker
+									data={nationalities.map((n) => {
+										return { label: n, value: n.toLowerCase() };
+									})}
+									handler={updateNationalityManager}
+									value={nationalityValueManager}
+									pickerTitle="Nationality"
+								/>
+							</div>
+						</div>
+					</section>
+
+					<h3 class="mt-10 mb-4">Account Manager Address</h3>
+					<section class="inputs">
+						<div class="items tp flex">
+							<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+								<Label class="mb-1">Street</Label>
+								<Textarea
+									bind:value={streetValueManager}
+									placeholder="36 Mwapona Road, Woodlands"
+									disabled={loading}
+									class="h-[100px]"
+									onkeypress={(e) => {
+										if (e.key === "Enter") getOtp();
+									}}
+								/>
+								<p class="text-justify text-sm text-muted-foreground">
+									Your street address as it appears on your proof of address.
+								</p>
+							</div>
+						</div>
+
+						<div class="items tp mt-7 flex justify-between">
+							<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+								<Label>City</Label>
+								<Input
+									bind:value={cityValueManager}
+									placeholder="Lusaka"
+									disabled={loading}
+									onkeypress={(e) => {
+										if (e.key === "Enter") getOtp();
+									}}
+									oninput={(e) => {
+										//@ts-ignore
+										cityValueManager = toTitleCase(e.target.value);
+									}}
+								/>
+								<p class="text-justify text-sm text-muted-foreground">
+									Your city of residence as it appears on your proof of address.
+								</p>
+							</div>
+
+							<div class="tp flex flex-col gap-1.5">
+								<Label class="mb-1">Country</Label>
+								<AnyPicker
+									data={countries.map((c) => {
+										return { label: c, value: c.toLowerCase() };
+									})}
+									handler={updateCountryManager}
+									value={countryValueManager}
+									pickerTitle="Country"
+								/>
+							</div>
+						</div>
+
+						<div class="items tp mt-7 flex">
+							<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+								<Label class="mb-1">Proof of Address</Label>
+								<Input type="file" onchange={handlePoaUploadManager} accept=".pdf" />
+								<p class="mb-4 text-justify text-sm text-muted-foreground">
+									Upload a tenancy agreement, tax certificate, utility bill, or bank statement from
+									the past three months.
+								</p>
+								<p class="text-justify text-sm text-muted-foreground">
+									<b>Ensure</b> they are certified by the police, court, church, or commisioner of oaths,
+									and that they cleary show your official names and address.
+								</p>
+							</div>
+						</div>
+					</section>
+
+					<h3 class="mt-10 mb-4">Account Manager Identity</h3>
+					<section class="inputs">
+						<div class="items tp flex justify-between">
+							<div class="cntnt-l flex flex-col gap-1.5">
+								<Label class="mb-1">ID Type</Label>
+								<AnyPicker
+									data={[
+										{ label: "ID Card", value: "id-card" },
+										{ label: "Passport", value: "passport" },
+										{ label: "Drivers License", value: "drivers-license" },
+										{ label: "Voters Card", value: "voters-card" },
+									]}
+									handler={updateIdTypeManager}
+									value={idTypeValueManager}
+									pickerTitle="ID Type"
+								/>
+							</div>
+
+							<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+								<Label>ID Number</Label>
+								<Input
+									bind:value={idNumValueManager}
+									placeholder="234976101"
+									disabled={loading}
+									onkeypress={(e) => {
+										if (e.key === "Enter") getOtp();
+									}}
+									oninput={(e) => {
+										//@ts-ignore
+										idNumValueManager = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "");
+									}}
+								/>
+								<p class="text-justify text-sm text-muted-foreground">
+									Leave out any special characters.
+								</p>
+							</div>
+						</div>
+
+						<div class="items tp mt-7 flex">
+							<div class="flex w-full max-w-sm flex-col gap-1.5">
+								<Label class="mb-1">Proof of Identity</Label>
+								<Input type="file" onchange={handlePoiUploadManager} accept=".pdf" />
+								<p class="mb-4 text-justify text-sm text-muted-foreground">
+									Upload {poiCommentManager}, passport, drivers license, or voters card.
+								</p>
+								<p class="text-justify text-sm text-muted-foreground">
+									<b>Ensure</b> they are certified by the police, court, church, or commisioner of oaths,
+									and that they cleary show your official names and address.
+								</p>
+							</div>
+						</div>
+					</section>
+				{/if}
+			{/if}
+
+			{#if activeTab === "joint"}
+				<h3 class="mb-4">Partner Details</h3>
+				<section class="inputs">
+					<h4 class={!isMobile ? "mb-4" : undefined}>General Details</h4>
+					<div class="items tp flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>First Name</Label>
+							<Input
+								bind:value={fnameValue}
+								placeholder="Bwalya"
+								disabled={loading}
+								oninput={(e) => {
+									//@ts-ignore
+									fnameValue = toTitleCase(e.target.value);
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								The first name as it appears on the ID.
+							</p>
+						</div>
+
+						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Last Name</Label>
+							<Input
+								bind:value={lnameValue}
+								placeholder="Mutale"
+								disabled={loading}
+								oninput={(e) => {
+									//@ts-ignore
+									lnameValue = toTitleCase(e.target.value);
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								The last name as it appears on the ID.
+							</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Phone</Label>
+							<Input
+								bind:value={phoneValue}
+								placeholder="260776574628"
+								disabled={loading}
+								oninput={(e) => {
+									//@ts-ignore
+									phoneValue = e.target.value.replace(/[^0-9]/g, "");
+								}}
+								inputmode="tel"
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								Include the international code.
+							</p>
+						</div>
+
+						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Email</Label>
+							<Input
+								bind:value={emailValue}
+								placeholder="bmutale@gmail.com"
+								disabled={loading}
+								inputmode="email"
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								We'll use this to send notifications.
+							</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="flex w-[100%] flex-col gap-1.5">
+							<Label class="mb-1">Date of Birth</Label>
+							<DatePicker handler={updateDob} dropdown />
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex justify-between">
+						<div class="flex flex-col gap-1.5">
+							<Label class="mb-1">Gender</Label>
+							<AnyPicker
+								data={[
+									{ label: "Male", value: "male" },
+									{ label: "Female", value: "female" },
+								]}
+								handler={updateGender}
+								value={genderValue}
+								pickerTitle="Gender"
+							/>
+						</div>
+
+						<div class="tp flex flex-col gap-1.5">
+							<Label class="mb-1">Marital Status</Label>
+							<AnyPicker
+								data={[
+									{ label: "Single", value: "single" },
+									{ label: "Married", value: "married" },
+									{ label: "Divorced", value: "divorced" },
+									{ label: "Widowed", value: "widowed" },
+								]}
+								handler={updateMarital}
+								value={maritalValue}
+								pickerTitle="Marital Status"
+							/>
+						</div>
+
+						<div class="tp flex flex-col gap-1.5">
+							<Label class="mb-1">Nationality</Label>
+							<AnyPicker
+								data={nationalities.map((n) => {
+									return { label: n, value: n.toLowerCase() };
+								})}
+								handler={updateNationality}
+								value={nationalityValue}
+								pickerTitle="Nationality"
+							/>
+						</div>
+					</div>
+
+					<h4 class={`mt-6 ${!isMobile ? " mb-4" : ""}`}>Address Details</h4>
+					<div class="items tp flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label class="mb-1">Street</Label>
+							<Textarea
+								bind:value={streetValue}
+								placeholder="36 Mwapona Road, Woodlands"
+								disabled={loading}
+								class="h-[100px]"
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								The street address as it appears on the proof of address.
+							</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex justify-between">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>City</Label>
+							<Input
+								bind:value={cityValue}
+								placeholder="Lusaka"
+								disabled={loading}
+								oninput={(e) => {
+									//@ts-ignore
+									cityValue = toTitleCase(e.target.value);
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								The city of residence as it appears on the proof of address.
+							</p>
+						</div>
+
+						<div class="tp flex flex-col gap-1.5">
+							<Label class="mb-1">Country</Label>
+							<AnyPicker
+								data={countries.map((c) => {
+									return { label: c, value: c.toLowerCase() };
+								})}
+								handler={updateCountry}
+								value={countryValue}
+								pickerTitle="Country"
+							/>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label class="mb-1">Proof of Address</Label>
+							<Input type="file" onchange={handlePoaUpload} accept=".pdf" />
+							<p class="mb-4 text-justify text-sm text-muted-foreground">
+								Upload a tenancy agreement, tax certificate, utility bill, or bank statement from
+								the past three months.
+							</p>
+							<p class="text-justify text-sm text-muted-foreground">
+								<b>Ensure</b> they are certified by the police, court, church, or commisioner of oaths,
+								and that they cleary show the official names and address.
+							</p>
+						</div>
+					</div>
+
+					<h4 class={`mt-6 ${!isMobile ? " mb-4" : ""}`}>Identity Details</h4>
+					<div class="items tp flex justify-between">
+						<div class="cntnt-l flex flex-col gap-1.5">
+							<Label class="mb-1">ID Type</Label>
+							<AnyPicker
+								data={[
+									{ label: "ID Card", value: "id-card" },
+									{ label: "Passport", value: "passport" },
+									{ label: "Drivers License", value: "drivers-license" },
+									{ label: "Voters Card", value: "voters-card" },
+									{ label: "Birth Certificate", value: "birth-certificate" },
+								]}
+								handler={updateIdType}
+								value={idTypeValue}
+								pickerTitle="ID Type"
+							/>
+						</div>
+
+						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+							<Label>ID Number</Label>
+							<Input
+								bind:value={idNumValue}
+								placeholder="234976101"
+								disabled={loading}
+								oninput={(e) => {
+									//@ts-ignore
+									idNumValue = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "");
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								Leave out any special characters.
+							</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label class="mb-1">Proof of Identity</Label>
+							<Input type="file" onchange={handlePoiUpload} accept=".pdf" />
+							<p class="mb-4 text-justify text-sm text-muted-foreground">
+								Upload {poiComment}, passport, drivers license, voters card, or birth certificate.
+							</p>
+							<p class="text-justify text-sm text-muted-foreground">
+								<b>Ensure</b> they are certified by the police, court, church, or commisioner of oaths,
+								and that they cleary show the official names and address.
+							</p>
+						</div>
+					</div>
+
+					<Button
+						class="mt-5 cursor-pointer"
+						disabled={blockReqAttemptJointPartner}
+						onclick={() => addToJointList()}>Add to List<SquarePlus class="ml-2 h-4 w-4" /></Button
+					>
+				</section>
+
+				<h3 class="mt-10 mb-4">Added Partners</h3>
+				<section class="inputs">
+					{#if jointUsers.length}
+						<Table.Root>
+							<Table.Header>
+								<Table.Row>
+									<Table.Head>Names</Table.Head>
+									<Table.Head>...</Table.Head>
+								</Table.Row>
+							</Table.Header>
+							<Table.Body>
+								{#each jointUsers as partner, index}
+									<Table.Row>
+										<Table.Cell>{partner.fname} {partner.lname}</Table.Cell>
+										<Table.Cell
+											><Button onclick={() => deleteJointPartner(index)}><Trash2 /></Button
+											></Table.Cell
+										>
+									</Table.Row>
+								{/each}
+							</Table.Body>
+						</Table.Root>
+					{:else}
+						<p class="tmid">No partners added. Fill in the form above to being adding partners.</p>
+					{/if}
+				</section>
+
+				<h3 class="mt-10 mb-4">Signing Arrangement</h3>
+				<section class="inputs">
+					<div class="items tp flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label class="mb-1">Signers</Label>
+							<Input
+								bind:value={jointSigningValue}
+								placeholder="2"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								oninput={(e) => {
+									//@ts-ignore
+									jointSigningValue = e.target.value.replace(/[^0-9]/g, "");
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								This is how many people need to sign regarding trading instructions and other
+								actions related to the account.
+							</p>
+						</div>
+					</div>
+				</section>
+
+				<h3 class="mt-10 mb-4">Account Banking</h3>
+				<section class="inputs">
+					<div class="items tp flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Bank Name</Label>
+							<Input
+								bind:value={bankNameValue}
+								placeholder="Stanbic Bank"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								oninput={(e) => {
+									//@ts-ignore
+									bankNameValue = toTitleCase(e.target.value);
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">The bank's full name.</p>
+						</div>
+
+						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Account Name</Label>
+							<Input
+								bind:value={bankAccName}
+								placeholder="Bwalya Mutale"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								oninput={(e) => {
+									//@ts-ignore
+									bankAccName = toTitleCase(e.target.value);
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">The account number/IBAN.</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Account Number</Label>
+							<Input
+								bind:value={bankAccValue}
+								placeholder="10321256444"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">The account number/IBAN.</p>
+						</div>
+
+						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Branch Name</Label>
+							<Input
+								bind:value={branchNameValue}
+								placeholder="Commercial"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								oninput={(e) => {
+									//@ts-ignore
+									branchNameValue = toTitleCase(e.target.value);
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">The branch's official name.</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Branch Code</Label>
+							<Input
+								bind:value={branchNumValue}
+								placeholder="260001"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								The branch/sort code in full.
+							</p>
+						</div>
+
+						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+							<Label>SWIFT Code</Label>
+							<Input
+								bind:value={swiftCodealue}
+								placeholder="SBCZMXXX"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								oninput={(e) => {
+									//@ts-ignore
+									swiftCodealue = e.target.value.toUpperCase();
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">The branch's official name.</p>
+						</div>
+					</div>
+				</section>
+			{/if}
+
+			{#if activeTab === "institution"}
+				<h3 class="mt-8 mb-4">Company Details</h3>
+				<section class="inputs">
+					<div class="items tp flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Name</Label>
+							<Input
+								bind:value={fnameValueInstitute}
+								placeholder="Stockbrokers Zambia Limited"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								oninput={(e) => {
+									//@ts-ignore
+									fnameValueInstitute = toTitleCase(e.target.value);
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								The company name as it appears on the certificate of incorporation.
+							</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Phone</Label>
+							<Input
+								bind:value={phoneValueInstitute}
+								placeholder="260776574628"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								oninput={(e) => {
+									//@ts-ignore
+									phoneValueInstitute = e.target.value.replace(/[^0-9]/g, "");
+								}}
+								inputmode="tel"
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								Include the international code.
+							</p>
+						</div>
+
+						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Email</Label>
+							<Input
+								bind:value={emailValueInstitute}
+								placeholder="bmutale@gmail.com"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								inputmode="email"
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								We'll use this to send notifications.
+							</p>
+						</div>
+					</div>
+				</section>
+
+				<h3 class="mt-10 mb-4">Company Address</h3>
+				<section class="inputs">
+					<div class="items tp flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label class="mb-1">Street</Label>
+							<Textarea
+								bind:value={streetValueInstitute}
+								placeholder="36 Mwapona Road, Woodlands"
+								disabled={loading}
+								class="h-[100px]"
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								The street address as it appears on the proof of address.
+							</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex justify-between">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>City</Label>
+							<Input
+								bind:value={cityValueInstitute}
+								placeholder="Lusaka"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								oninput={(e) => {
+									//@ts-ignore
+									cityValueInstitute = toTitleCase(e.target.value);
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								The city of residence as it appears on the proof of address.
+							</p>
+						</div>
+
+						<div class="tp flex flex-col gap-1.5">
+							<Label class="mb-1">Country</Label>
+							<AnyPicker
+								data={countries.map((c) => {
+									return { label: c, value: c.toLowerCase() };
+								})}
+								handler={updateCountryInstitute}
+								value={countryValueInstitute}
+								pickerTitle="Country"
+							/>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label class="mb-1">Proof of Address</Label>
+							<Input type="file" onchange={handlePoaUploadInstitute} accept=".pdf" />
+							<p class="mb-4 text-justify text-sm text-muted-foreground">
+								Upload a tenancy agreement, tax certificate, utility bill, or bank statement from
+								the past three months.
+							</p>
+							<p class="text-justify text-sm text-muted-foreground">
+								<b>Ensure</b> they are certified by the police, court, church, or commisioner of oaths,
+								and that they cleary show the official names and address.
+							</p>
+						</div>
+					</div>
+				</section>
+
+				<h3 class="mt-10 mb-4">Company Identity</h3>
+				<section class="inputs">
+					<div class="items tp flex justify-between">
+						<div class="cntnt-l flex flex-col gap-1.5">
+							<Label class="mb-1">ID Type</Label>
+							<AnyPicker
+								data={[{ label: "Cert. of Incorp.", value: "coi" }]}
+								handler={updateIdTypeInstitute}
+								value={idTypeValueInstitute}
+								pickerTitle="ID Type"
+							/>
+						</div>
+
+						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+							<Label>ID Number</Label>
+							<Input
+								bind:value={idNumValueInstitute}
+								placeholder="234976101"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								Leave out any special characters.
+							</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label class="mb-1">Proof of Identity</Label>
+							<Input type="file" onchange={handlePoiUploadInstitute} accept=".pdf" />
+							<p class="mb-4 text-justify text-sm text-muted-foreground">
+								Upload certificate of incorporation.
+							</p>
+							<p class="text-justify text-sm text-muted-foreground">
+								<b>Ensure</b> it is are certified by the police, court, church, or commisioner of oaths,
+								and that it cleary shows the official names and address.
+							</p>
+						</div>
+					</div>
+				</section>
+
+				<!-- Directors -->
+				<h3 class="mt-10 mb-4">Director Details</h3>
+				<section class="inputs">
+					<h4 class={!isMobile ? "mb-4" : undefined}>General Details</h4>
+					<div class="items tp flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>First Name</Label>
+							<Input
+								bind:value={fnameValue}
+								placeholder="Bwalya"
+								disabled={loading}
+								oninput={(e) => {
+									//@ts-ignore
+									fnameValue = toTitleCase(e.target.value);
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								The first name as it appears on the ID.
+							</p>
+						</div>
+
+						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Last Name</Label>
+							<Input
+								bind:value={lnameValue}
+								placeholder="Mutale"
+								disabled={loading}
+								oninput={(e) => {
+									//@ts-ignore
+									lnameValue = toTitleCase(e.target.value);
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								The last name as it appears on the ID.
+							</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Phone</Label>
+							<Input
+								bind:value={phoneValue}
+								placeholder="260776574628"
+								disabled={loading}
+								oninput={(e) => {
+									//@ts-ignore
+									phoneValue = e.target.value.replace(/[^0-9]/g, "");
+								}}
+								inputmode="tel"
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								Include the international code.
+							</p>
+						</div>
+
+						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Email</Label>
+							<Input
+								bind:value={emailValue}
+								placeholder="bmutale@gmail.com"
+								disabled={loading}
+								inputmode="email"
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								We'll use this to send notifications.
+							</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="flex w-[100%] flex-col gap-1.5">
+							<Label class="mb-1">Date of Birth</Label>
+							<DatePicker handler={updateDob} dropdown />
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex justify-between">
+						<div class="flex flex-col gap-1.5">
+							<Label class="mb-1">Gender</Label>
+							<AnyPicker
+								data={[
+									{ label: "Male", value: "male" },
+									{ label: "Female", value: "female" },
+								]}
+								handler={updateGender}
+								value={genderValue}
+								pickerTitle="Gender"
+							/>
+						</div>
+
+						<div class="tp flex flex-col gap-1.5">
+							<Label class="mb-1">Marital Status</Label>
+							<AnyPicker
+								data={[
+									{ label: "Single", value: "single" },
+									{ label: "Married", value: "married" },
+									{ label: "Divorced", value: "divorced" },
+									{ label: "Widowed", value: "widowed" },
+								]}
+								handler={updateMarital}
+								value={maritalValue}
+								pickerTitle="Marital Status"
+							/>
+						</div>
+
+						<div class="tp flex flex-col gap-1.5">
+							<Label class="mb-1">Nationality</Label>
+							<AnyPicker
+								data={nationalities.map((n) => {
+									return { label: n, value: n.toLowerCase() };
+								})}
+								handler={updateNationality}
+								value={nationalityValue}
+								pickerTitle="Nationality"
+							/>
+						</div>
+					</div>
+
+					<h4 class={`mt-6 ${!isMobile ? " mb-4" : ""}`}>Address Details</h4>
+					<div class="items tp flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label class="mb-1">Street</Label>
+							<Textarea
+								bind:value={streetValue}
+								placeholder="36 Mwapona Road, Woodlands"
+								disabled={loading}
+								class="h-[100px]"
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								The street address as it appears on the proof of address.
+							</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex justify-between">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>City</Label>
+							<Input
+								bind:value={cityValue}
+								placeholder="Lusaka"
+								disabled={loading}
+								oninput={(e) => {
+									//@ts-ignore
+									cityValue = toTitleCase(e.target.value);
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								The city of residence as it appears on the proof of address.
+							</p>
+						</div>
+
+						<div class="tp flex flex-col gap-1.5">
+							<Label class="mb-1">Country</Label>
+							<AnyPicker
+								data={countries.map((c) => {
+									return { label: c, value: c.toLowerCase() };
+								})}
+								handler={updateCountry}
+								value={countryValue}
+								pickerTitle="Country"
+							/>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label class="mb-1">Proof of Address</Label>
+							<Input type="file" onchange={handlePoaUpload} accept=".pdf" />
+							<p class="mb-4 text-justify text-sm text-muted-foreground">
+								Upload a tenancy agreement, tax certificate, utility bill, or bank statement from
+								the past three months.
+							</p>
+							<p class="text-justify text-sm text-muted-foreground">
+								<b>Ensure</b> they are certified by the police, court, church, or commisioner of oaths,
+								and that they cleary show the official names and address.
+							</p>
+						</div>
+					</div>
+
+					<h4 class={`mt-6 ${!isMobile ? " mb-4" : ""}`}>Identity Details</h4>
+					<div class="items tp flex justify-between">
+						<div class="cntnt-l flex flex-col gap-1.5">
+							<Label class="mb-1">ID Type</Label>
+							<AnyPicker
+								data={[
+									{ label: "ID Card", value: "id-card" },
+									{ label: "Passport", value: "passport" },
+									{ label: "Drivers License", value: "drivers-license" },
+									{ label: "Voters Card", value: "voters-card" },
+								]}
+								handler={updateIdType}
+								value={idTypeValue}
+								pickerTitle="ID Type"
+							/>
+						</div>
+
+						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+							<Label>ID Number</Label>
+							<Input
+								bind:value={idNumValue}
+								placeholder="234976101"
+								disabled={loading}
+								oninput={(e) => {
+									//@ts-ignore
+									idNumValue = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "");
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								Leave out any special characters.
+							</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label class="mb-1">Proof of Identity</Label>
+							<Input type="file" onchange={handlePoiUpload} accept=".pdf" />
+							<p class="mb-4 text-justify text-sm text-muted-foreground">
+								Upload {poiComment}, passport, drivers license, voters card.
+							</p>
+							<p class="text-justify text-sm text-muted-foreground">
+								<b>Ensure</b> they are certified by the police, court, church, or commisioner of oaths,
+								and that they cleary show the official names and address.
+							</p>
+						</div>
+					</div>
+
+					<Button
+						class="mt-5 cursor-pointer"
+						disabled={blockReqAttemptDirector}
+						onclick={() => addToDirectorsList()}
+						>Add to List<SquarePlus class="ml-2 h-4 w-4" /></Button
+					>
+				</section>
+
+				<h3 class="mt-10 mb-4">Added Directors</h3>
+				<section class="inputs">
+					{#if directors.length}
+						<Table.Root>
+							<Table.Header>
+								<Table.Row>
+									<Table.Head>Names</Table.Head>
+									<Table.Head>...</Table.Head>
+								</Table.Row>
+							</Table.Header>
+							<Table.Body>
+								{#each directors as director, index}
+									<Table.Row>
+										<Table.Cell>{director.fname} {director.lname}</Table.Cell>
+										<Table.Cell
+											><Button onclick={() => deleteDirector(index)}><Trash2 /></Button></Table.Cell
+										>
+									</Table.Row>
+								{/each}
+							</Table.Body>
+						</Table.Root>
+					{:else}
+						<p class="tmid">
+							No directors added. Fill in the form above to being adding directors.
+						</p>
+					{/if}
+				</section>
+
+				<!-- Managers -->
+				<h3 class="mt-10 mb-4">Manager Details</h3>
+				<section class="inputs">
+					<h4 class={!isMobile ? "mb-4" : undefined}>General Details</h4>
+					<div class="items tp flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>First Name</Label>
+							<Input
+								bind:value={fnameValueManager}
+								placeholder="Bwalya"
+								disabled={loading}
+								oninput={(e) => {
+									//@ts-ignore
+									fnameValueManager = toTitleCase(e.target.value);
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								The first name as it appears on the ID.
+							</p>
+						</div>
+
+						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Last Name</Label>
+							<Input
+								bind:value={lnameValueManager}
+								placeholder="Mutale"
+								disabled={loading}
+								oninput={(e) => {
+									//@ts-ignore
+									lnameValueManager = toTitleCase(e.target.value);
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								The last name as it appears on the ID.
+							</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Phone</Label>
+							<Input
+								bind:value={phoneValueManager}
+								placeholder="260776574628"
+								disabled={loading}
 								oninput={(e) => {
 									//@ts-ignore
 									phoneValueManager = e.target.value.replace(/[^0-9]/g, "");
@@ -1112,9 +2210,6 @@
 								bind:value={emailValueManager}
 								placeholder="bmutale@gmail.com"
 								disabled={loading}
-								onkeypress={(e) => {
-									if (e.key === "Enter") getOtp();
-								}}
 								inputmode="email"
 							/>
 							<p class="text-justify text-sm text-muted-foreground">
@@ -1171,10 +2266,8 @@
 							/>
 						</div>
 					</div>
-				</section>
 
-				<h3 class="mt-10 mb-4">Account Manager Address</h3>
-				<section class="inputs">
+					<h4 class={`mt-6 ${!isMobile ? " mb-4" : ""}`}>Address Details</h4>
 					<div class="items tp flex">
 						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
 							<Label class="mb-1">Street</Label>
@@ -1183,12 +2276,9 @@
 								placeholder="36 Mwapona Road, Woodlands"
 								disabled={loading}
 								class="h-[100px]"
-								onkeypress={(e) => {
-									if (e.key === "Enter") getOtp();
-								}}
 							/>
 							<p class="text-justify text-sm text-muted-foreground">
-								Your street address as it appears on your proof of address.
+								The street address as it appears on the proof of address.
 							</p>
 						</div>
 					</div>
@@ -1200,16 +2290,13 @@
 								bind:value={cityValueManager}
 								placeholder="Lusaka"
 								disabled={loading}
-								onkeypress={(e) => {
-									if (e.key === "Enter") getOtp();
-								}}
 								oninput={(e) => {
 									//@ts-ignore
 									cityValueManager = toTitleCase(e.target.value);
 								}}
 							/>
 							<p class="text-justify text-sm text-muted-foreground">
-								Your city of residence as it appears on your proof of address.
+								The city of residence as it appears on the proof of address.
 							</p>
 						</div>
 
@@ -1236,14 +2323,12 @@
 							</p>
 							<p class="text-justify text-sm text-muted-foreground">
 								<b>Ensure</b> they are certified by the police, court, church, or commisioner of oaths,
-								and that they cleary show your official names and address.
+								and that they cleary show the official names and address.
 							</p>
 						</div>
 					</div>
-				</section>
 
-				<h3 class="mt-10 mb-4">Account Manager Identity</h3>
-				<section class="inputs">
+					<h4 class={`mt-6 ${!isMobile ? " mb-4" : ""}`}>Identity Details</h4>
 					<div class="items tp flex justify-between">
 						<div class="cntnt-l flex flex-col gap-1.5">
 							<Label class="mb-1">ID Type</Label>
@@ -1266,9 +2351,6 @@
 								bind:value={idNumValueManager}
 								placeholder="234976101"
 								disabled={loading}
-								onkeypress={(e) => {
-									if (e.key === "Enter") getOtp();
-								}}
 								oninput={(e) => {
 									//@ts-ignore
 									idNumValueManager = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -1281,1247 +2363,190 @@
 					</div>
 
 					<div class="items tp mt-7 flex">
-						<div class="flex w-full max-w-sm flex-col gap-1.5">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
 							<Label class="mb-1">Proof of Identity</Label>
 							<Input type="file" onchange={handlePoiUploadManager} accept=".pdf" />
 							<p class="mb-4 text-justify text-sm text-muted-foreground">
-								Upload {poiCommentManager}, passport, drivers license, or voters card.
+								Upload {poiComment}, passport, drivers license, voters card.
 							</p>
 							<p class="text-justify text-sm text-muted-foreground">
 								<b>Ensure</b> they are certified by the police, court, church, or commisioner of oaths,
-								and that they cleary show your official names and address.
+								and that they cleary show the official names and address.
+							</p>
+						</div>
+					</div>
+
+					<Button
+						class="mt-5 cursor-pointer"
+						disabled={blockReqAttemptWManager}
+						onclick={() => addToManagersList()}
+						>Add to List<SquarePlus class="ml-2 h-4 w-4" /></Button
+					>
+				</section>
+
+				<h3 class="mt-10 mb-4">Added Managers</h3>
+				<section class="inputs">
+					{#if instituteManagers.length}
+						<Table.Root>
+							<Table.Header>
+								<Table.Row>
+									<Table.Head>Names</Table.Head>
+									<Table.Head>...</Table.Head>
+								</Table.Row>
+							</Table.Header>
+							<Table.Body>
+								{#each instituteManagers as manager, index}
+									<Table.Row>
+										<Table.Cell>{manager.fname} {manager.lname}</Table.Cell>
+										<Table.Cell
+											><Button onclick={() => deleteManager(index)}><Trash2 /></Button></Table.Cell
+										>
+									</Table.Row>
+								{/each}
+							</Table.Body>
+						</Table.Root>
+					{:else}
+						<p class="tmid">No managers added. Fill in the form above to being adding managers.</p>
+					{/if}
+				</section>
+
+				<h3 class="mt-10 mb-4">Signing Arrangement</h3>
+				<section class="inputs">
+					<div class="items tp flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label class="mb-1">Signers</Label>
+							<Input
+								bind:value={instituteSigningValue}
+								placeholder="2"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								oninput={(e) => {
+									//@ts-ignore
+									instituteSigningValue = e.target.value.replace(/[^0-9]/g, "");
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								This is how many people need to sign regarding trading instructions and other
+								actions related to the account.
 							</p>
 						</div>
 					</div>
 				</section>
+
+				<h3 class="mt-10 mb-4">Account Banking</h3>
+				<section class="inputs">
+					<div class="items tp flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Bank Name</Label>
+							<Input
+								bind:value={bankNameValue}
+								placeholder="Stanbic Bank"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								oninput={(e) => {
+									//@ts-ignore
+									bankNameValue = toTitleCase(e.target.value);
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">The bank's full name.</p>
+						</div>
+
+						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Account Name</Label>
+							<Input
+								bind:value={bankAccName}
+								placeholder="Bwalya Mutale"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								oninput={(e) => {
+									//@ts-ignore
+									bankAccName = toTitleCase(e.target.value);
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">The account number/IBAN.</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Account Number</Label>
+							<Input
+								bind:value={bankAccValue}
+								placeholder="10321256444"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">The account number/IBAN.</p>
+						</div>
+
+						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Branch Name</Label>
+							<Input
+								bind:value={branchNameValue}
+								placeholder="Commercial"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								oninput={(e) => {
+									//@ts-ignore
+									branchNameValue = toTitleCase(e.target.value);
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">The branch's official name.</p>
+						</div>
+					</div>
+
+					<div class="items tp mt-7 flex">
+						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Branch Code</Label>
+							<Input
+								bind:value={branchNumValue}
+								placeholder="260001"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">
+								The branch/sort code in full.
+							</p>
+						</div>
+
+						<div class="tp flex w-full max-w-sm flex-col gap-1.5">
+							<Label>SWIFT Code</Label>
+							<Input
+								bind:value={swiftCodealue}
+								placeholder="SBCZMXXX"
+								disabled={loading}
+								onkeypress={(e) => {
+									if (e.key === "Enter") getOtp();
+								}}
+								oninput={(e) => {
+									//@ts-ignore
+									swiftCodealue = e.target.value.toUpperCase();
+								}}
+							/>
+							<p class="text-justify text-sm text-muted-foreground">The branch's official name.</p>
+						</div>
+					</div>
+				</section>
 			{/if}
+
+			<Button
+				class={`mt-10 cursor-pointer${!isMobile ? " mx-auto w-[200px]" : ""}`}
+				{disabled}
+				onclick={getOtp}>Sign Up<CirclePlus class="ml-2 h-4 w-4" /></Button
+			>
 		{/if}
-
-		{#if activeTab === "joint"}
-			<h3 class="mb-4">Partner Details</h3>
-			<section class="inputs">
-				<h4 class={!isMobile ? "mb-4" : undefined}>General Details</h4>
-				<div class="items tp flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>First Name</Label>
-						<Input
-							bind:value={fnameValue}
-							placeholder="Bwalya"
-							disabled={loading}
-							oninput={(e) => {
-								//@ts-ignore
-								fnameValue = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							The first name as it appears on the ID.
-						</p>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Last Name</Label>
-						<Input
-							bind:value={lnameValue}
-							placeholder="Mutale"
-							disabled={loading}
-							oninput={(e) => {
-								//@ts-ignore
-								lnameValue = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							The last name as it appears on the ID.
-						</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Phone</Label>
-						<Input
-							bind:value={phoneValue}
-							placeholder="260776574628"
-							disabled={loading}
-							oninput={(e) => {
-								//@ts-ignore
-								phoneValue = e.target.value.replace(/[^0-9]/g, "");
-							}}
-							inputmode="tel"
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							Include the international code.
-						</p>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Email</Label>
-						<Input
-							bind:value={emailValue}
-							placeholder="bmutale@gmail.com"
-							disabled={loading}
-							inputmode="email"
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							We'll use this to send notifications.
-						</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="flex w-[100%] flex-col gap-1.5">
-						<Label class="mb-1">Date of Birth</Label>
-						<DatePicker handler={updateDob} dropdown />
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex justify-between">
-					<div class="flex flex-col gap-1.5">
-						<Label class="mb-1">Gender</Label>
-						<AnyPicker
-							data={[
-								{ label: "Male", value: "male" },
-								{ label: "Female", value: "female" },
-							]}
-							handler={updateGender}
-							value={genderValue}
-							pickerTitle="Gender"
-						/>
-					</div>
-
-					<div class="tp flex flex-col gap-1.5">
-						<Label class="mb-1">Marital Status</Label>
-						<AnyPicker
-							data={[
-								{ label: "Single", value: "single" },
-								{ label: "Married", value: "married" },
-								{ label: "Divorced", value: "divorced" },
-								{ label: "Widowed", value: "widowed" },
-							]}
-							handler={updateMarital}
-							value={maritalValue}
-							pickerTitle="Marital Status"
-						/>
-					</div>
-
-					<div class="tp flex flex-col gap-1.5">
-						<Label class="mb-1">Nationality</Label>
-						<AnyPicker
-							data={nationalities.map((n) => {
-								return { label: n, value: n.toLowerCase() };
-							})}
-							handler={updateNationality}
-							value={nationalityValue}
-							pickerTitle="Nationality"
-						/>
-					</div>
-				</div>
-
-				<h4 class={`mt-6 ${!isMobile ? " mb-4" : ""}`}>Address Details</h4>
-				<div class="items tp flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label class="mb-1">Street</Label>
-						<Textarea
-							bind:value={streetValue}
-							placeholder="36 Mwapona Road, Woodlands"
-							disabled={loading}
-							class="h-[100px]"
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							The street address as it appears on the proof of address.
-						</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex justify-between">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>City</Label>
-						<Input
-							bind:value={cityValue}
-							placeholder="Lusaka"
-							disabled={loading}
-							oninput={(e) => {
-								//@ts-ignore
-								cityValue = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							The city of residence as it appears on the proof of address.
-						</p>
-					</div>
-
-					<div class="tp flex flex-col gap-1.5">
-						<Label class="mb-1">Country</Label>
-						<AnyPicker
-							data={countries.map((c) => {
-								return { label: c, value: c.toLowerCase() };
-							})}
-							handler={updateCountry}
-							value={countryValue}
-							pickerTitle="Country"
-						/>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label class="mb-1">Proof of Address</Label>
-						<Input type="file" onchange={handlePoaUpload} accept=".pdf" />
-						<p class="mb-4 text-justify text-sm text-muted-foreground">
-							Upload a tenancy agreement, tax certificate, utility bill, or bank statement from the
-							past three months.
-						</p>
-						<p class="text-justify text-sm text-muted-foreground">
-							<b>Ensure</b> they are certified by the police, court, church, or commisioner of oaths,
-							and that they cleary show the official names and address.
-						</p>
-					</div>
-				</div>
-
-				<h4 class={`mt-6 ${!isMobile ? " mb-4" : ""}`}>Identity Details</h4>
-				<div class="items tp flex justify-between">
-					<div class="cntnt-l flex flex-col gap-1.5">
-						<Label class="mb-1">ID Type</Label>
-						<AnyPicker
-							data={[
-								{ label: "ID Card", value: "id-card" },
-								{ label: "Passport", value: "passport" },
-								{ label: "Drivers License", value: "drivers-license" },
-								{ label: "Voters Card", value: "voters-card" },
-								{ label: "Birth Certificate", value: "birth-certificate" },
-							]}
-							handler={updateIdType}
-							value={idTypeValue}
-							pickerTitle="ID Type"
-						/>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>ID Number</Label>
-						<Input
-							bind:value={idNumValue}
-							placeholder="234976101"
-							disabled={loading}
-							oninput={(e) => {
-								//@ts-ignore
-								idNumValue = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "");
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							Leave out any special characters.
-						</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label class="mb-1">Proof of Identity</Label>
-						<Input type="file" onchange={handlePoiUpload} accept=".pdf" />
-						<p class="mb-4 text-justify text-sm text-muted-foreground">
-							Upload {poiComment}, passport, drivers license, voters card, or birth certificate.
-						</p>
-						<p class="text-justify text-sm text-muted-foreground">
-							<b>Ensure</b> they are certified by the police, court, church, or commisioner of oaths,
-							and that they cleary show the official names and address.
-						</p>
-					</div>
-				</div>
-
-				<Button
-					class="mt-5 cursor-pointer"
-					disabled={blockReqAttemptJointPartner}
-					onclick={() => addToJointList()}>Add to List<SquarePlus class="ml-2 h-4 w-4" /></Button
-				>
-			</section>
-
-			<h3 class="mt-10 mb-4">Added Partners</h3>
-			<section class="inputs">
-				{#if jointUsers.length}
-					<Table.Root>
-						<Table.Header>
-							<Table.Row>
-								<Table.Head>Names</Table.Head>
-								<Table.Head>...</Table.Head>
-							</Table.Row>
-						</Table.Header>
-						<Table.Body>
-							{#each jointUsers as partner, index}
-								<Table.Row>
-									<Table.Cell>{partner.fname} {partner.lname}</Table.Cell>
-									<Table.Cell
-										><Button onclick={() => deleteJointPartner(index)}><Trash2 /></Button
-										></Table.Cell
-									>
-								</Table.Row>
-							{/each}
-						</Table.Body>
-					</Table.Root>
-				{:else}
-					<p class="tmid">No partners added. Fill in the form above to being adding partners.</p>
-				{/if}
-			</section>
-
-			<h3 class="mt-10 mb-4">Signing Arrangement</h3>
-			<section class="inputs">
-				<div class="items tp flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label class="mb-1">Signers</Label>
-						<Input
-							bind:value={jointSigningValue}
-							placeholder="2"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								jointSigningValue = e.target.value.replace(/[^0-9]/g, "");
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							This is how many people need to sign regarding trading instructions and other actions
-							related to the account.
-						</p>
-					</div>
-				</div>
-			</section>
-
-			<h3 class="mt-10 mb-4">Account Banking</h3>
-			<section class="inputs">
-				<div class="items tp flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Bank Name</Label>
-						<Input
-							bind:value={bankNameValue}
-							placeholder="Stanbic Bank"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								bankNameValue = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">The bank's full name.</p>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Account Name</Label>
-						<Input
-							bind:value={bankAccName}
-							placeholder="Bwalya Mutale"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								bankAccName = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">The account number/IBAN.</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Account Number</Label>
-						<Input
-							bind:value={bankAccValue}
-							placeholder="10321256444"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">The account number/IBAN.</p>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Branch Name</Label>
-						<Input
-							bind:value={branchNameValue}
-							placeholder="Commercial"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								branchNameValue = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">The branch's official name.</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Branch Code</Label>
-						<Input
-							bind:value={branchNumValue}
-							placeholder="260001"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">The branch/sort code in full.</p>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>SWIFT Code</Label>
-						<Input
-							bind:value={swiftCodealue}
-							placeholder="SBCZMXXX"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								swiftCodealue = e.target.value.toUpperCase();
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">The branch's official name.</p>
-					</div>
-				</div>
-			</section>
-		{/if}
-
-		{#if activeTab === "institution"}
-			<h3 class="mt-8 mb-4">Company Details</h3>
-			<section class="inputs">
-				<div class="items tp flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Name</Label>
-						<Input
-							bind:value={fnameValueInstitute}
-							placeholder="Stockbrokers Zambia Limited"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								fnameValueInstitute = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							The company name as it appears on the certificate of incorporation.
-						</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Phone</Label>
-						<Input
-							bind:value={phoneValueInstitute}
-							placeholder="260776574628"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								phoneValueInstitute = e.target.value.replace(/[^0-9]/g, "");
-							}}
-							inputmode="tel"
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							Include the international code.
-						</p>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Email</Label>
-						<Input
-							bind:value={emailValueInstitute}
-							placeholder="bmutale@gmail.com"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							inputmode="email"
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							We'll use this to send notifications.
-						</p>
-					</div>
-				</div>
-			</section>
-
-			<h3 class="mt-10 mb-4">Company Address</h3>
-			<section class="inputs">
-				<div class="items tp flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label class="mb-1">Street</Label>
-						<Textarea
-							bind:value={streetValueInstitute}
-							placeholder="36 Mwapona Road, Woodlands"
-							disabled={loading}
-							class="h-[100px]"
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							The street address as it appears on the proof of address.
-						</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex justify-between">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>City</Label>
-						<Input
-							bind:value={cityValueInstitute}
-							placeholder="Lusaka"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								cityValueInstitute = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							The city of residence as it appears on the proof of address.
-						</p>
-					</div>
-
-					<div class="tp flex flex-col gap-1.5">
-						<Label class="mb-1">Country</Label>
-						<AnyPicker
-							data={countries.map((c) => {
-								return { label: c, value: c.toLowerCase() };
-							})}
-							handler={updateCountryInstitute}
-							value={countryValueInstitute}
-							pickerTitle="Country"
-						/>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label class="mb-1">Proof of Address</Label>
-						<Input type="file" onchange={handlePoaUploadInstitute} accept=".pdf" />
-						<p class="mb-4 text-justify text-sm text-muted-foreground">
-							Upload a tenancy agreement, tax certificate, utility bill, or bank statement from the
-							past three months.
-						</p>
-						<p class="text-justify text-sm text-muted-foreground">
-							<b>Ensure</b> they are certified by the police, court, church, or commisioner of oaths,
-							and that they cleary show the official names and address.
-						</p>
-					</div>
-				</div>
-			</section>
-
-			<h3 class="mt-10 mb-4">Company Identity</h3>
-			<section class="inputs">
-				<div class="items tp flex justify-between">
-					<div class="cntnt-l flex flex-col gap-1.5">
-						<Label class="mb-1">ID Type</Label>
-						<AnyPicker
-							data={[{ label: "Cert. of Incorp.", value: "coi" }]}
-							handler={updateIdTypeInstitute}
-							value={idTypeValueInstitute}
-							pickerTitle="ID Type"
-						/>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>ID Number</Label>
-						<Input
-							bind:value={idNumValueInstitute}
-							placeholder="234976101"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							Leave out any special characters.
-						</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label class="mb-1">Proof of Identity</Label>
-						<Input type="file" onchange={handlePoiUploadInstitute} accept=".pdf" />
-						<p class="mb-4 text-justify text-sm text-muted-foreground">
-							Upload certificate of incorporation.
-						</p>
-						<p class="text-justify text-sm text-muted-foreground">
-							<b>Ensure</b> it is are certified by the police, court, church, or commisioner of oaths,
-							and that it cleary shows the official names and address.
-						</p>
-					</div>
-				</div>
-			</section>
-
-			<!-- Directors -->
-			<h3 class="mt-10 mb-4">Director Details</h3>
-			<section class="inputs">
-				<h4 class={!isMobile ? "mb-4" : undefined}>General Details</h4>
-				<div class="items tp flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>First Name</Label>
-						<Input
-							bind:value={fnameValue}
-							placeholder="Bwalya"
-							disabled={loading}
-							oninput={(e) => {
-								//@ts-ignore
-								fnameValue = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							The first name as it appears on the ID.
-						</p>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Last Name</Label>
-						<Input
-							bind:value={lnameValue}
-							placeholder="Mutale"
-							disabled={loading}
-							oninput={(e) => {
-								//@ts-ignore
-								lnameValue = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							The last name as it appears on the ID.
-						</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Phone</Label>
-						<Input
-							bind:value={phoneValue}
-							placeholder="260776574628"
-							disabled={loading}
-							oninput={(e) => {
-								//@ts-ignore
-								phoneValue = e.target.value.replace(/[^0-9]/g, "");
-							}}
-							inputmode="tel"
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							Include the international code.
-						</p>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Email</Label>
-						<Input
-							bind:value={emailValue}
-							placeholder="bmutale@gmail.com"
-							disabled={loading}
-							inputmode="email"
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							We'll use this to send notifications.
-						</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="flex w-[100%] flex-col gap-1.5">
-						<Label class="mb-1">Date of Birth</Label>
-						<DatePicker handler={updateDob} dropdown />
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex justify-between">
-					<div class="flex flex-col gap-1.5">
-						<Label class="mb-1">Gender</Label>
-						<AnyPicker
-							data={[
-								{ label: "Male", value: "male" },
-								{ label: "Female", value: "female" },
-							]}
-							handler={updateGender}
-							value={genderValue}
-							pickerTitle="Gender"
-						/>
-					</div>
-
-					<div class="tp flex flex-col gap-1.5">
-						<Label class="mb-1">Marital Status</Label>
-						<AnyPicker
-							data={[
-								{ label: "Single", value: "single" },
-								{ label: "Married", value: "married" },
-								{ label: "Divorced", value: "divorced" },
-								{ label: "Widowed", value: "widowed" },
-							]}
-							handler={updateMarital}
-							value={maritalValue}
-							pickerTitle="Marital Status"
-						/>
-					</div>
-
-					<div class="tp flex flex-col gap-1.5">
-						<Label class="mb-1">Nationality</Label>
-						<AnyPicker
-							data={nationalities.map((n) => {
-								return { label: n, value: n.toLowerCase() };
-							})}
-							handler={updateNationality}
-							value={nationalityValue}
-							pickerTitle="Nationality"
-						/>
-					</div>
-				</div>
-
-				<h4 class={`mt-6 ${!isMobile ? " mb-4" : ""}`}>Address Details</h4>
-				<div class="items tp flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label class="mb-1">Street</Label>
-						<Textarea
-							bind:value={streetValue}
-							placeholder="36 Mwapona Road, Woodlands"
-							disabled={loading}
-							class="h-[100px]"
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							The street address as it appears on the proof of address.
-						</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex justify-between">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>City</Label>
-						<Input
-							bind:value={cityValue}
-							placeholder="Lusaka"
-							disabled={loading}
-							oninput={(e) => {
-								//@ts-ignore
-								cityValue = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							The city of residence as it appears on the proof of address.
-						</p>
-					</div>
-
-					<div class="tp flex flex-col gap-1.5">
-						<Label class="mb-1">Country</Label>
-						<AnyPicker
-							data={countries.map((c) => {
-								return { label: c, value: c.toLowerCase() };
-							})}
-							handler={updateCountry}
-							value={countryValue}
-							pickerTitle="Country"
-						/>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label class="mb-1">Proof of Address</Label>
-						<Input type="file" onchange={handlePoaUpload} accept=".pdf" />
-						<p class="mb-4 text-justify text-sm text-muted-foreground">
-							Upload a tenancy agreement, tax certificate, utility bill, or bank statement from the
-							past three months.
-						</p>
-						<p class="text-justify text-sm text-muted-foreground">
-							<b>Ensure</b> they are certified by the police, court, church, or commisioner of oaths,
-							and that they cleary show the official names and address.
-						</p>
-					</div>
-				</div>
-
-				<h4 class={`mt-6 ${!isMobile ? " mb-4" : ""}`}>Identity Details</h4>
-				<div class="items tp flex justify-between">
-					<div class="cntnt-l flex flex-col gap-1.5">
-						<Label class="mb-1">ID Type</Label>
-						<AnyPicker
-							data={[
-								{ label: "ID Card", value: "id-card" },
-								{ label: "Passport", value: "passport" },
-								{ label: "Drivers License", value: "drivers-license" },
-								{ label: "Voters Card", value: "voters-card" },
-							]}
-							handler={updateIdType}
-							value={idTypeValue}
-							pickerTitle="ID Type"
-						/>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>ID Number</Label>
-						<Input
-							bind:value={idNumValue}
-							placeholder="234976101"
-							disabled={loading}
-							oninput={(e) => {
-								//@ts-ignore
-								idNumValue = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "");
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							Leave out any special characters.
-						</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label class="mb-1">Proof of Identity</Label>
-						<Input type="file" onchange={handlePoiUpload} accept=".pdf" />
-						<p class="mb-4 text-justify text-sm text-muted-foreground">
-							Upload {poiComment}, passport, drivers license, voters card.
-						</p>
-						<p class="text-justify text-sm text-muted-foreground">
-							<b>Ensure</b> they are certified by the police, court, church, or commisioner of oaths,
-							and that they cleary show the official names and address.
-						</p>
-					</div>
-				</div>
-
-				<Button
-					class="mt-5 cursor-pointer"
-					disabled={blockReqAttemptDirector}
-					onclick={() => addToDirectorsList()}
-					>Add to List<SquarePlus class="ml-2 h-4 w-4" /></Button
-				>
-			</section>
-
-			<h3 class="mt-10 mb-4">Added Directors</h3>
-			<section class="inputs">
-				{#if directors.length}
-					<Table.Root>
-						<Table.Header>
-							<Table.Row>
-								<Table.Head>Names</Table.Head>
-								<Table.Head>...</Table.Head>
-							</Table.Row>
-						</Table.Header>
-						<Table.Body>
-							{#each directors as director, index}
-								<Table.Row>
-									<Table.Cell>{director.fname} {director.lname}</Table.Cell>
-									<Table.Cell
-										><Button onclick={() => deleteDirector(index)}><Trash2 /></Button></Table.Cell
-									>
-								</Table.Row>
-							{/each}
-						</Table.Body>
-					</Table.Root>
-				{:else}
-					<p class="tmid">No directors added. Fill in the form above to being adding directors.</p>
-				{/if}
-			</section>
-
-			<!-- Managers -->
-			<h3 class="mt-10 mb-4">Manager Details</h3>
-			<section class="inputs">
-				<h4 class={!isMobile ? "mb-4" : undefined}>General Details</h4>
-				<div class="items tp flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>First Name</Label>
-						<Input
-							bind:value={fnameValueManager}
-							placeholder="Bwalya"
-							disabled={loading}
-							oninput={(e) => {
-								//@ts-ignore
-								fnameValueManager = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							The first name as it appears on the ID.
-						</p>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Last Name</Label>
-						<Input
-							bind:value={lnameValueManager}
-							placeholder="Mutale"
-							disabled={loading}
-							oninput={(e) => {
-								//@ts-ignore
-								lnameValueManager = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							The last name as it appears on the ID.
-						</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Phone</Label>
-						<Input
-							bind:value={phoneValueManager}
-							placeholder="260776574628"
-							disabled={loading}
-							oninput={(e) => {
-								//@ts-ignore
-								phoneValueManager = e.target.value.replace(/[^0-9]/g, "");
-							}}
-							inputmode="tel"
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							Include the international code.
-						</p>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Email</Label>
-						<Input
-							bind:value={emailValueManager}
-							placeholder="bmutale@gmail.com"
-							disabled={loading}
-							inputmode="email"
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							We'll use this to send notifications.
-						</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="flex w-[100%] flex-col gap-1.5">
-						<Label class="mb-1">Date of Birth</Label>
-						<DatePicker handler={updateDobManager} dropdown />
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex justify-between">
-					<div class="flex flex-col gap-1.5">
-						<Label class="mb-1">Gender</Label>
-						<AnyPicker
-							data={[
-								{ label: "Male", value: "male" },
-								{ label: "Female", value: "female" },
-							]}
-							handler={updateGenderManager}
-							value={genderValueManager}
-							pickerTitle="Gender"
-						/>
-					</div>
-
-					<div class="tp flex flex-col gap-1.5">
-						<Label class="mb-1">Marital Status</Label>
-						<AnyPicker
-							data={[
-								{ label: "Single", value: "single" },
-								{ label: "Married", value: "married" },
-								{ label: "Divorced", value: "divorced" },
-								{ label: "Widowed", value: "widowed" },
-							]}
-							handler={updateMaritalManager}
-							value={maritalValueManager}
-							pickerTitle="Marital Status"
-						/>
-					</div>
-
-					<div class="tp flex flex-col gap-1.5">
-						<Label class="mb-1">Nationality</Label>
-						<AnyPicker
-							data={nationalities.map((n) => {
-								return { label: n, value: n.toLowerCase() };
-							})}
-							handler={updateNationalityManager}
-							value={nationalityValueManager}
-							pickerTitle="Nationality"
-						/>
-					</div>
-				</div>
-
-				<h4 class={`mt-6 ${!isMobile ? " mb-4" : ""}`}>Address Details</h4>
-				<div class="items tp flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label class="mb-1">Street</Label>
-						<Textarea
-							bind:value={streetValueManager}
-							placeholder="36 Mwapona Road, Woodlands"
-							disabled={loading}
-							class="h-[100px]"
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							The street address as it appears on the proof of address.
-						</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex justify-between">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>City</Label>
-						<Input
-							bind:value={cityValueManager}
-							placeholder="Lusaka"
-							disabled={loading}
-							oninput={(e) => {
-								//@ts-ignore
-								cityValueManager = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							The city of residence as it appears on the proof of address.
-						</p>
-					</div>
-
-					<div class="tp flex flex-col gap-1.5">
-						<Label class="mb-1">Country</Label>
-						<AnyPicker
-							data={countries.map((c) => {
-								return { label: c, value: c.toLowerCase() };
-							})}
-							handler={updateCountryManager}
-							value={countryValueManager}
-							pickerTitle="Country"
-						/>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label class="mb-1">Proof of Address</Label>
-						<Input type="file" onchange={handlePoaUploadManager} accept=".pdf" />
-						<p class="mb-4 text-justify text-sm text-muted-foreground">
-							Upload a tenancy agreement, tax certificate, utility bill, or bank statement from the
-							past three months.
-						</p>
-						<p class="text-justify text-sm text-muted-foreground">
-							<b>Ensure</b> they are certified by the police, court, church, or commisioner of oaths,
-							and that they cleary show the official names and address.
-						</p>
-					</div>
-				</div>
-
-				<h4 class={`mt-6 ${!isMobile ? " mb-4" : ""}`}>Identity Details</h4>
-				<div class="items tp flex justify-between">
-					<div class="cntnt-l flex flex-col gap-1.5">
-						<Label class="mb-1">ID Type</Label>
-						<AnyPicker
-							data={[
-								{ label: "ID Card", value: "id-card" },
-								{ label: "Passport", value: "passport" },
-								{ label: "Drivers License", value: "drivers-license" },
-								{ label: "Voters Card", value: "voters-card" },
-							]}
-							handler={updateIdTypeManager}
-							value={idTypeValueManager}
-							pickerTitle="ID Type"
-						/>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>ID Number</Label>
-						<Input
-							bind:value={idNumValueManager}
-							placeholder="234976101"
-							disabled={loading}
-							oninput={(e) => {
-								//@ts-ignore
-								idNumValueManager = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "");
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							Leave out any special characters.
-						</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label class="mb-1">Proof of Identity</Label>
-						<Input type="file" onchange={handlePoiUploadManager} accept=".pdf" />
-						<p class="mb-4 text-justify text-sm text-muted-foreground">
-							Upload {poiComment}, passport, drivers license, voters card.
-						</p>
-						<p class="text-justify text-sm text-muted-foreground">
-							<b>Ensure</b> they are certified by the police, court, church, or commisioner of oaths,
-							and that they cleary show the official names and address.
-						</p>
-					</div>
-				</div>
-
-				<Button
-					class="mt-5 cursor-pointer"
-					disabled={blockReqAttemptWManager}
-					onclick={() => addToManagersList()}>Add to List<SquarePlus class="ml-2 h-4 w-4" /></Button
-				>
-			</section>
-
-			<h3 class="mt-10 mb-4">Added Managers</h3>
-			<section class="inputs">
-				{#if instituteManagers.length}
-					<Table.Root>
-						<Table.Header>
-							<Table.Row>
-								<Table.Head>Names</Table.Head>
-								<Table.Head>...</Table.Head>
-							</Table.Row>
-						</Table.Header>
-						<Table.Body>
-							{#each instituteManagers as manager, index}
-								<Table.Row>
-									<Table.Cell>{manager.fname} {manager.lname}</Table.Cell>
-									<Table.Cell
-										><Button onclick={() => deleteManager(index)}><Trash2 /></Button></Table.Cell
-									>
-								</Table.Row>
-							{/each}
-						</Table.Body>
-					</Table.Root>
-				{:else}
-					<p class="tmid">No managers added. Fill in the form above to being adding managers.</p>
-				{/if}
-			</section>
-
-			<h3 class="mt-10 mb-4">Signing Arrangement</h3>
-			<section class="inputs">
-				<div class="items tp flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label class="mb-1">Signers</Label>
-						<Input
-							bind:value={instituteSigningValue}
-							placeholder="2"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								instituteSigningValue = e.target.value.replace(/[^0-9]/g, "");
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							This is how many people need to sign regarding trading instructions and other actions
-							related to the account.
-						</p>
-					</div>
-				</div>
-			</section>
-
-			<h3 class="mt-10 mb-4">Account Banking</h3>
-			<section class="inputs">
-				<div class="items tp flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Bank Name</Label>
-						<Input
-							bind:value={bankNameValue}
-							placeholder="Stanbic Bank"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								bankNameValue = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">The bank's full name.</p>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Account Name</Label>
-						<Input
-							bind:value={bankAccName}
-							placeholder="Bwalya Mutale"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								bankAccName = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">The account number/IBAN.</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Account Number</Label>
-						<Input
-							bind:value={bankAccValue}
-							placeholder="10321256444"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">The account number/IBAN.</p>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Branch Name</Label>
-						<Input
-							bind:value={branchNameValue}
-							placeholder="Commercial"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								branchNameValue = toTitleCase(e.target.value);
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">The branch's official name.</p>
-					</div>
-				</div>
-
-				<div class="items tp mt-7 flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>Branch Code</Label>
-						<Input
-							bind:value={branchNumValue}
-							placeholder="260001"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">The branch/sort code in full.</p>
-					</div>
-
-					<div class="tp flex w-full max-w-sm flex-col gap-1.5">
-						<Label>SWIFT Code</Label>
-						<Input
-							bind:value={swiftCodealue}
-							placeholder="SBCZMXXX"
-							disabled={loading}
-							onkeypress={(e) => {
-								if (e.key === "Enter") getOtp();
-							}}
-							oninput={(e) => {
-								//@ts-ignore
-								swiftCodealue = e.target.value.toUpperCase();
-							}}
-						/>
-						<p class="text-justify text-sm text-muted-foreground">The branch's official name.</p>
-					</div>
-				</div>
-			</section>
-		{/if}
-
-		<Button
-			class={`mt-10 cursor-pointer${!isMobile ? " mx-auto w-[200px]" : ""}`}
-			{disabled}
-			onclick={getOtp}>Sign Up<CirclePlus class="ml-2 h-4 w-4" /></Button
-		>
 
 		<div class="footer my-10">
 			<p>Built by <a href="https://www.neos.finance" target="_blank">Neos FinTech</a></p>

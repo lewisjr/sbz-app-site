@@ -3,6 +3,8 @@ import { genOTP } from "$lib/utils";
 import { json } from "@sveltejs/kit";
 import notif from "$lib/server/email";
 
+import type { SBZdb } from "$lib/types";
+
 // Set an OTP
 export const PUT = async ({ request }) => {
 	const { emails, phones }: { emails: string[]; phones: string[] } = await request.json();
@@ -25,7 +27,7 @@ export const PUT = async ({ request }) => {
 
 	let err = emailReqs.find((item) => !item);
 
-	if (err)
+	if (err) {
 		return json(
 			{
 				success: false,
@@ -33,6 +35,34 @@ export const PUT = async ({ request }) => {
 			},
 			{ status: 400 },
 		);
+	}
 
 	return json(otpReq, { status: 200 });
+};
+
+// Confirm OTP and make account opening ticket
+export const POST = async ({ request }) => {
+	const formData = await request.formData();
+
+	const otp = Number(formData.get("otp")); // comes in as string → cast to number
+	const emails = JSON.parse(formData.get("emails") as string) as string[]; // if multiple inputs named "emails"
+	const obj = JSON.parse(
+		formData.get("obj") as string,
+	) as SBZdb["public"]["Tables"]["clients"]["Insert"];
+
+	// now otp, emails, and obj have the right types
+	console.log({ otp, emails, obj });
+
+	const serverOtp = await dbs.sbz.checkOtp({ otp, user: emails.join(",,") });
+
+	if (!serverOtp.success)
+		return json(
+			{
+				success: false,
+				msg: "Failed to confirm your OTP, please ensure that it is correct and try again.",
+			},
+			{ status: 400 },
+		);
+
+	return json({ success: true, message: "w.i.p" }, { status: 200 });
 };

@@ -59,3 +59,10 @@ export const formatDbTime = (isoString: string) => {
 
 /**Generating tickets, and other indexing items */
 export const genId = customAlphabet("ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789", 11);
+
+/**Simple random AB testing; Not truly random */
+export const randomAb = <T>(arr: T[]): T | null => {
+	if (arr.length === 0) return null;
+	const randomIndex = Math.floor(Math.random() * arr.length);
+	return arr[randomIndex];
+};
