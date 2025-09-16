@@ -1,0 +1,1 @@
+cmd /k yarn supabase db diff --use-migra -f %1 --linked

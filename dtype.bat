@@ -1,0 +1,1 @@
+cmd /k yarn supabase gen types typescript --linked
