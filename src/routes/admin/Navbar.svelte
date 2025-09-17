@@ -59,10 +59,18 @@
 		<p>Home</p>
 	</a>
 
+	<div class="titl">
+		<p>Odyn</p>
+	</div>
+
 	<a class={`link${path === "/admin/tickets" ? " current" : ""}`} href="/admin/tickets">
 		<MessageCircleQuestion class="h-8 w-8" />
 		<p>Tickets</p>
 	</a>
+
+	<div class="titl">
+		<p>System</p>
+	</div>
 
 	<a class={`link${path === "/admin/users" ? " current" : ""}`} href="/admin/users">
 		<UserRoundCog class="h-8 w-8" />
@@ -195,6 +203,21 @@
 		.vis {
 			transform: rotateY(180deg);
 			user-select: none;
+		}
+	}
+
+	.titl {
+		min-width: 41%;
+		padding-bottom: 5px;
+		border-bottom: 1px solid var(--foreground);
+		font-size: 9pt;
+		font-weight: 600;
+		margin-bottom: 11px;
+		margin-top: -5px;
+		text-align: center;
+
+		p {
+			opacity: 0.5;
 		}
 	}
 </style>
