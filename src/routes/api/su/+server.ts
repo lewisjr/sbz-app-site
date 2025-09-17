@@ -124,19 +124,34 @@ export const POST = async ({ request }) => {
 		details.idNumber = obj.manag_id_num;
 		details.name = `${obj.manag_fname} ${obj.manag_lname}`;
 		details.phone = obj.manag_phone.toString();
-		queryHelper = `Requesting the opening of an in trust of account for ${details.name} managed by ${details.name}.`;
+		queryHelper = `Requesting the opening of an in trust of account for ${obj.fname} ${obj.lname} managed by ${details.name}.`;
 	}
 
 	if (obj.joint_partners.length) {
 		//@ts-ignore
 		const partners: UserObj[] = obj.joint_partners;
 
-		partners.forEach((row) => {
+		partners.forEach((row, i) => {
 			const poa = formData.get(`${row.idNum}-poa`) as File;
 			const poi = formData.get(`${row.idNum}-poi`) as File;
 
 			files.push({ file: poa, id: row.idNum, type: "poa" });
 			files.push({ file: poi, id: row.idNum, type: "poi" });
+
+			if (!i) {
+				details.email = row.email;
+				details.name = `${row.fname} ${row.lname}`;
+				details.idNumber = row.idNum;
+				details.phone = obj.phone.toString();
+			}
+
+			if (i && i < partners.length - 1) {
+				details.name = `${details.name}, ${row.fname} ${row.lname}`;
+			} else if (i === partners.length - 1) {
+				details.name = `${details.name}, and ${row.fname} ${row.lname}`;
+			}
+
+			queryHelper = `Requesting the opening of a joint account for ${details.name}.`;
 		});
 	}
 
@@ -157,12 +172,27 @@ export const POST = async ({ request }) => {
 		//@ts-ignore
 		const managers: UserObj[] = obj.comp_managers;
 
-		managers.forEach((row) => {
+		managers.forEach((row, i) => {
 			const poa = formData.get(`${row.idNum}-poa`) as File;
 			const poi = formData.get(`${row.idNum}-poi`) as File;
 
 			files.push({ file: poa, id: row.idNum, type: "poa" });
 			files.push({ file: poi, id: row.idNum, type: "poi" });
+
+			if (!i) {
+				details.email = row.email;
+				details.name = `${row.fname} ${row.lname}`;
+				details.idNumber = row.idNum;
+				details.phone = obj.phone.toString();
+			}
+
+			if (i && i < managers.length - 1) {
+				details.name = `${details.name}, ${row.fname} ${row.lname}`;
+			} else if (i === managers.length - 1) {
+				details.name = `${details.name}, and ${row.fname} ${row.lname}`;
+			}
+
+			queryHelper = `Requesting the opening of a joint account for ${details.name}.`;
 		});
 	}
 
@@ -172,14 +202,15 @@ export const POST = async ({ request }) => {
 	const ticketRes = await dbs.sbz.createTicket(
 		{
 			assigned: agent.data.agentId,
-			email: "",
+			email: details.email,
 			id: "",
-			id_num: "",
+			id_num: details.idNumber,
 			luse_id: -1,
-			names: "",
-			phone: "",
-			query: "",
+			names: details.name,
+			phone: details.phone,
+			query: queryHelper,
 			query_type: "Account Opening",
+			object: obj,
 		},
 		agent.data,
 	);

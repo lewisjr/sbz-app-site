@@ -654,6 +654,90 @@
 				break;
 		}
 
+		const form = new FormData();
+
+		// append main files
+		form.append(`${idNumValue}-poa`, poaValue ? poaValue : "");
+		form.append(`${idNumValue}-poi`, poiValue ? poiValue : "");
+
+		// append manager files
+		form.append(`${idNumValueManager}-poa`, poaValueManager ? poaValueManager : "");
+		form.append(`${idNumValueManager}-poi`, poiValueManager ? poiValueManager : "");
+
+		// append partners files
+		jointUsers.forEach((row) => {
+			form.append(`${row.idNum}-poa`, row.poa);
+			form.append(`${row.idNum}-poi`, row.poi);
+		});
+
+		// append comp directors files
+		directors.forEach((row) => {
+			form.append(`${row.idNum}-poa`, row.poa);
+			form.append(`${row.idNum}-poi`, row.poi);
+		});
+
+		// append comp managers files
+		instituteManagers.forEach((row) => {
+			form.append(`${row.idNum}-poa`, row.poa);
+			form.append(`${row.idNum}-poi`, row.poi);
+		});
+
+		// append otp
+		form.append("otp", otpValue);
+
+		// append emails
+		const managerEmails: string[] = [];
+
+		if (activeTab === "individual" && isInTrustOf === "no") {
+			managerEmails.push(emailValue.trim());
+		}
+
+		if (isInTrustOf !== "no") {
+			managerEmails.push(emailValueManager.trim());
+		}
+
+		let fname: string = fnameValue;
+		let street: string = streetValue;
+		let city: string = cityValue;
+		let country: string = countryValue;
+		let email: string = emailValue;
+		let phone: number = Number(phoneValue) ?? 0;
+		let id_num: string = idNumValue;
+
+		if (activeTab === "joint") {
+			managerEmails.push(...jointUsers.map((user) => user.email.trim()));
+
+			jointUsers.forEach((row, i) => {
+				if (!i) {
+					fname = `${row.fname} ${row.lname}`;
+					street = row.street;
+					city = row.city;
+					country = row.country;
+					email = row.email;
+					phone = Number(row.phone) ?? 0;
+					id_num = row.idNum;
+				}
+
+				if (i && i < jointUsers.length - 1) {
+					fname = `${fname}, ${row.fname} ${row.lname}`;
+				} else if (i === jointUsers.length - 1) {
+					fname = `${fname}, and ${row.fname} ${row.lname}`;
+				}
+			});
+		}
+
+		if (activeTab === "institution") {
+			managerEmails.push(...instituteManagers.map((user) => user.email.trim()));
+
+			fname = fnameValueInstitute;
+			email = emailValueInstitute;
+			street = streetValueInstitute;
+			city = cityValueInstitute;
+			country = countryValueInstitute;
+			id_num = idNumValueInstitute;
+			phone = Number(phoneValueInstitute) ?? 0;
+		}
+
 		const obj: SBZdb["public"]["Tables"]["clients"]["Insert"] = {
 			acc_type: activeTab,
 			bank_acc_name: bankAccName,
@@ -661,20 +745,20 @@
 			bank_name: bankNameValue,
 			branch_code: branchNumValue,
 			branch_name: branchNameValue,
-			city: cityValue,
-			country: countryValue,
+			city,
+			country,
 			dob: dobValue ?? "",
-			email: emailValue,
-			fname: fnameValue,
+			email,
+			fname,
 			gender: genderValue,
-			id_num: idNumValue,
+			id_num,
 			id_type: idTypeValue,
 			lname: lnameValue,
 			mstatus: maritalValue,
 			nationality: nationalityValue,
-			phone: Number(phoneValue) ?? 0,
+			phone,
 			signatures: {},
-			street: streetValue,
+			street,
 			swift_code: swiftCodealue,
 			// others
 			manag_city: cityValueManager,
@@ -796,58 +880,8 @@
 			signing_arrangement,
 		};
 
-		const form = new FormData();
-
-		// append main files
-		form.append(`${idNumValue}-poa`, poaValue ? poaValue : "");
-		form.append(`${idNumValue}-poi`, poiValue ? poiValue : "");
-
-		// append manager files
-		form.append(`${idNumValueManager}-poa`, poaValueManager ? poaValueManager : "");
-		form.append(`${idNumValueManager}-poi`, poiValueManager ? poiValueManager : "");
-
-		// append partners files
-		jointUsers.forEach((row) => {
-			form.append(`${row.idNum}-poa`, row.poa);
-			form.append(`${row.idNum}-poi`, row.poi);
-		});
-
-		// append comp directors files
-		directors.forEach((row) => {
-			form.append(`${row.idNum}-poa`, row.poa);
-			form.append(`${row.idNum}-poi`, row.poi);
-		});
-
-		// append comp managers files
-		instituteManagers.forEach((row) => {
-			form.append(`${row.idNum}-poa`, row.poa);
-			form.append(`${row.idNum}-poi`, row.poi);
-		});
-
 		// append obj
 		form.append("obj", JSON.stringify(obj));
-
-		// append otp
-		form.append("otp", otpValue);
-
-		// append emails
-		const managerEmails: string[] = [];
-
-		if (activeTab === "individual" && isInTrustOf === "no") {
-			managerEmails.push(emailValue.trim());
-		}
-
-		if (isInTrustOf !== "no") {
-			managerEmails.push(emailValueManager.trim());
-		}
-
-		if (activeTab === "joint") {
-			managerEmails.push(...jointUsers.map((user) => user.email.trim()));
-		}
-
-		if (activeTab === "institution") {
-			managerEmails.push(...instituteManagers.map((user) => user.email.trim()));
-		}
 
 		form.append("emails", JSON.stringify(managerEmails));
 
