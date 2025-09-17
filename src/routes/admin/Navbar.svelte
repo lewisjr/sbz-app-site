@@ -72,9 +72,9 @@
 		<p>System</p>
 	</div>
 
-	<a class={`link${path === "/admin/users" ? " current" : ""}`} href="/admin/users">
+	<a class={`link${path === "/admin/staff" ? " current" : ""}`} href="/admin/staff">
 		<UserRoundCog class="h-8 w-8" />
-		<p>Users</p>
+		<p>Staff</p>
 	</a>
 
 	<a class={`link${path === "/admin/otps" ? " current" : ""}`} href="/admin/otps">

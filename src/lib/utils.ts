@@ -44,16 +44,18 @@ export const formatDbTime = (isoString: string) => {
 
 	// Get local parts
 	const day = date.getDate();
-	const month = date.toLocaleString(undefined, { month: "long" });
+	const month = date.toLocaleString(undefined, { month: "short" });
 	const year = date.getFullYear();
 
 	let hours = date.getHours();
 	const minutes = date.getMinutes().toString().padStart(2, "0");
 
+	/*
 	// Handle 24:xx formatting manually
 	if (hours === 0) {
 		hours = 24; // interpret midnight as 24:00 of previous day
 	}
+	*/
 
 	return `${day} ${month} ${year}, ${hours}:${minutes}`;
 };
@@ -66,4 +68,9 @@ export const randomAb = <T>(arr: T[]): T | null => {
 	if (arr.length === 0) return null;
 	const randomIndex = Math.floor(Math.random() * arr.length);
 	return arr[randomIndex];
+};
+
+/**Convert decimal percentages to percentage values with the "%" */
+export const percentageHandler = (_value: number): string => {
+	return (_value * 100).toFixed(2) + "%";
 };

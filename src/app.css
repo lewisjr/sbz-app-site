@@ -37,6 +37,8 @@
 	--sidebar-accent-foreground: oklch(0.21 0.006 285.885);
 	--sidebar-border: oklch(0.92 0.004 286.32);
 	--sidebar-ring: oklch(0.723 0.219 149.579);
+
+	--shadow: rgba(0, 0, 0, 0.2);
 }
 
 .dark {
@@ -71,6 +73,8 @@
 	--sidebar-accent-foreground: oklch(0.985 0 0);
 	--sidebar-border: oklch(1 0 0 / 10%);
 	--sidebar-ring: oklch(0.527 0.154 150.069);
+
+	--shadow: rgba(243, 243, 243, 0.3);
 }
 
 @theme inline {
@@ -138,6 +142,14 @@
 /*This will change the font of something from a montserrat to a Google Sans Code, much better for numbers */
 *.num {
 	font-family: "Google Sans Code", monospace;
+}
+
+*.gren {
+	color: var(--sbz-green);
+}
+
+*.rd {
+	color: var(--sbz-red);
 }
 
 *::-webkit-scrollbar {
@@ -229,7 +241,7 @@ button:disabled {
 }
 
 .loading {
-	background-color: hsl(var(--muted));
+	background-color: var(--muted);
 	padding: 5px 10px;
 	border-radius: var(--radius);
 	color: transparent;

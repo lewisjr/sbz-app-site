@@ -66,7 +66,7 @@
 				<Button
 					{...props}
 					variant="outline"
-					class="loading w-[200px] justify-between"
+					class={`loading w-[200px] justify-between ${classes ?? ""}`.trim()}
 					role="combobox"
 					aria-expanded={open}
 					disabled

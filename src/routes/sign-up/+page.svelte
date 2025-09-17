@@ -876,7 +876,7 @@
 			}),
 			// can be undefined
 			luseId: luseId.length ? Number(luseId) : undefined,
-			is_in_trust_of: isInTrustOf === "yes" ?? undefined,
+			is_in_trust_of: isInTrustOf === "yes" ? true : undefined,
 			signing_arrangement,
 		};
 
@@ -922,7 +922,7 @@
 		}
 	});
 
-	/* SCAFOLDING
+	/*/ SCAFOLDING
 
 	// for testing purposes, prefill the details for an individual
 	const _scaffoldIndividual = () => {

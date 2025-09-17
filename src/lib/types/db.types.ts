@@ -238,8 +238,11 @@ export type Database = {
 					names: string;
 					object: Json | null;
 					phone: string;
+					platform: string;
 					query: string;
 					query_type: string;
+					referral_source: string | null;
+					uid: string;
 				};
 				Insert: {
 					assigned: string;
@@ -253,8 +256,11 @@ export type Database = {
 					names: string;
 					object?: Json | null;
 					phone: string;
+					platform: string;
 					query: string;
 					query_type: string;
+					referral_source?: string | null;
+					uid?: string;
 				};
 				Update: {
 					assigned?: string;
@@ -268,8 +274,11 @@ export type Database = {
 					names?: string;
 					object?: Json | null;
 					phone?: string;
+					platform?: string;
 					query?: string;
 					query_type?: string;
+					referral_source?: string | null;
+					uid?: string;
 				};
 				Relationships: [];
 			};

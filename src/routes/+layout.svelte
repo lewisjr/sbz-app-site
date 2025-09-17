@@ -25,7 +25,7 @@
 
 <svelte:window bind:innerWidth />
 
-<main>
+<main data-vaul-drawer-wrapper>
 	{@render children?.()}
 </main>
 
