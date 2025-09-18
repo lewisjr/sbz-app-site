@@ -8,7 +8,12 @@
 	import { formatDbTime } from "$lib/utils";
 	import { createRawSnippet } from "svelte";
 	import { renderSnippet, renderComponent } from "$lib/components/ui/data-table/index.js";
-	import { percentageHandler } from "$lib/utils";
+	import {
+		percentageHandler,
+		queryTypesArray,
+		platformsArray,
+		referralSourcesArray,
+	} from "$lib/utils";
 
 	//stores
 	import { screenWidthStore } from "$lib/stores";
@@ -28,7 +33,7 @@
 
 	//types
 	import type { PageProps } from "./$types";
-	import type { SBZdb } from "$lib/types";
+	import type { SBZdb, Types } from "$lib/types";
 	import type { ColumnDef, PaginationState } from "@tanstack/table-core";
 
 	let { data }: PageProps = $props();
@@ -100,6 +105,7 @@
 
 				return renderSnippet(renderCell);
 			},
+			enableColumnFilter: false,
 		},
 		{
 			accessorKey: "close_date",
@@ -122,6 +128,16 @@
 		{
 			accessorKey: "query",
 			header: "Details",
+			cell: ({ cell }) => {
+				const renderCell = createRawSnippet<[string]>(() => {
+					const value = cell.getValue() as string;
+					return {
+						render: () => `<p class="w-[400px] whitespace-normal">${value}</p>`,
+					};
+				});
+
+				return renderSnippet(renderCell);
+			},
 		},
 		{
 			accessorKey: "luse_id",
@@ -150,12 +166,27 @@
 			header: "Phone No.",
 		},
 		{
+			accessorKey: "platform",
+			header: "Platform",
+		},
+		{
+			accessorKey: "referral_source",
+			header: "Referrer",
+		},
+		{
 			id: "actions",
 			cell: ({ row }) => renderComponent(TicketActions, { data: row.original }),
 		},
 	];
 
-	type StrongFilter = "none" | "agent" | "closed" | "open" | "acc-open";
+	type StrongFilter =
+		| "none"
+		| "closed"
+		| "open"
+		| Types["ReferralSource"]
+		| Types["QueryTypes"]
+		| Types["Platforms"]
+		| string;
 
 	let strongFilter = $state<StrongFilter>("none");
 	const updateStrongFilter = (val: StrongFilter) => (strongFilter = val);
@@ -173,21 +204,64 @@
 			case "open":
 				const openTickets = ticketData.filter((item) => !item.is_closed);
 				return openTickets;
-			case "acc-open":
-				const accountOpeningTickets = ticketData.filter(
-					(item) => item.query_type === "Account Opening",
-				);
-				return accountOpeningTickets;
 			default:
+				const [code, filter] = strongFilter.split(":");
+
+				if (code === "AG") {
+					const agentTickets = ticketData.filter((item) => item.assigned === filter);
+					return agentTickets;
+				}
+
+				if (code === "RS") {
+					const referralTickets = ticketData.filter((item) => item.referral_source === filter);
+					return referralTickets;
+				}
+
+				if (code === "QT") {
+					const qTypeTickets = ticketData.filter((item) => item.query_type === filter);
+					return qTypeTickets;
+				}
+
+				if (code === "P") {
+					const platformTickets = ticketData.filter((item) => item.platform === filter);
+					return platformTickets;
+				}
+
 				return ticketData;
 		}
+	});
+
+	let globalFilterValue = $state<string>("");
+
+	// ! could be a search error here
+	let filteredTickets = $derived.by(() => {
+		return cleanedTickets.filter((entry) => {
+			let res: boolean = false;
+
+			const _sanitize = (value: string) => value.toLowerCase().replace(/\s+/g, "");
+			const _compare = (value: string) => _sanitize(value).includes(_sanitize(globalFilterValue));
+
+			if (_compare(entry.assigned)) res = true;
+			if (entry.close_date && _compare(formatDbTime(entry.close_date))) res = true;
+			if (_compare(formatDbTime(entry.created_at))) res = true;
+			if (_compare(entry.email)) res = true;
+			if (_compare(entry.id)) res = true;
+			if (_compare(entry.id_num)) res = true;
+			if (_compare(entry.luse_id.toString())) res = true;
+			if (_compare(entry.names)) res = true;
+			if (_compare(entry.phone)) res = true;
+			if (_compare(entry.platform)) res = true;
+			if (_compare(entry.query)) res = true;
+
+			return res;
+		});
 	});
 
 	let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 25 });
 
 	const table = createSvelteTable({
 		get data() {
-			return cleanedTickets;
+			return filteredTickets;
 		},
 		columns,
 		state: {
@@ -212,7 +286,9 @@
 		closed: number;
 		efficiency: number;
 		verdict: string;
-		mostPopular: string;
+		mostPopularQuery: string;
+		mostPopularPlatform: string;
+		mostPopularReferrer: string;
 	}
 
 	let summary: Summary = $derived.by(() => {
@@ -221,8 +297,10 @@
 		let closed: number = 0;
 
 		const qTypes: { [key: string]: number } = {};
+		const platforms: { [key: string]: number } = {};
+		const referrers: { [key: string]: number } = {};
 
-		cleanedTickets.forEach((row) => {
+		filteredTickets.forEach((row) => {
 			total++;
 
 			if (row.is_closed) closed++;
@@ -231,19 +309,56 @@
 			qTypes[row.query_type]
 				? (qTypes[row.query_type] = qTypes[row.query_type] + 1)
 				: (qTypes[row.query_type] = 1);
+
+			platforms[row.platform]
+				? (platforms[row.platform] = platforms[row.platform] + 1)
+				: (platforms[row.platform] = 1);
+
+			referrers[row.referral_source]
+				? (referrers[row.referral_source] = referrers[row.referral_source] + 1)
+				: (referrers[row.referral_source] = 1);
 		});
 
-		let mp: number = 0;
-		let mpText: string = "";
+		// most popular query type
+		let mPq: number = 0;
+		let mPqText: string = "";
 
 		Object.keys(qTypes).forEach((tipo) => {
 			const count = qTypes[tipo];
 
-			if (count > mp) {
-				mpText = `${tipo} (${percentageHandler(count / total)})`;
+			if (count > mPq) {
+				mPqText = `${tipo} (${percentageHandler(count / total)})`;
 			}
 
-			mp = count;
+			mPq = count;
+		});
+
+		// most popular platform
+		let mPpl: number = 0;
+		let mPplText: string = "";
+
+		Object.keys(platforms).forEach((platform) => {
+			const count = platforms[platform];
+
+			if (count > mPpl) {
+				mPplText = `${platform} (${percentageHandler(count / total)})`;
+			}
+
+			mPpl = count;
+		});
+
+		// most popular referrer
+		let mPr: number = 0;
+		let mPrText: string = "";
+
+		Object.keys(referrers).forEach((referrer) => {
+			const count = referrers[referrer];
+
+			if (count > mPr) {
+				mPrText = `${referrer} (${percentageHandler(count / total)})`;
+			}
+
+			mPr = count;
 		});
 
 		const efficiency = closed / total;
@@ -256,7 +371,9 @@
 			open,
 			total,
 			verdict,
-			mostPopular: mpText,
+			mostPopularQuery: mPqText,
+			mostPopularPlatform: mPplText,
+			mostPopularReferrer: mPrText,
 		};
 	});
 </script>
@@ -307,11 +424,7 @@
 			<div class="mt-2 flex items-center justify-between space-x-4">
 				<div class="flex items-center justify-between">
 					<p class="loading no-padding text-sm opacity-70">
-						<strong>Total Tickets:</strong> <span class="num">9,999</span>
-					</p>
-					<span class="mx-2 opacity-40">•</span>
-					<p class="loading no-padding text-sm opacity-70">
-						<strong>Closed:</strong> <span class="num">9,999</span>
+						<strong>Total:</strong> <span class="num">9,999</span>
 					</p>
 					<span class="mx-2 opacity-40">•</span>
 					<p class="loading no-padding text-sm opacity-70">
@@ -328,8 +441,26 @@
 					</p>
 					<span class="mx-2 opacity-40">•</span>
 					<p class="loading no-padding text-sm opacity-70">
-						<strong>Most Popular:</strong> <span class="num">Lorem Ipsum (100.00%)</span>
+						<strong>TQ:</strong> <span class="num">Lorem (100.00%)</span>
 					</p>
+					<span class="mx-2 opacity-40">•</span>
+					<p class="loading no-padding text-sm opacity-70">
+						<strong>TP:</strong> <span class="num">Lorem (100.00%)</span>
+					</p>
+					<span class="mx-2 opacity-40">•</span>
+					<p class="loading no-padding text-sm opacity-70">
+						<strong>TR:</strong> <span class="num">Lorem (100.00%)</span>
+					</p>
+				</div>
+
+				<div class="flex flex-row items-center justify-end">
+					<Button variant="outline" size="sm" disabled class="loading"
+						><ChevronLeft class="mr-2 h-4 w-4" />Previous</Button
+					>
+					<Button class="loading mx-2" variant="outline" size="sm" disabled>1</Button>
+					<Button variant="outline" size="sm" class="loading" disabled
+						>Next<ChevronRight class="ml-2 h-4 w-4" /></Button
+					>
 				</div>
 			</div>
 		</div>
@@ -391,12 +522,23 @@
 		<h1>Tickets</h1>
 		<div class="flex w-[50%] items-center">
 			<Search class="mr-4 h-10 w-10" />
-			<Input class="w-[100%]" placeholder="Filter Tickets..." type="text" />
+			<Input
+				class="w-[100%]"
+				bind:value={globalFilterValue}
+				placeholder="Filter Tickets..."
+				type="text"
+			/>
 			<AnyCombobox
 				handler={updateStrongFilter}
 				data={{
 					grouped: [
-						{ title: "Asignee", group: [{ label: toTitleCase(data.admin), value: "agent" }] },
+						{
+							title: "Asignee",
+							group: data.agents.map((agent) => {
+								const { username } = agent;
+								return { label: toTitleCase(username), value: `AG:${username}` };
+							}),
+						},
 						{
 							title: "Status",
 							group: [
@@ -404,7 +546,27 @@
 								{ label: "Closed", value: "closed" },
 							],
 						},
-						{ title: "Type", group: [{ label: "Account Opening", value: "acc-open" }] },
+						{
+							title: "Type",
+							group: queryTypesArray.map((item) => {
+								const [_, val] = item.split(":");
+								return { label: val, value: item };
+							}),
+						},
+						{
+							title: "Platform",
+							group: platformsArray.map((item) => {
+								const [_, val] = item.split(":");
+								return { label: val, value: item };
+							}),
+						},
+						{
+							title: "Referrer",
+							group: referralSourcesArray.map((item) => {
+								const [_, val] = item.split(":");
+								return { label: val, value: item };
+							}),
+						},
 					],
 					ungrouped: [{ label: "None", value: "none" }],
 				}}
@@ -460,9 +622,9 @@
 		</div>
 
 		<div class="mt-2 flex items-center justify-between space-x-4">
-			<div class="flex items-center justify-between">
+			<div class="sum-tainer flex items-center justify-between">
 				<p class="text-sm opacity-70">
-					<strong>Total Tickets:</strong> <span class="num">{numParse(summary.total)}</span>
+					<strong>Total:</strong> <span class="num">{numParse(summary.total)}</span>
 				</p>
 				<span class="mx-2 opacity-40">•</span>
 				<p class="text-sm opacity-70">
@@ -482,8 +644,16 @@
 					<strong>Verdict:</strong> <span class="num">{summary.verdict}</span>
 				</p>
 				<span class="mx-2 opacity-40">•</span>
-				<p class="text-sm opacity-70">
-					<strong>Most Popular:</strong> <span class="num">{summary.mostPopular}</span>
+				<p class="no-padding text-sm opacity-70">
+					<strong>TQ:</strong> <span class="num">{summary.mostPopularQuery}</span>
+				</p>
+				<span class="mx-2 opacity-40">•</span>
+				<p class="no-padding text-sm opacity-70">
+					<strong>TP:</strong> <span class="num">{summary.mostPopularPlatform}</span>
+				</p>
+				<span class="mx-2 opacity-40">•</span>
+				<p class="no-padding text-sm opacity-70">
+					<strong>TR:</strong> <span class="num">{summary.mostPopularReferrer}</span>
 				</p>
 			</div>
 
@@ -535,6 +705,19 @@
 
 		&::-webkit-scrollbar-thumb {
 			border-radius: 100px !important;
+		}
+	}
+
+	.sum-tainer {
+		max-width: calc(100% - 220px);
+		overflow-x: auto;
+
+		&::-webkit-scrollbar {
+			display: none;
+		}
+
+		p {
+			white-space: nowrap;
 		}
 	}
 </style>

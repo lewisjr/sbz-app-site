@@ -60,6 +60,10 @@ type AdminRow = SBZdb["public"]["Tables"]["admins"]["Row"];
 type ClientRow = SBZdb["public"]["Tables"]["clients"]["Row"];
 type TicketRow = SBZdb["public"]["Tables"]["odyn-tickets"]["Row"];
 
+interface AgentIDs {
+	username: string;
+}
+
 interface SBZutils {
 	log: (obj: LogObj) => Promise<void>;
 	setOtp: (obj: OTPObj) => Promise<GenericResponse>;
@@ -76,8 +80,11 @@ interface SBZutils {
 
 	isAdminCorrect: (username: string) => Promise<boolean>;
 	getAdmin: (username: string) => Promise<AdminRow[]>;
+	// getAdmins: () => Promise<AdminRow[]>;
 	isClientCorrect: (luseId: number) => Promise<boolean>;
 	getClient: (luseId: number) => Promise<ClientRow[]>;
+
+	getAgents: () => Promise<AgentIDs[]>;
 }
 
 const sbz = (): SBZutils => {
@@ -534,6 +541,38 @@ const sbz = (): SBZutils => {
 		}
 	};
 
+	const _getAgents = async (): Promise<AgentIDs[]> => {
+		try {
+			const { data, error } = await sbzdb
+				.from("admins")
+				.select("username")
+				.filter("ticketable", "eq", true)
+				.order("username", { ascending: true });
+
+			if (error) {
+				_log({
+					message: error.message,
+					title: "Get Agents Error",
+				});
+				return [];
+			}
+
+			if (data && data.length) return data;
+
+			return [];
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Get Agents Exception" });
+			return [];
+		}
+	};
+
 	const _isClientCorrect = async (luseId: number): Promise<boolean> => {
 		try {
 			const { data, error } = await sbzdb
@@ -607,6 +646,7 @@ const sbz = (): SBZutils => {
 		isAdminCorrect: _isAdminCorrect,
 		getClient: _getClient,
 		isClientCorrect: _isClientCorrect,
+		getAgents: _getAgents,
 	};
 };
 

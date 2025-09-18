@@ -74,3 +74,23 @@ export const randomAb = <T>(arr: T[]): T | null => {
 export const percentageHandler = (_value: number): string => {
 	return (_value * 100).toFixed(2) + "%";
 };
+
+export const referralSourcesArray = [
+	"RS:Web",
+	"RS:Facebook",
+	"RS:YouTube",
+	"RS:LinkedIn",
+	"RS:Spotify",
+	"RS:LuSE",
+	"RS:ZBT",
+	"RS:Ventura",
+	"RS:Radio Phoenix",
+	"RS:Referral",
+	"RS:News",
+	"RS:Newspaper",
+	//"RS:Other",
+] as const;
+
+export const queryTypesArray = ["QT:Account Opening"] as const;
+
+export const platformsArray = ["P:Web", "P:Messenger", "P:Whatsapp"] as const;
