@@ -12,6 +12,7 @@
 	import Head from "$lib/components/Head.svelte";
 	import AnyPicker from "$lib/components/AnyPicker.svelte";
 	import OTP from "$lib/components/OTP.svelte";
+	import AnyCombobox from "$lib/components/AnyCombobox/AnyCombobox.svelte";
 
 	//components - shadcn
 	import Label from "$lib/components/ui/label/label.svelte";
@@ -545,18 +546,48 @@
 		instituteManagers = temp;
 	};
 
+	type ReferralSource =
+		| "Web"
+		| "Facebook"
+		| "YouTube"
+		| "LinkedIn"
+		| "Spotify"
+		| "LuSE"
+		| "ZBT"
+		| "Ventura"
+		| "Radio Phoenix"
+		| "Referral"
+		| "News"
+		| "Newspaper"
+		| "Other";
+
+	let sanitisedReferralValue = $state<ReferralSource | undefined>(undefined);
+	const changeSanitisedReferral = (val: ReferralSource) => (sanitisedReferralValue = val);
+
+	let otherReferralValue = $state<string>("");
+
 	let disabled = $derived.by(() => {
+		const noReferral = !sanitisedReferralValue
+			? true
+			: sanitisedReferralValue === "Other"
+				? otherReferralValue.length < 3
+					? true
+					: false
+				: false;
+
+		if (noReferral) return true;
+
 		if (activeTab === "individual") {
 			if (isInTrustOf !== "no") return blockReqAttemptIndividual || blockReqAttemptWManager;
 			else return blockReqAttemptIndividual;
 		}
 
 		if (activeTab === "joint") {
-			return blockReqAttemptJoint;
+			return blockReqAttemptJoint || noReferral;
 		}
 
 		if (activeTab === "institution") {
-			return blockReqAttemptInstitution;
+			return blockReqAttemptInstitution || noReferral;
 		}
 
 		return true;
@@ -696,13 +727,13 @@
 			managerEmails.push(emailValueManager.trim());
 		}
 
-		let fname: string = fnameValue;
-		let street: string = streetValue;
-		let city: string = cityValue;
+		let fname: string = fnameValue.trim();
+		let street: string = streetValue.trim();
+		let city: string = cityValue.trim();
 		let country: string = countryValue;
-		let email: string = emailValue;
-		let phone: number = Number(phoneValue) ?? 0;
-		let id_num: string = idNumValue;
+		let email: string = emailValue.trim();
+		let phone: number = Number(phoneValue.trim()) ?? 0;
+		let id_num: string = idNumValue.trim();
 
 		if (activeTab === "joint") {
 			managerEmails.push(...jointUsers.map((user) => user.email.trim()));
@@ -740,11 +771,11 @@
 
 		const obj: SBZdb["public"]["Tables"]["clients"]["Insert"] = {
 			acc_type: activeTab,
-			bank_acc_name: bankAccName,
-			bank_acc_num: bankAccValue,
-			bank_name: bankNameValue,
-			branch_code: branchNumValue,
-			branch_name: branchNameValue,
+			bank_acc_name: bankAccName.trim(),
+			bank_acc_num: bankAccValue.trim(),
+			bank_name: bankNameValue.trim(),
+			branch_code: branchNumValue.trim(),
+			branch_name: branchNameValue.trim(),
 			city,
 			country,
 			dob: dobValue ?? "",
@@ -753,27 +784,27 @@
 			gender: genderValue,
 			id_num,
 			id_type: idTypeValue,
-			lname: lnameValue,
+			lname: lnameValue.trim(),
 			mstatus: maritalValue,
 			nationality: nationalityValue,
 			phone,
 			signatures: {},
 			street,
-			swift_code: swiftCodealue,
+			swift_code: swiftCodealue.trim(),
 			// others
-			manag_city: cityValueManager,
+			manag_city: cityValueManager.trim(),
 			manag_country: countryValueManager,
 			manag_dob: dobValueManager ?? "",
-			manag_email: emailValueManager,
-			manag_fname: fnameValueManager,
+			manag_email: emailValueManager.trim(),
+			manag_fname: fnameValueManager.trim(),
 			manag_gender: genderValueManager,
-			manag_id_num: idNumValueManager,
+			manag_id_num: idNumValueManager.trim(),
 			manag_id_type: idTypeValueManager,
-			manag_lname: lnameValueManager,
+			manag_lname: lnameValueManager.trim(),
 			manag_mstatus: maritalValueManager,
 			manag_nationality: nationalityValueManager,
-			manag_phone: Number(phoneValueManager) ?? 0,
-			manag_street: streetValueManager,
+			manag_phone: Number(phoneValueManager.trim()) ?? 0,
+			manag_street: streetValueManager.trim(),
 			// managers
 			comp_directors: directors.map((row) => {
 				const {
@@ -793,19 +824,19 @@
 				} = row;
 
 				return {
-					city,
+					city: city.trim(),
 					country,
 					dob,
-					email,
-					fname,
+					email: email.trim(),
+					fname: fname.trim(),
 					gender,
-					idNum,
+					idNum: idNum.trim(),
 					idType,
-					lname,
+					lname: lname.trim(),
 					mstatus,
 					nationality,
-					phone,
-					street,
+					phone: phone.trim(),
+					street: street.trim(),
 				};
 			}),
 			comp_managers: instituteManagers.map((row) => {
@@ -826,19 +857,19 @@
 				} = row;
 
 				return {
-					city,
+					city: city.trim(),
 					country,
 					dob,
-					email,
-					fname,
+					email: email.trim(),
+					fname: fname.trim(),
 					gender,
-					idNum,
+					idNum: idNum.trim(),
 					idType,
-					lname,
+					lname: lname.trim(),
 					mstatus,
 					nationality,
-					phone,
-					street,
+					phone: phone.trim(),
+					street: street.trim(),
 				};
 			}),
 			joint_partners: jointUsers.map((row) => {
@@ -859,19 +890,19 @@
 				} = row;
 
 				return {
-					city,
+					city: city.trim(),
 					country,
 					dob,
-					email,
-					fname,
+					email: email.trim(),
+					fname: fname.trim(),
 					gender,
-					idNum,
+					idNum: idNum.trim(),
 					idType,
-					lname,
+					lname: lname.trim(),
 					mstatus,
 					nationality,
-					phone,
-					street,
+					phone: phone.trim(),
+					street: street.trim(),
 				};
 			}),
 			// can be undefined
@@ -883,7 +914,18 @@
 		// append obj
 		form.append("obj", JSON.stringify(obj));
 
+		// add emails
 		form.append("emails", JSON.stringify(managerEmails));
+
+		// add referral source
+		const referralSource = !sanitisedReferralValue
+			? "e1"
+			: sanitisedReferralValue === "Other"
+				? otherReferralValue.length < 3
+					? "e2"
+					: otherReferralValue.trim()
+				: sanitisedReferralValue;
+		form.append("referral", referralSource);
 
 		try {
 			const req = await fetch("/api/su", {
@@ -922,7 +964,7 @@
 		}
 	});
 
-	/*/ SCAFOLDING
+	// SCAFOLDING
 
 	// for testing purposes, prefill the details for an individual
 	const _scaffoldIndividual = () => {
@@ -1071,7 +1113,6 @@
 		// _scaffoldJoint();
 		// _scaffoldCompany();
 	});
-	*/
 </script>
 
 <Head
@@ -3012,6 +3053,65 @@
 					</div>
 				</section>
 			{/if}
+
+			<h3 class="mt-7 mb-4">Questionnaire</h3>
+			<section class="inputs mb-5">
+				<div class="items tp flex">
+					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+						<Label>How Did You Hear About Us?</Label>
+
+						<AnyCombobox
+							handler={changeSanitisedReferral}
+							data={{
+								ungrouped: [{ label: "Other (Specify)", value: "Other" }],
+								grouped: [
+									{
+										title: "SBZ Sources",
+										group: [
+											{ value: "Facebook", label: "Facebook" },
+											{ value: "LinkedIn", label: "LinkedIn" },
+											{ value: "Web", label: "Web" },
+											{ value: "YouTube", label: "YouTube" },
+											{ value: "Spotify", label: "Spotify" },
+										],
+									},
+									{
+										title: "Institutions",
+										group: [
+											{ value: "LuSE", label: "Lusaka Securities Exchange" },
+											{ value: "Ventura", label: "Ventura Solutions" },
+											{ value: "ZBT", label: "Zambian Business Times" },
+											{ value: "Radio Phoenix", label: "Radio Phoenix" },
+										],
+									},
+									{
+										title: "Other Sources",
+										group: [
+											{ value: "Referral", label: "Referral" },
+											{ value: "News", label: "News" },
+											{ value: "Newspaper", label: "Newspaper" },
+										],
+									},
+								],
+							}}
+							dataTitle="Source"
+						/>
+
+						{#if sanitisedReferralValue === "Other"}
+							<Input
+								class="my-2"
+								bind:value={otherReferralValue}
+								placeholder="Type here..."
+								disabled={loading}
+								oninput={(e) => {
+									//@ts-ignore
+									otherReferralValue = toTitleCase(e.target.value);
+								}}
+							/>
+						{/if}
+					</div>
+				</div>
+			</section>
 
 			<Button
 				class={`mt-10 cursor-pointer${!isMobile ? " mx-auto w-[200px]" : ""}`}

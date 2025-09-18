@@ -24,6 +24,7 @@
 		loader?: boolean;
 		icon?: "filter";
 		classes?: string;
+		forceValue?: T;
 	}
 
 	const {
@@ -34,11 +35,14 @@
 		loader,
 		icon,
 		classes,
+		forceValue,
 	}: Props<T> = $props();
 
 	let open = $state(false);
 	let value = $state<T>();
 	let triggerRef = $state<HTMLButtonElement>(null!);
+
+	if (forceValue) value = forceValue;
 
 	let _data = [...data.grouped.flatMap((d) => d.group), ...data.ungrouped];
 

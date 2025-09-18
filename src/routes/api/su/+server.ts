@@ -70,6 +70,7 @@ export const POST = async ({ request }) => {
 	const obj = JSON.parse(
 		formData.get("obj") as string,
 	) as SBZdb["public"]["Tables"]["clients"]["Insert"];
+	const referral_source = formData.get("referral") as string;
 
 	// now otp, emails, and obj have the right types
 	console.log({ otp, emails, obj });
@@ -211,6 +212,9 @@ export const POST = async ({ request }) => {
 			query: queryHelper,
 			query_type: "Account Opening",
 			object: obj,
+			platform: "Web",
+			uid: details.email,
+			referral_source,
 		},
 		agent.data,
 	);

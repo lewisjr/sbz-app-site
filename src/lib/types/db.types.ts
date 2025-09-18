@@ -241,7 +241,7 @@ export type Database = {
 					platform: string;
 					query: string;
 					query_type: string;
-					referral_source: string | null;
+					referral_source: string;
 					uid: string;
 				};
 				Insert: {
@@ -259,8 +259,8 @@ export type Database = {
 					platform: string;
 					query: string;
 					query_type: string;
-					referral_source?: string | null;
-					uid?: string;
+					referral_source: string;
+					uid: string;
 				};
 				Update: {
 					assigned?: string;
@@ -277,7 +277,7 @@ export type Database = {
 					platform?: string;
 					query?: string;
 					query_type?: string;
-					referral_source?: string | null;
+					referral_source?: string;
 					uid?: string;
 				};
 				Relationships: [];
