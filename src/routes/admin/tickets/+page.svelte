@@ -1,13 +1,13 @@
 <script lang="ts">
 	//functions
 	import { toast } from "svelte-sonner";
-	import { createSvelteTable, FlexRender } from "$lib/components/ui/data-table/index.js";
+	import { createSvelteTable, FlexRender } from "$lib/components/ui/data-table/index";
 	import { getCoreRowModel, getPaginationRowModel } from "@tanstack/table-core";
 	import { toTitleCase } from "@cerebrusinc/fstring";
 	import { numParse } from "@cerebrusinc/qol";
 	import { formatDbTime } from "$lib/utils";
 	import { createRawSnippet } from "svelte";
-	import { renderSnippet, renderComponent } from "$lib/components/ui/data-table/index.js";
+	import { renderSnippet, renderComponent } from "$lib/components/ui/data-table/index";
 	import {
 		percentageHandler,
 		queryTypesArray,
@@ -21,15 +21,18 @@
 	//components - custom
 	import Head from "$lib/components/Head.svelte";
 	import AnyCombobox from "$lib/components/AnyCombobox/AnyCombobox.svelte";
-
-	//components - custom
-	import Input from "$lib/components/ui/input/input.svelte";
-	import Button from "$lib/components/ui/button/button.svelte";
-	import * as Table from "$lib/components/ui/table/index.js";
+	import AnySheet from "$lib/components/AnySheet.svelte";
 	import TicketActions from "./TicketActions.svelte";
 
+	//components - shadcn
+	import Input from "$lib/components/ui/input/input.svelte";
+	import Button from "$lib/components/ui/button/button.svelte";
+	import * as Table from "$lib/components/ui/table/index";
+	import Textarea from "$lib/components/ui/textarea/textarea.svelte";
+	import Label from "$lib/components/ui/label/label.svelte";
+
 	//icons
-	import { Search, SlidersHorizontal, ChevronLeft, ChevronRight } from "@lucide/svelte";
+	import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, Upload } from "@lucide/svelte";
 
 	//types
 	import type { PageProps } from "./$types";
@@ -57,6 +60,74 @@
 	});
 
 	let isMobile = $derived($screenWidthStore < 767);
+
+	type ActionConfig = Types["ActionConfig"];
+
+	let openTrigger = $state<number>(0);
+	let forceClose = $state<number>(0);
+	let sheetConfig = $state<ActionConfig>("re-assign");
+
+	const initTicket: TicketRow = {
+		assigned: "",
+		created_at: "",
+		email: "",
+		id: "",
+		id_num: "",
+		is_closed: false,
+		luse_id: 0,
+		names: "",
+		object: null,
+		phone: "",
+		platform: "",
+		query: "",
+		query_type: "",
+		referral_source: "",
+		uid: "",
+		close_date: null,
+	};
+
+	let activeRow = $state<TicketRow>(initTicket);
+	let sheetWidth = $state<number | undefined>(undefined);
+
+	let sheetTitle = $state<string>("");
+	let sheetDesc = $state<string>("");
+
+	// udp = user defined picker
+	// udf = user defined field
+	let udp1 = $state<string>("");
+	const changeUdp1 = (val: string) => (udp1 = val);
+
+	let udf1 = $state<string>("");
+
+	const resetSheet = () => {
+		changeUdp1("");
+		udf1 = "";
+	};
+
+	const openSheet = (config: ActionConfig, row: TicketRow, width?: number) => {
+		resetSheet();
+
+		sheetConfig = config;
+		activeRow = row;
+		sheetWidth = width;
+
+		switch (config) {
+			case "re-assign":
+				sheetTitle = `Reassign ${row.names}'s Ticket`;
+				sheetDesc = `The current broker responsible for this ticket (${row.id}) is ${toTitleCase(row.assigned)}.`;
+				break;
+			default:
+				sheetTitle = "Error";
+				sheetDesc = "This should not be possible.";
+				break;
+		}
+
+		openTrigger = Date.now();
+	};
+
+	const closeSheet = () => {
+		forceClose = Date.now();
+	};
 
 	const columns: ColumnDef<TicketRow>[] = [
 		{
@@ -175,7 +246,11 @@
 		},
 		{
 			id: "actions",
-			cell: ({ row }) => renderComponent(TicketActions, { data: row.original }),
+			cell: ({ row }) =>
+				renderComponent(TicketActions, {
+					data: row.original,
+					openSheet,
+				}),
 		},
 	];
 
@@ -376,6 +451,31 @@
 			mostPopularReferrer: mPrText,
 		};
 	});
+
+	const reassignTicket = async () => {
+		const pass = !udp1.length || udf1.length < 10;
+
+		if (!pass) {
+			toast.error("One or both of the required data is malformed or missing.");
+			return;
+		}
+
+		loading = true;
+		toast.info("Reassigning ticket...");
+
+		try {
+		} catch (ex: any) {
+			loading = false;
+			const message =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex?.message || JSON.stringify(ex);
+
+			toast.error(message);
+		}
+	};
 </script>
 
 <Head
@@ -677,6 +777,69 @@
 			</div>
 		</div>
 	</div>
+
+	<AnySheet
+		{openTrigger}
+		{forceClose}
+		width={sheetWidth}
+		title={sheetTitle}
+		description={sheetDesc}
+	>
+		{#snippet main()}
+			{#if sheetConfig === "re-assign"}
+				<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+					<Label>Select A Different Broker</Label>
+					<AnyCombobox
+						handler={changeUdp1}
+						data={{
+							ungrouped: [],
+							grouped: [
+								{
+									title: "Brokers",
+									group: data.agents
+										.map((broker) => broker.username)
+										.join(",")
+										.replace(data.admin, "")
+										.replace(",,", ",")
+										.split(",")
+										.map((broker) => {
+											return { label: toTitleCase(broker), value: broker };
+										}),
+								},
+							],
+						}}
+						dataTitle="Broker"
+					/>
+				</div>
+
+				<div class="mt-8 flex w-full max-w-sm flex-col gap-1.5">
+					<Label>Reassignment Reason</Label>
+					<Textarea
+						bind:value={udf1}
+						placeholder="E.g your current broker is out of office."
+						disabled={loading}
+						onkeypress={(e) => {
+							if (e.key === "Enter") reassignTicket();
+						}}
+						maxlength={120}
+						class="h-[100px]"
+					/>
+					<p class="text-justify text-sm text-muted-foreground">
+						This will be shown in the audit trail, and in an email to the client, and the trading
+						desk.
+					</p>
+				</div>
+			{/if}
+		{/snippet}
+
+		{#snippet actionButton()}
+			{#if sheetConfig === "re-assign"}
+				<Button disabled={!udp1.length || udf1.length < 10} onclick={reassignTicket}
+					>Submit<Upload class="ml-2 h-4 w-4" /></Button
+				>
+			{/if}
+		{/snippet}
+	</AnySheet>
 {/if}
 
 <style lang="scss">

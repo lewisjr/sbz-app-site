@@ -127,21 +127,24 @@
 							<Command.Separator />
 						{/each}
 					{/if}
+
 					<!-- Ungrouped Options -->
-					<Command.Group value="data" heading="Other">
-						{#each data.ungrouped as row (row.value)}
-							<Command.Item
-								value={String(row.value)}
-								onSelect={() => {
-									value = row.value;
-									closeAndFocusTrigger();
-								}}
-							>
-								<CheckIcon class={cn(value !== row.value && "text-transparent")} />
-								{row.label}
-							</Command.Item>
-						{/each}
-					</Command.Group>
+					{#if data.ungrouped.length}
+						<Command.Group value="data" heading="Other">
+							{#each data.ungrouped as row (row.value)}
+								<Command.Item
+									value={String(row.value)}
+									onSelect={() => {
+										value = row.value;
+										closeAndFocusTrigger();
+									}}
+								>
+									<CheckIcon class={cn(value !== row.value && "text-transparent")} />
+									{row.label}
+								</Command.Item>
+							{/each}
+						</Command.Group>
+					{/if}
 				</Command.List>
 			</Command.Root>
 		</Popover.Content>

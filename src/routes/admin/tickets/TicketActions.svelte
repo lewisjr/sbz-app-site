@@ -7,15 +7,16 @@
 	import EllipsisIcon from "@lucide/svelte/icons/ellipsis";
 
 	//types
-	import type { SBZdb } from "$lib/types";
+	import type { SBZdb, Types } from "$lib/types";
 
 	type TicketRow = SBZdb["public"]["Tables"]["odyn-tickets"]["Row"];
 
 	interface Props {
 		data: TicketRow;
+		openSheet: (config: Types["ActionConfig"], row: TicketRow, width?: number) => void;
 	}
 
-	let { data }: Props = $props();
+	let { data, openSheet }: Props = $props();
 </script>
 
 <DropdownMenu.Root>
@@ -37,8 +38,13 @@
 		</DropdownMenu.Group>
 
 		<DropdownMenu.Separator />
-		<DropdownMenu.Item>View customer</DropdownMenu.Item>
-		<DropdownMenu.Item>View payment details</DropdownMenu.Item>
+
+		<DropdownMenu.Group>
+			<DropdownMenu.Label>Admin</DropdownMenu.Label>
+			<DropdownMenu.Item onclick={() => openSheet("re-assign", data)}
+				>Reassign Ticket</DropdownMenu.Item
+			>
+		</DropdownMenu.Group>
 	</DropdownMenu.Content>
 </DropdownMenu.Root>
 
