@@ -52,7 +52,8 @@ export const PUT = async ({ request }) => {
 		return json(
 			{
 				success: false,
-				msg: "Failed to send an OTP to one or more of your provided emails. Please get in touch with tech support.",
+				message:
+					"Failed to send an OTP to one or more of your provided emails. Please get in touch with tech support.",
 			},
 			{ status: 400 },
 		);
@@ -81,7 +82,7 @@ export const POST = async ({ request }) => {
 		return json(
 			{
 				success: false,
-				msg: "Failed to confirm your OTP, please ensure that it is correct and try again.",
+				message: "Failed to confirm your OTP, please ensure that it is correct and try again.",
 			},
 			{ status: 400 },
 		);
@@ -223,7 +224,7 @@ export const POST = async ({ request }) => {
 		return json(
 			{
 				success: false,
-				msg: "Failed to submit your request. Please try again in a few minutes.",
+				message: "Failed to submit your request. Please try again in a few minutes.",
 			},
 			{ status: 400 },
 		);

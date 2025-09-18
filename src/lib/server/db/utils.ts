@@ -64,6 +64,17 @@ interface AgentIDs {
 	username: string;
 }
 
+interface ReassignByEmailObj {
+	old: string;
+	new: string;
+	sender: string;
+	ticketId: string;
+	clientEmail: string;
+	clientName: string;
+	queryType: string;
+	message: string;
+}
+
 interface SBZutils {
 	log: (obj: LogObj) => Promise<void>;
 	setOtp: (obj: OTPObj) => Promise<GenericResponse>;
@@ -76,6 +87,7 @@ interface SBZutils {
 		agent: TicketCandidateObjExt,
 	) => Promise<GenericResponseWData<string>>;
 	getAllTickets: () => Promise<TicketRow[]>;
+	reassignWebTicket: (obj: ReassignByEmailObj) => Promise<GenericResponse>;
 	uploadKyc: (files: FileData[]) => Promise<void>;
 
 	isAdminCorrect: (username: string) => Promise<boolean>;
@@ -344,6 +356,167 @@ const sbz = (): SBZutils => {
 		}
 	};
 
+	const _reassignWebTicket = async (obj: ReassignByEmailObj): Promise<GenericResponse> => {
+		const { ticketId, new: neew, old, sender, clientEmail, clientName, queryType, message } = obj;
+
+		/**First day of the current month */
+		const fdm = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+
+		/**First day of the next month */
+		const fdnm = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString();
+
+		try {
+			const reassignReq = sbzdb.from("odyn-tickets").update({ assigned: neew }).eq("id", ticketId);
+			const updateHistoryReq = sbzdb.from("odyn-history").insert({
+				creator: sender,
+				message: `${toTitleCase(sender)} reassigned this ticket to ${toTitleCase(neew)} from ${toTitleCase(old)}.`,
+				ticket_no: ticketId,
+			});
+			const ticketAdminsReq = sbzdb
+				.from("system-vars")
+				.select()
+				.in("key", [old, neew])
+				.gte("created_at", fdm)
+				.lt("created_at", fdnm)
+				.order("value", { ascending: false });
+			/**Order in terms of ascending name */
+			const adminsReq = sbzdb
+				.from("admins")
+				.select("email,username")
+				.filter("username", "eq", neew);
+
+			const [reassignRes, updateHistoryRes, ticketAdminsRes, adminsRes] = await Promise.all([
+				reassignReq,
+				updateHistoryReq,
+				ticketAdminsReq,
+				adminsReq,
+			]);
+
+			if (reassignRes.error) {
+				await _log({ message: reassignRes.error.message, title: "Reassign Ticket Error - 1" });
+				return { message: reassignRes.error.message, success: false };
+			}
+
+			if (updateHistoryRes.error) {
+				await _log({ message: updateHistoryRes.error.message, title: "Reassign Ticket Error - 2" });
+			}
+
+			if (ticketAdminsRes.error) {
+				await _log({ message: ticketAdminsRes.error.message, title: "Reassign Ticket Error - 3" });
+				return {
+					message: "Failed to proceed past third operation. Please refresh your browser.",
+					success: false,
+				};
+			}
+
+			if (adminsRes.error) {
+				await _log({ message: adminsRes.error.message, title: "Reassign Ticket Error - 4" });
+				return {
+					message: "Failed to proceed past fourth operation. Please refresh your browser.",
+					success: false,
+				};
+			}
+
+			const agents: TicketCandidateObjExt[] = ticketAdminsRes.data.map((r) => {
+				const _d = new Date(r.created_at);
+				const _m = _d.getMonth();
+				return {
+					_id: r.id,
+					email: "",
+					name: "",
+					phone: "",
+					agentId: r.key.replace(".tickets", ""),
+					volume: Number(r.value),
+					month: _m,
+				};
+			});
+
+			const updatedAgentObects: TicketCandidateObjExt[] = [];
+
+			let newAgentEmail: string = "";
+
+			adminsRes.data.forEach((agent) => {
+				const alreadyExisting = agents.find((item) => item.agentId === agent.username);
+
+				const _m = new Date().getMonth();
+
+				if (agent.username === neew) newAgentEmail = agent.email;
+
+				if (alreadyExisting)
+					updatedAgentObects.push({
+						_id: alreadyExisting._id,
+						email: agent.email,
+						name: "",
+						phone: "",
+						agentId: agent.username,
+						volume: alreadyExisting.volume,
+						month: alreadyExisting.month,
+					});
+				else
+					updatedAgentObects.push({
+						_id: -1,
+						email: agent.email,
+						name: "",
+						phone: "",
+						agentId: agent.username,
+						volume: 0,
+						month: _m,
+					});
+			});
+
+			const sendStaffMail = notif.email.sendLink(
+				{
+					subject: `Ticket Reassignment | ${ticketId}`,
+					title: `Query Type: <i>${queryType}</i>`,
+					body: `Hi ${toTitleCase(neew)},<br /><br /><b>${toTitleCase(sender)}</b> has assigned ticket number <b>${ticketId}</b> to you from <b>${toTitleCase(old)}</b>.`,
+					link: `https://app.sbz.com.zm/admin/tickets?q=${ticketId}`,
+					linkText: "View Ticket",
+					extra: `Reassignment Reason:<br />${message}`,
+					cc: IS_DEV ? "sbzlewis@gmail.com" : "trading@sbz.com.zm",
+				},
+				IS_DEV ? "privatodato@gmail.com" : newAgentEmail,
+			);
+
+			const sendClientMail = notif.email.sendLink(
+				{
+					subject: `Ticket Reassignment | ${ticketId}`,
+					title: `Some Good News!`,
+					body: `Hi ${clientName},<br /><br /><b>${toTitleCase(neew)}</b> has been assigned to look into your open ticket numbered <b>${ticketId}</b>. We usually respond within 24 hours.`,
+					link: `https://app.sbz.com.zm/track/${ticketId}`,
+					linkText: "View Ticket",
+					extra: "",
+				},
+				clientEmail,
+			);
+
+			const [] = await Promise.all([
+				...updatedAgentObects.map((agent) =>
+					_updateTicketCandidate(agent, agent.agentId === old ? true : undefined),
+				),
+				sendStaffMail,
+				sendClientMail,
+			]);
+
+			return {
+				message: `${toTitleCase(neew)} is now assigned to ticket ${ticketId}!`,
+				success: true,
+			};
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Reassign Ticket Exception" });
+			return {
+				success: false,
+				message: "Server error, please wait 10 minutes and try again.",
+			};
+		}
+	};
+
 	const _getAllTickets = async (): Promise<TicketRow[]> => {
 		try {
 			const { data, error } = await sbzdb
@@ -370,22 +543,27 @@ const sbz = (): SBZutils => {
 		}
 	};
 
-	const _updateTicketCandidate = async (obj: TicketCandidateObjExt): Promise<void> => {
+	const _updateTicketCandidate = async (
+		obj: TicketCandidateObjExt,
+		decrease?: boolean,
+	): Promise<void> => {
 		try {
 			const currentMonth = new Date().getMonth();
+
+			const k = decrease ? -1 : 1;
 
 			let ex: any = null;
 
 			if (currentMonth === obj.month && obj._id > -1) {
 				const { error } = await sbzdb
 					.from("system-vars")
-					.update({ value: (obj.volume + 1).toString() })
+					.update({ value: (obj.volume + k).toString() })
 					.eq("id", obj._id);
 				ex = error;
 			} else {
 				const { error } = await sbzdb
 					.from("system-vars")
-					.insert({ value: (obj.volume + 1).toString(), key: `${obj.agentId}.tickets` });
+					.insert({ value: (obj.volume + k).toString(), key: `${obj.agentId}.tickets` });
 				ex = error;
 				return;
 			}
@@ -647,6 +825,7 @@ const sbz = (): SBZutils => {
 		getClient: _getClient,
 		isClientCorrect: _isClientCorrect,
 		getAgents: _getAgents,
+		reassignWebTicket: _reassignWebTicket,
 	};
 };
 

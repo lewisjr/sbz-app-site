@@ -225,6 +225,54 @@ export type Database = {
 				};
 				Relationships: [];
 			};
+			"odyn-chats": {
+				Row: {
+					body: string;
+					created_at: string;
+					id: number;
+					sender: string;
+					ticket_no: string;
+				};
+				Insert: {
+					body: string;
+					created_at?: string;
+					id?: number;
+					sender: string;
+					ticket_no: string;
+				};
+				Update: {
+					body?: string;
+					created_at?: string;
+					id?: number;
+					sender?: string;
+					ticket_no?: string;
+				};
+				Relationships: [];
+			};
+			"odyn-history": {
+				Row: {
+					created_at: string;
+					creator: string;
+					id: number;
+					message: string;
+					ticket_no: string;
+				};
+				Insert: {
+					created_at?: string;
+					creator: string;
+					id?: number;
+					message: string;
+					ticket_no: string;
+				};
+				Update: {
+					created_at?: string;
+					creator?: string;
+					id?: number;
+					message?: string;
+					ticket_no?: string;
+				};
+				Relationships: [];
+			};
 			"odyn-tickets": {
 				Row: {
 					assigned: string;

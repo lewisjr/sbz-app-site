@@ -452,10 +452,36 @@
 		};
 	});
 
-	const reassignTicket = async () => {
-		const pass = !udp1.length || udf1.length < 10;
+	let brokerList = $derived.by(() => {
+		const flattened = data.agents.map((broker) => broker.username);
 
-		if (!pass) {
+		const selfIndex = flattened.indexOf(data.admin);
+		const assignedIndex = flattened.indexOf(activeRow.assigned);
+
+		flattened.splice(selfIndex, 1);
+		flattened.splice(assignedIndex, 1);
+
+		return flattened.map((broker) => {
+			return { label: toTitleCase(broker), value: broker };
+		});
+	});
+
+	const updateTicket = (ticket: TicketRow) => {
+		const temp: TicketRow[] = JSON.parse(JSON.stringify(ticketData));
+
+		const index = temp.findIndex((item) => (item.id = ticket.id));
+
+		temp[index].assigned = ticket.assigned;
+
+		ticketData = temp;
+
+		closeSheet();
+	};
+
+	const reassignTicket = async () => {
+		const fail = !udp1.length || udf1.length < 10;
+
+		if (fail) {
 			toast.error("One or both of the required data is malformed or missing.");
 			return;
 		}
@@ -464,6 +490,36 @@
 		toast.info("Reassigning ticket...");
 
 		try {
+			const req = await fetch("/api/admin/tickets", {
+				method: "POST",
+				body: JSON.stringify({
+					action: "reassign",
+					obj: {
+						old: activeRow.assigned,
+						new: udp1,
+						ticketId: activeRow.id,
+						clientEmail: activeRow.email,
+						clientName: activeRow.names.split(" ")[0],
+						queryType: activeRow.query_type,
+						message: udf1,
+					},
+				}),
+			});
+
+			const res: { success: boolean; message: string } = await req.json();
+
+			loading = false;
+
+			if (!res.success) {
+				toast.error(res.message);
+				return;
+			}
+
+			toast.success(res.message);
+
+			const updatedTicket: TicketRow = JSON.parse(JSON.stringify(activeRow));
+			updatedTicket.assigned = udp1;
+			updateTicket(updatedTicket);
 		} catch (ex: any) {
 			loading = false;
 			const message =
@@ -796,15 +852,7 @@
 							grouped: [
 								{
 									title: "Brokers",
-									group: data.agents
-										.map((broker) => broker.username)
-										.join(",")
-										.replace(data.admin, "")
-										.replace(",,", ",")
-										.split(",")
-										.map((broker) => {
-											return { label: toTitleCase(broker), value: broker };
-										}),
+									group: brokerList,
 								},
 							],
 						}}
@@ -816,7 +864,7 @@
 					<Label>Reassignment Reason</Label>
 					<Textarea
 						bind:value={udf1}
-						placeholder="E.g your current broker is out of office."
+						placeholder="E.g The previous assignee is out of office."
 						disabled={loading}
 						onkeypress={(e) => {
 							if (e.key === "Enter") reassignTicket();
