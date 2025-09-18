@@ -6,7 +6,7 @@
 	import { toTitleCase } from "@cerebrusinc/fstring";
 	import { numParse } from "@cerebrusinc/qol";
 	import { formatDbTime } from "$lib/utils";
-	import { createRawSnippet } from "svelte";
+	import { createRawSnippet, onMount } from "svelte";
 	import { renderSnippet, renderComponent } from "$lib/components/ui/data-table/index";
 	import {
 		percentageHandler,
@@ -17,6 +17,7 @@
 
 	//stores
 	import { screenWidthStore } from "$lib/stores";
+	import { page } from "$app/state";
 
 	//components - custom
 	import Head from "$lib/components/Head.svelte";
@@ -36,14 +37,12 @@
 
 	//types
 	import type { PageProps } from "./$types";
-	import type { SBZdb, Types } from "$lib/types";
+	import type { SBZdb, Types, TicketRowLean } from "$lib/types";
 	import type { ColumnDef, PaginationState } from "@tanstack/table-core";
 
 	let { data }: PageProps = $props();
 
-	type TicketRow = SBZdb["public"]["Tables"]["odyn-tickets"]["Row"];
-
-	let ticketData = $state<TicketRow[]>([]);
+	let ticketData = $state<TicketRowLean[]>([]);
 	let loading = $state<boolean>(false);
 	let initialising = $state<boolean>(true);
 
@@ -65,9 +64,9 @@
 
 	let openTrigger = $state<number>(0);
 	let forceClose = $state<number>(0);
-	let sheetConfig = $state<ActionConfig>("re-assign");
+	let sheetConfig = $state<ActionConfig>("reassign");
 
-	const initTicket: TicketRow = {
+	const initTicket: TicketRowLean = {
 		assigned: "",
 		created_at: "",
 		email: "",
@@ -76,7 +75,6 @@
 		is_closed: false,
 		luse_id: 0,
 		names: "",
-		object: null,
 		phone: "",
 		platform: "",
 		query: "",
@@ -84,9 +82,11 @@
 		referral_source: "",
 		uid: "",
 		close_date: null,
+		closed_by: null,
+		email_vars: null,
 	};
 
-	let activeRow = $state<TicketRow>(initTicket);
+	let activeRow = $state<TicketRowLean>(initTicket);
 	let sheetWidth = $state<number | undefined>(undefined);
 
 	let sheetTitle = $state<string>("");
@@ -99,12 +99,74 @@
 
 	let udf1 = $state<string>("");
 
+	type AuditRow = SBZdb["public"]["Tables"]["odyn-history"]["Row"];
+
+	let auditHistoryLoading = $state<boolean>(false);
+	let auditHistory = $state<AuditRow[]>([]);
+
+	const fetchHistory = async () => {
+		auditHistoryLoading = true;
+		// toast.info("Fetching ticket activity...");
+
+		try {
+			const req = await fetch("/api/admin/tickets", {
+				method: "POST",
+				body: JSON.stringify({
+					action: sheetConfig,
+					obj: {
+						ticketId: activeRow.id,
+					},
+				}),
+			});
+
+			const res: { success: boolean; message: string; data: AuditRow[] } = await req.json();
+
+			if (!res.success) {
+				toast.error(res.message);
+				return;
+			}
+
+			// toast.success(res.message);
+			auditHistory = [
+				{
+					created_at: activeRow.created_at,
+					creator: activeRow.names,
+					id: -1,
+					message: `${activeRow.names} opened this ticket.`,
+					ticket_no: activeRow.id,
+				},
+				...res.data,
+			];
+
+			if (activeRow.is_closed && activeRow.closed_by && activeRow.close_date)
+				auditHistory.push({
+					created_at: activeRow.close_date,
+					creator: activeRow.closed_by,
+					id: -1,
+					message: `${toTitleCase(activeRow.closed_by)} closed this ticket.`,
+					ticket_no: activeRow.id,
+				});
+
+			auditHistoryLoading = false;
+		} catch (ex: any) {
+			loading = false;
+			const message =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex?.message || JSON.stringify(ex);
+
+			toast.error(message);
+		}
+	};
+
 	const resetSheet = () => {
 		changeUdp1("");
 		udf1 = "";
 	};
 
-	const openSheet = (config: ActionConfig, row: TicketRow, width?: number) => {
+	const openSheet = (config: ActionConfig, row: TicketRowLean, width?: number) => {
 		resetSheet();
 
 		sheetConfig = config;
@@ -112,9 +174,14 @@
 		sheetWidth = width;
 
 		switch (config) {
-			case "re-assign":
+			case "reassign":
 				sheetTitle = `Reassign ${row.names}'s Ticket`;
 				sheetDesc = `The current broker responsible for this ticket (${row.id}) is ${toTitleCase(row.assigned)}.`;
+				break;
+			case "audit":
+				sheetTitle = `Audit Trail - ${row.id}`;
+				sheetDesc = `Take a look at all the activity carried out by the asigned broker(s) and the client.`;
+				fetchHistory();
 				break;
 			default:
 				sheetTitle = "Error";
@@ -129,7 +196,7 @@
 		forceClose = Date.now();
 	};
 
-	const columns: ColumnDef<TicketRow>[] = [
+	const columns: ColumnDef<TicketRowLean>[] = [
 		{
 			accessorKey: "id",
 			header: "Ticket No.",
@@ -186,6 +253,20 @@
 					const value = cell.getValue() as string | null;
 					return {
 						render: () => (value ? formatDbTime(value) : "-"),
+					};
+				});
+
+				return renderSnippet(renderCell);
+			},
+		},
+		{
+			accessorKey: "closed_by",
+			header: "Closer",
+			cell: ({ cell }) => {
+				const renderCell = createRawSnippet<[string]>(() => {
+					const value = cell.getValue() as string | null;
+					return {
+						render: () => (value ? toTitleCase(value) : "-"),
 					};
 				});
 
@@ -466,8 +547,8 @@
 		});
 	});
 
-	const updateTicket = (ticket: TicketRow) => {
-		const temp: TicketRow[] = JSON.parse(JSON.stringify(ticketData));
+	const updateTicket = (ticket: TicketRowLean) => {
+		const temp: TicketRowLean[] = JSON.parse(JSON.stringify(ticketData));
 
 		const index = temp.findIndex((item) => (item.id = ticket.id));
 
@@ -493,7 +574,7 @@
 			const req = await fetch("/api/admin/tickets", {
 				method: "POST",
 				body: JSON.stringify({
-					action: "reassign",
+					action: sheetConfig,
 					obj: {
 						old: activeRow.assigned,
 						new: udp1,
@@ -517,7 +598,7 @@
 
 			toast.success(res.message);
 
-			const updatedTicket: TicketRow = JSON.parse(JSON.stringify(activeRow));
+			const updatedTicket: TicketRowLean = JSON.parse(JSON.stringify(activeRow));
 			updatedTicket.assigned = udp1;
 			updateTicket(updatedTicket);
 		} catch (ex: any) {
@@ -532,6 +613,13 @@
 			toast.error(message);
 		}
 	};
+
+	// in case it's by redirect from link email, set the filter after everything mounts
+	onMount(() => {
+		const q = page.url.searchParams.get("q");
+
+		if (q) globalFilterValue = q;
+	});
 </script>
 
 <Head
@@ -842,7 +930,7 @@
 		description={sheetDesc}
 	>
 		{#snippet main()}
-			{#if sheetConfig === "re-assign"}
+			{#if sheetConfig === "reassign"}
 				<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
 					<Label>Select A Different Broker</Label>
 					<AnyCombobox
@@ -878,10 +966,68 @@
 					</p>
 				</div>
 			{/if}
+
+			{#if sheetConfig === "audit"}
+				{#if auditHistoryLoading}
+					<div class="audit-box">
+						<div class="icon-tainer">
+							<div class="circ two loading no-padding"></div>
+						</div>
+						<div class="text-tainer">
+							<p class="sml loading no-padding mt-2 mb-1 italic">15 Sep 2025, 14:52</p>
+							<p class="loading no-padding">
+								Lorem ipsum dolor sit amet consectetur. Lorem ipsum dolor
+							</p>
+							<p class="sml loading no-padding mt-1 mb-2"><b>Executor:</b> Chinyanta</p>
+						</div>
+					</div>
+
+					<div class="audit-box">
+						<div class="icon-tainer">
+							<div class="circ two loading no-padding"></div>
+						</div>
+						<div class="text-tainer">
+							<p class="sml loading no-padding mt-2 mb-1 italic">15 Sep 2025, 14:52</p>
+							<p class="loading no-padding">
+								Lorem ipsum dolor sit amet consectetur. Lorem ipsum dolor
+							</p>
+							<p class="sml loading no-padding mt-1 mb-2"><b>Executor:</b> Chinyanta</p>
+						</div>
+					</div>
+
+					<div class="audit-box">
+						<div class="icon-tainer">
+							<div class="circ two loading no-padding"></div>
+						</div>
+						<div class="text-tainer">
+							<p class="sml loading no-padding mt-2 mb-1 italic">15 Sep 2025, 14:52</p>
+							<p class="loading no-padding">
+								Lorem ipsum dolor sit amet consectetur. Lorem ipsum dolor
+							</p>
+							<p class="sml loading no-padding mt-1 mb-2"><b>Executor:</b> Chinyanta</p>
+						</div>
+					</div>
+				{:else}
+					{#each auditHistory as log}
+						<div class="audit-box">
+							<div class="icon-tainer">
+								<div class="circ"></div>
+								<div class="circ two"></div>
+								<div class="bar"></div>
+							</div>
+							<div class="text-tainer">
+								<p class="sml mt-2 mb-1 italic">{formatDbTime(log.created_at)}</p>
+								<p>{log.message}</p>
+								<p class="sml mt-1 mb-2"><b>Executor:</b> {toTitleCase(log.creator)}</p>
+							</div>
+						</div>
+					{/each}
+				{/if}
+			{/if}
 		{/snippet}
 
 		{#snippet actionButton()}
-			{#if sheetConfig === "re-assign"}
+			{#if sheetConfig === "reassign"}
 				<Button disabled={!udp1.length || udf1.length < 10} onclick={reassignTicket}
 					>Submit<Upload class="ml-2 h-4 w-4" /></Button
 				>
@@ -918,7 +1064,6 @@
 			border-radius: 100px !important;
 		}
 	}
-
 	.sum-tainer {
 		max-width: calc(100% - 220px);
 		overflow-x: auto;
@@ -929,6 +1074,70 @@
 
 		p {
 			white-space: nowrap;
+		}
+	}
+	.audit-box {
+		//border: 1px solid red;
+
+		width: 100%;
+		position: relative;
+		display: flex;
+		flex-direction: row;
+		align-items: stretch;
+
+		.icon-tainer {
+			position: relative;
+			display: flex;
+			height: inherit;
+			width: 50px;
+
+			.circ {
+				width: 50%;
+				aspect-ratio: 1;
+				border: 4px solid var(--foreground);
+				border-radius: 50%;
+				opacity: 0.7;
+				position: absolute;
+				left: 50%;
+				top: 50%;
+				transform: translateX(-50%) translateY(-50%);
+				z-index: 3;
+
+				&.two {
+					background-color: var(--background);
+					border: 0px solid transparent;
+					opacity: 1;
+					z-index: 2;
+				}
+			}
+
+			.bar {
+				width: 3px;
+				height: 100%;
+				background-color: var(--foreground);
+				position: absolute;
+				opacity: 0.5;
+				left: 50%;
+				transform: translateX(-50%);
+				z-index: 1;
+			}
+		}
+
+		.text-tainer {
+			position: inherit;
+			width: calc(100% - 50px);
+			height: 100%;
+
+			p {
+				max-width: 100%;
+				font-size: 10pt;
+				text-align: justify;
+
+				&.sml {
+					opacity: 0.7;
+					width: fit-content;
+				}
+			}
 		}
 	}
 </style>

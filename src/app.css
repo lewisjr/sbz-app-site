@@ -221,11 +221,12 @@ a {
 
 button {
 	user-select: none;
+	cursor: pointer;
 }
 
 button:disabled {
 	cursor: not-allowed;
-	background-color: #7d7d7d;
+	background-color: #7d7d7d !important;
 }
 
 @keyframes load {
@@ -241,7 +242,7 @@ button:disabled {
 }
 
 .loading {
-	background-color: var(--muted);
+	background-color: var(--muted) !important;
 	padding: 5px 10px;
 	border-radius: var(--radius);
 	color: transparent;

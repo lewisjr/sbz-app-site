@@ -247,9 +247,16 @@ export const POST = async ({ request }) => {
 		),
 	);
 
+	const historyReq = dbs.sbz.appendHistory({
+		creator: "odyn",
+		message: `Odyn assigned this ticket to ${toTitleCase(agent.data.agentId)}.`,
+		ticketId: ticketRes.data,
+	});
+
 	const [updateAgentRes, uploadKycRes] = await Promise.all([
 		updateAgentReq,
 		uploadKycReq,
+		historyReq,
 		...emailReqs,
 	]);
 

@@ -116,8 +116,54 @@ const sendLink = async (
 	}
 };
 
+/**Keeps the emails all in one chain... theoretically */
+const sendNested = async (
+	{ subject, title, body, extra, link, linkText, cc }: ButtonEmailObj,
+	recipient: string,
+	msgId?: string | null,
+): Promise<string | false> => {
+	const { html, plain } = templates.button({ title, body, extra, subject, link, linkText });
+
+	try {
+		const res = await client.sendEmail({
+			From: "app@sbz.com.zm",
+			To: recipient,
+			Cc: cc,
+			Subject: subject,
+			HtmlBody: html,
+			TextBody: plain,
+			MessageStream: "outbound",
+			Headers: msgId
+				? [
+						{ Name: "In-Reply-To", Value: msgId },
+						{ Name: "References", Value: msgId },
+					]
+				: undefined,
+		});
+
+		if (res.ErrorCode) {
+			await dbs.sbz.log({
+				title: "Send Nested Error: Email",
+				message: `Failed to send email to ${recipient}. Code ${res.ErrorCode}`,
+			});
+			return false;
+		} else return res.MessageID;
+	} catch (ex: any) {
+		const error =
+			typeof ex === "string"
+				? ex
+				: ex instanceof Error
+					? ex.message
+					: ex.message || JSON.stringify(ex);
+		await dbs.sbz.log({ title: "Send Link Exception: Email", message: error });
+		return false;
+	}
+};
+
 export const email = {
 	sendOtp,
 	sendUpdate,
 	sendLink,
+	/**Keeps the emails all in one chain... theoretically */
+	sendNested,
 };

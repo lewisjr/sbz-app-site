@@ -1,20 +1,15 @@
 import notif from "../email";
 import { nfdb, sbzdb } from "./db";
-import { genDbTimestamp, randomAb, genId } from "$lib/utils";
+import { genDbTimestamp, genId } from "$lib/utils";
 import { toTitleCase } from "@cerebrusinc/fstring";
 
-import type { SBZdb } from "$lib/types";
+import type { SBZdb, TicketRowLean, GenericResponse, GenericResponseWData } from "$lib/types";
 import type { StorageError } from "@supabase/storage-js";
 
 import { DEV } from "$env/static/private";
 const IS_DEV = DEV === "y";
 
 // * SBZ DB functions
-interface GenericResponse {
-	success: boolean;
-	message: string;
-}
-
 interface LogObj {
 	title: string;
 	message: string;
@@ -44,10 +39,6 @@ interface TicketCandidateObjExt extends TicketCandidateObj {
 	month: number;
 }
 
-interface GenericResponseWData<T> extends GenericResponse {
-	data: T;
-}
-
 type OdynInsert = SBZdb["public"]["Tables"]["odyn-tickets"]["Insert"];
 
 export interface FileData {
@@ -64,6 +55,8 @@ interface AgentIDs {
 	username: string;
 }
 
+type AuditRow = SBZdb["public"]["Tables"]["odyn-history"]["Row"];
+
 interface ReassignByEmailObj {
 	old: string;
 	new: string;
@@ -72,6 +65,12 @@ interface ReassignByEmailObj {
 	clientEmail: string;
 	clientName: string;
 	queryType: string;
+	message: string;
+}
+
+interface AddHistoryObj {
+	ticketId: string;
+	creator: string;
 	message: string;
 }
 
@@ -86,7 +85,7 @@ interface SBZutils {
 		obj: OdynInsert,
 		agent: TicketCandidateObjExt,
 	) => Promise<GenericResponseWData<string>>;
-	getAllTickets: () => Promise<TicketRow[]>;
+	getAllTickets: () => Promise<TicketRowLean[]>;
 	reassignWebTicket: (obj: ReassignByEmailObj) => Promise<GenericResponse>;
 	uploadKyc: (files: FileData[]) => Promise<void>;
 
@@ -97,6 +96,10 @@ interface SBZutils {
 	getClient: (luseId: number) => Promise<ClientRow[]>;
 
 	getAgents: () => Promise<AgentIDs[]>;
+
+	auditTicket: (ticketId: string) => Promise<GenericResponseWData<AuditRow[]>>;
+
+	appendHistory: (obj: AddHistoryObj) => Promise<boolean>;
 }
 
 const sbz = (): SBZutils => {
@@ -309,6 +312,33 @@ const sbz = (): SBZutils => {
 		}
 	};
 
+	const _appendHistory = async (obj: AddHistoryObj): Promise<boolean> => {
+		try {
+			const { error } = await sbzdb.from("odyn-history").insert({
+				ticket_no: obj.ticketId,
+				creator: obj.creator,
+				message: obj.message,
+			});
+
+			if (error) {
+				await _log({ message: error.message, title: "Append History Error" });
+				return false;
+			}
+
+			return true;
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Append History Exception" });
+			return false;
+		}
+	};
+
 	const _createTicket = async (
 		obj: OdynInsert,
 		agent: TicketCandidateObjExt,
@@ -517,11 +547,13 @@ const sbz = (): SBZutils => {
 		}
 	};
 
-	const _getAllTickets = async (): Promise<TicketRow[]> => {
+	const _getAllTickets = async (): Promise<TicketRowLean[]> => {
 		try {
 			const { data, error } = await sbzdb
 				.from("odyn-tickets")
-				.select()
+				.select(
+					"assigned,close_date,created_at,email,id,id_num,is_closed,luse_id,names,phone,platform,query,query_type,referral_source,closed_by,email_vars,uid",
+				)
 				.order("created_at", { ascending: false });
 
 			if (error) {
@@ -810,6 +842,42 @@ const sbz = (): SBZutils => {
 		}
 	};
 
+	const _auditTicket = async (ticketId: string): Promise<GenericResponseWData<AuditRow[]>> => {
+		try {
+			const { data, error } = await sbzdb
+				.from("odyn-history")
+				.select()
+				.filter("ticket_no", "eq", ticketId)
+				.order("created_at", { ascending: true });
+
+			if (error) {
+				_log({
+					message: error.message,
+					title: `Get History Error - ${ticketId}`,
+				});
+				return {
+					data: [],
+					message: "Failed to fetch this ticket's history. Please try again in a few minutes.",
+					success: false,
+				};
+			}
+
+			if (data && data.length) return { data, message: "", success: true };
+
+			return { data: [], message: "", success: true };
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: `Get History Exception - ${ticketId}` });
+			return { data: [], message: error, success: false };
+		}
+	};
+
 	return {
 		log: _log,
 		setOtp: _setOtp,
@@ -826,6 +894,8 @@ const sbz = (): SBZutils => {
 		isClientCorrect: _isClientCorrect,
 		getAgents: _getAgents,
 		reassignWebTicket: _reassignWebTicket,
+		auditTicket: _auditTicket,
+		appendHistory: _appendHistory,
 	};
 };
 

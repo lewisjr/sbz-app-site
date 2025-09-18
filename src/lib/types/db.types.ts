@@ -277,10 +277,13 @@ export type Database = {
 				Row: {
 					assigned: string;
 					close_date: string | null;
+					closed_by: string | null;
 					created_at: string;
 					email: string;
+					email_vars: string | null;
 					id: string;
 					id_num: string;
+					is_client: boolean;
 					is_closed: boolean;
 					luse_id: number;
 					names: string;
@@ -295,10 +298,13 @@ export type Database = {
 				Insert: {
 					assigned: string;
 					close_date?: string | null;
+					closed_by?: string | null;
 					created_at?: string;
 					email: string;
+					email_vars?: string | null;
 					id: string;
 					id_num: string;
+					is_client?: boolean;
 					is_closed?: boolean;
 					luse_id: number;
 					names: string;
@@ -313,10 +319,13 @@ export type Database = {
 				Update: {
 					assigned?: string;
 					close_date?: string | null;
+					closed_by?: string | null;
 					created_at?: string;
 					email?: string;
+					email_vars?: string | null;
 					id?: string;
 					id_num?: string;
+					is_client?: boolean;
 					is_closed?: boolean;
 					luse_id?: number;
 					names?: string;

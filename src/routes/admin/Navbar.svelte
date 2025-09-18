@@ -1,4 +1,8 @@
 <script lang="ts">
+	//functions
+	import { toast } from "svelte-sonner";
+	import { goto } from "$app/navigation";
+
 	//stores
 	import { page } from "$app/state";
 
@@ -6,12 +10,23 @@
 	import {
 		ChevronRight,
 		Home,
-		ClipboardPlus,
 		UserRoundCog,
 		Database,
 		RectangleEllipsis,
 		MessageCircleQuestion,
+		ChartNoAxesColumn,
+		Facebook,
+		ChartCandlestick,
+		NotebookText,
+		Upload,
+		User,
+		ArrowRightLeft,
+		FileChartPie,
+		LogOut,
 	} from "@lucide/svelte";
+
+	//types
+	import type { GenericResponse } from "$lib/types";
 
 	let mode = $state<"hid" | "vis">("hid");
 
@@ -35,11 +50,44 @@
 	}
 
 	let { permissions }: Props = $props();
+
+	let loading = $state<boolean>(false);
+
+	const signOut = async () => {
+		loading = true;
+		toast.info("Signing you out...");
+
+		try {
+			const req = await fetch("/api/si", {
+				method: "DELETE",
+			});
+
+			const res: GenericResponse = await req.json();
+
+			if (!res.success) {
+				toast.error(res.message);
+				return;
+			}
+
+			toast.success(res.message);
+			goto("/sign-in");
+		} catch (ex: any) {
+			loading = false;
+			const message =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex?.message || JSON.stringify(ex);
+
+			toast.error(message);
+		}
+	};
 </script>
 
 <button
-	class={`${mode} cursor-pointer`}
-	on:click={() => changeMode()}
+	class={`${mode} button cursor-pointer`}
+	onclick={() => changeMode()}
 	title={mode === "hid" ? `Open Menu` : "Close Menu"}
 >
 	<span class={mode}><ChevronRight /></span>
@@ -59,6 +107,7 @@
 		<p>Home</p>
 	</a>
 
+	<!-- Odyn -->
 	<div class="titl">
 		<p>Odyn</p>
 	</div>
@@ -68,6 +117,59 @@
 		<p>Tickets</p>
 	</a>
 
+	<a class={`link${path === "/admin/analytics" ? " current" : ""}`} href="/admin/analytics">
+		<ChartNoAxesColumn class="h-8 w-8" />
+		<p>Analytics</p>
+	</a>
+
+	<a class={`link${path === "/admin/socials" ? " current" : ""}`} href="/admin/socials">
+		<Facebook class="h-8 w-8" />
+		<p>Socials</p>
+	</a>
+
+	<!-- Market -->
+	<div class="titl">
+		<p>Market</p>
+	</div>
+
+	<a class={`link${path === "/admin/data" ? " current" : ""}`} href="/admin/data">
+		<ChartCandlestick class="h-8 w-8" />
+		<p>Data</p>
+	</a>
+
+	<a class={`link${path === "/admin/news" ? " current" : ""}`} href="/admin/news">
+		<NotebookText class="h-8 w-8" />
+		<p>News</p>
+	</a>
+
+	<a class={`link${path === "/admin/upload" ? " current" : ""}`} href="/admin/upload">
+		<Upload class="h-8 w-8" />
+		<p>Upload</p>
+	</a>
+
+	<!-- SBZ Specific -->
+	<div class="titl">
+		<p>Company</p>
+	</div>
+
+	<a class={`link${path === "/admin/clients" ? " current" : ""}`} href="/admin/clients">
+		<User class="h-8 w-8" />
+		<p>Clients</p>
+		<!-- view file, portfolio plus export -->
+	</a>
+
+	<a class={`link${path === "/admin/trades" ? " current" : ""}`} href="/admin/trades">
+		<ArrowRightLeft class="h-8 w-8" />
+		<p>Trades</p>
+	</a>
+
+	<a class={`link${path === "/admin/reports" ? " current" : ""}`} href="/admin/reports">
+		<FileChartPie class="h-8 w-8" />
+		<!-- e.g DMR -->
+		<p>Reports</p>
+	</a>
+
+	<!-- System -->
 	<div class="titl">
 		<p>System</p>
 	</div>
@@ -86,12 +188,18 @@
 		<Database class="h-8 w-8" />
 		<p>Logs</p>
 	</a>
+
+	<button class="battan link" onclick={signOut} disabled={loading}>
+		<LogOut class="h-8 w-8" />
+		<p>Sign Out</p>
+	</button>
 </div>
 
 <style lang="scss">
 	* {
 		&::-webkit-scrollbar {
 			width: 3px;
+			display: none;
 		}
 	}
 
@@ -134,7 +242,8 @@
 			left: 0px;
 		}
 
-		a {
+		a,
+		.battan {
 			text-decoration: none;
 			position: relative;
 			z-index: 103;
@@ -159,6 +268,10 @@
 				&:hover {
 					background-color: var(--primary) !important;
 					color: #f7f7f7 !important;
+
+					&:disabled {
+						background-color: #7d7d7d !important;
+					}
 				}
 
 				&.current {
@@ -174,7 +287,7 @@
 		}
 	}
 
-	button {
+	.button {
 		display: flex;
 		align-items: center;
 		justify-content: flex-end;
@@ -210,11 +323,12 @@
 		min-width: 41%;
 		padding-bottom: 5px;
 		border-bottom: 1px solid var(--foreground);
-		font-size: 9pt;
+		font-size: 8pt;
 		font-weight: 600;
 		margin-bottom: 11px;
 		margin-top: -5px;
 		text-align: center;
+		user-select: none;
 
 		p {
 			opacity: 0.5;

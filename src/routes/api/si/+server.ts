@@ -187,3 +187,10 @@ export const POST = async ({ request, cookies }) => {
 		{ status: correct.success ? 200 : 400 },
 	);
 };
+
+export const DELETE = async ({ cookies }) => {
+	cookies.delete("sbz-admin", { path: "/" });
+	cookies.delete("sbz-client", { path: "/" });
+
+	return json({ success: true, message: "Successfully signed out!" }, { status: 200 });
+};
