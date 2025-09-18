@@ -7,7 +7,7 @@ type QueryTypes = (typeof queryTypesArray)[number];
 
 type Platforms = (typeof platformsArray)[number];
 
-type ActionConfig = "reassign" | "audit";
+type ActionConfig = "reassign" | "audit" | "chat";
 
 export interface Types {
 	/**For tickets */

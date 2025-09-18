@@ -74,6 +74,8 @@ interface AddHistoryObj {
 	message: string;
 }
 
+type LogRow = SBZdb["public"]["Tables"]["logs"]["Row"];
+
 interface SBZutils {
 	log: (obj: LogObj) => Promise<void>;
 	setOtp: (obj: OTPObj) => Promise<GenericResponse>;
@@ -98,8 +100,9 @@ interface SBZutils {
 	getAgents: () => Promise<AgentIDs[]>;
 
 	auditTicket: (ticketId: string) => Promise<GenericResponseWData<AuditRow[]>>;
-
 	appendHistory: (obj: AddHistoryObj) => Promise<boolean>;
+
+	getAllLogs: () => Promise<LogRow[]>;
 }
 
 const sbz = (): SBZutils => {
@@ -878,6 +881,32 @@ const sbz = (): SBZutils => {
 		}
 	};
 
+	const _getAllLogs = async (): Promise<LogRow[]> => {
+		try {
+			const { data, error } = await sbzdb
+				.from("logs")
+				.select()
+				.order("created_at", { ascending: false });
+
+			if (error) {
+				await _log({ message: error.message, title: "Get Logs Error" });
+				return [];
+			}
+
+			return data;
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Get Logs Exception" });
+			return [];
+		}
+	};
+
 	return {
 		log: _log,
 		setOtp: _setOtp,
@@ -896,6 +925,7 @@ const sbz = (): SBZutils => {
 		reassignWebTicket: _reassignWebTicket,
 		auditTicket: _auditTicket,
 		appendHistory: _appendHistory,
+		getAllLogs: _getAllLogs,
 	};
 };
 

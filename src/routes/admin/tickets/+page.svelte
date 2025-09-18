@@ -620,6 +620,8 @@
 
 		if (q) globalFilterValue = q;
 	});
+
+	$effect(() => {});
 </script>
 
 <Head
