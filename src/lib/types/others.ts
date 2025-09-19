@@ -9,6 +9,8 @@ type Platforms = (typeof platformsArray)[number];
 
 type ActionConfig = "reassign" | "audit" | "chat";
 
+type StaffActionConfig = "block" | "unblock" | "edit" | "perms" | "new";
+
 export interface Types {
 	/**For tickets */
 	ReferralSource: ReferralSource;
@@ -16,6 +18,8 @@ export interface Types {
 	Platforms: Platforms;
 	/**Fot ticket actions */
 	ActionConfig: ActionConfig;
+	/**Fot staff actions */
+	StaffActionConfig: StaffActionConfig;
 }
 
 export interface GenericResponse {

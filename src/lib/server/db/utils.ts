@@ -49,7 +49,6 @@ export interface FileData {
 
 type AdminRow = SBZdb["public"]["Tables"]["admins"]["Row"];
 type ClientRow = SBZdb["public"]["Tables"]["clients"]["Row"];
-type TicketRow = SBZdb["public"]["Tables"]["odyn-tickets"]["Row"];
 
 interface AgentIDs {
 	username: string;
@@ -75,6 +74,9 @@ interface AddHistoryObj {
 }
 
 type LogRow = SBZdb["public"]["Tables"]["logs"]["Row"];
+type OTPRow = SBZdb["public"]["Tables"]["otps"]["Row"];
+type StaffRow = SBZdb["public"]["Tables"]["admins"]["Row"];
+export type StaffInsertRow = SBZdb["public"]["Tables"]["admins"]["Insert"];
 
 interface SBZutils {
 	log: (obj: LogObj) => Promise<void>;
@@ -102,7 +104,11 @@ interface SBZutils {
 	auditTicket: (ticketId: string) => Promise<GenericResponseWData<AuditRow[]>>;
 	appendHistory: (obj: AddHistoryObj) => Promise<boolean>;
 
+	// system ops
 	getAllLogs: () => Promise<LogRow[]>;
+	getAllOtps: () => Promise<OTPRow[]>;
+	getAllStaff: () => Promise<StaffRow[]>;
+	addStaffMember: (obj: StaffInsertRow) => Promise<GenericResponseWData<StaffRow | undefined>>;
 }
 
 const sbz = (): SBZutils => {
@@ -697,7 +703,8 @@ const sbz = (): SBZutils => {
 			const { data, error } = await sbzdb
 				.from("admins")
 				.select("username")
-				.filter("username", "eq", username);
+				.filter("username", "eq", username)
+				.filter("approved", "eq", true);
 
 			if (error) {
 				_log({
@@ -791,7 +798,8 @@ const sbz = (): SBZutils => {
 			const { data, error } = await sbzdb
 				.from("clients")
 				.select("luseId")
-				.filter("luseId", "eq", luseId);
+				.filter("luseId", "eq", luseId)
+				.filter("is_approved", "eq", true);
 
 			if (error) {
 				_log({
@@ -907,6 +915,126 @@ const sbz = (): SBZutils => {
 		}
 	};
 
+	const _getAllOtps = async (): Promise<OTPRow[]> => {
+		try {
+			const { data, error } = await sbzdb
+				.from("otps")
+				.select()
+				.order("updated_at", { ascending: false });
+
+			if (error) {
+				await _log({ message: error.message, title: "Get OTPs Error" });
+				return [];
+			}
+
+			return data;
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Get OTPs Exception" });
+			return [];
+		}
+	};
+
+	const _getAllStaff = async (): Promise<StaffRow[]> => {
+		try {
+			const { data, error } = await sbzdb
+				.from("admins")
+				.select()
+				.order("username", { ascending: true });
+
+			if (error) {
+				await _log({ message: error.message, title: "Get Staff Error" });
+				return [];
+			}
+
+			return data;
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Get Staff Exception" });
+			return [];
+		}
+	};
+
+	const _addStaffMember = async (
+		obj: StaffInsertRow,
+	): Promise<GenericResponseWData<StaffRow | undefined>> => {
+		try {
+			const { error } = await sbzdb.from("admins").insert(obj);
+
+			if (error) {
+				_log({ message: error.message, title: "Create Staff Error" });
+				return { data: undefined, message: error.message, success: false };
+			}
+
+			const mailReq = notif.email.sendLink(
+				{
+					body: `Hi ${obj.full_names.split(" ")[0]},<br /><br />You now have access to the SBZ Digital system with username <b>${obj.username}</b>! Click the button below to sign in.`,
+					extra: "When entering your username, make sure to put a hashtag <b>#</b> first.",
+					link: "https://app.sbz.com.zm/sign-in",
+					linkText: "Sign In",
+					subject: "Account Created | SBZ Digital",
+					title: "Access Granted",
+				},
+				obj.email,
+			);
+
+			const logReq = _log({
+				title: "Account Created",
+				message: `${toTitleCase(obj.created_by)} created a staff account for ${obj.full_names}.`,
+			});
+
+			await Promise.all([mailReq, logReq]);
+
+			const {
+				created_by,
+				department,
+				email,
+				full_names,
+				permissions,
+				phone,
+				username,
+				ticketable,
+			} = obj;
+
+			const nObj: StaffRow = {
+				approved: true,
+				created_at: genDbTimestamp(),
+				ticketable: ticketable ? ticketable : false,
+				created_by,
+				department,
+				email,
+				full_names,
+				permissions,
+				phone,
+				username,
+			};
+
+			return { data: nObj, message: `${obj.full_names} now has system access!`, success: true };
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Create Staff Exception" });
+			return { data: undefined, message: error, success: false };
+		}
+	};
+
 	return {
 		log: _log,
 		setOtp: _setOtp,
@@ -926,6 +1054,9 @@ const sbz = (): SBZutils => {
 		auditTicket: _auditTicket,
 		appendHistory: _appendHistory,
 		getAllLogs: _getAllLogs,
+		getAllOtps: _getAllOtps,
+		getAllStaff: _getAllStaff,
+		addStaffMember: _addStaffMember,
 	};
 };
 

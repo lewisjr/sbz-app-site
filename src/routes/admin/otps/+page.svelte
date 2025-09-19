@@ -27,30 +27,58 @@
 	import type { SBZdb } from "$lib/types";
 	import type { ColumnDef, PaginationState } from "@tanstack/table-core";
 
-	type LogRow = SBZdb["public"]["Tables"]["logs"]["Row"];
+	type OTPRow = SBZdb["public"]["Tables"]["otps"]["Row"];
 
 	let { data }: PageProps = $props();
 
-	let logData = $state<LogRow[]>([]);
+	let otpData = $state<OTPRow[]>([]);
 	let initialising = $state<boolean>(true);
 
 	$effect(() => {
-		data.logs
+		data.otps
 			.then((res) => {
-				logData = res;
+				otpData = res;
 				initialising = false;
 			})
 			.catch(() => {
-				toast.error("Failed to get logs! Please refresh the browser in a few minutes.");
+				toast.error("Failed to get otps! Please refresh the browser in a few minutes.");
 				initialising = false;
 			});
 	});
 
 	let isMobile = $derived($screenWidthStore < 767);
 
-	const columns: ColumnDef<LogRow>[] = [
+	const columns: ColumnDef<OTPRow>[] = [
 		{
-			accessorKey: "created_at",
+			accessorKey: "id",
+			header: "User",
+			cell: ({ cell }) => {
+				const renderCell = createRawSnippet<[string]>(() => {
+					const value = cell.getValue() as string;
+					return {
+						render: () => `<p class="whitespace-normal">${value}</p>`,
+					};
+				});
+
+				return renderSnippet(renderCell);
+			},
+		},
+		{
+			accessorKey: "otp",
+			header: "OTP",
+			cell: ({ cell }) => {
+				const renderCell = createRawSnippet<[string]>(() => {
+					const value = cell.getValue() as string | number;
+					return {
+						render: () => `<p class="whitespace-normal">${value}</p>`,
+					};
+				});
+
+				return renderSnippet(renderCell);
+			},
+		},
+		{
+			accessorKey: "updated_at",
 			header: "Timestamp",
 			cell: ({ cell }) => {
 				const renderCell = createRawSnippet<[string]>(() => {
@@ -63,49 +91,21 @@
 				return renderSnippet(renderCell);
 			},
 		},
-		{
-			accessorKey: "title",
-			header: "Header",
-			cell: ({ cell }) => {
-				const renderCell = createRawSnippet<[string]>(() => {
-					const value = cell.getValue() as string;
-					return {
-						render: () => `<p class="whitespace-normal">${value}</p>`,
-					};
-				});
-
-				return renderSnippet(renderCell);
-			},
-		},
-		{
-			accessorKey: "value",
-			header: "Details",
-			cell: ({ cell }) => {
-				const renderCell = createRawSnippet<[string]>(() => {
-					const value = cell.getValue() as string;
-					return {
-						render: () => `<p class="whitespace-normal">${value}</p>`,
-					};
-				});
-
-				return renderSnippet(renderCell);
-			},
-		},
 	];
 
 	let globalFilterValue = $state<string>("");
 
 	// ! could be a search error here
 	let filteredTickets = $derived.by(() => {
-		return logData.filter((entry) => {
+		return otpData.filter((entry) => {
 			let res: boolean = false;
 
 			const _sanitize = (value: string) => value.toLowerCase().replace(/\s+/g, "");
 			const _compare = (value: string) => _sanitize(value).includes(_sanitize(globalFilterValue));
 
-			if (_compare(formatDbTime(entry.created_at))) res = true;
-			if (_compare(entry.title)) res = true;
-			if (_compare(entry.value)) res = true;
+			if (_compare(formatDbTime(entry.updated_at))) res = true;
+			if (_compare(entry.otp.toString())) res = true;
+			if (_compare(entry.id)) res = true;
 
 			return res;
 		});
@@ -136,8 +136,8 @@
 </script>
 
 <Head
-	title="Logs | SBZ Admin"
-	ogTitle="Logs"
+	title="OTPs | SBZ Admin"
+	ogTitle="OTPs"
 	description="System activity management."
 	ogDescription="System activity management."
 />
@@ -145,18 +145,18 @@
 {#if initialising}
 	{#if isMobile}
 		<div class="flex flex-row items-center justify-between">
-			<h1>Logs</h1>
+			<h1>OTPs</h1>
 		</div>
 		<div class="mt-2 flex w-[100%] flex-row items-center justify-end">
 			<Search class="mr-4" />
-			<Input class="w-[100%]" placeholder="Filter Logs..." type="text" disabled />
+			<Input class="w-[100%]" placeholder="Filter OTPs..." type="text" disabled />
 		</div>
 	{:else}
 		<div class="flex flex-row items-center justify-between">
-			<h1>Logs</h1>
+			<h1>OTPs</h1>
 			<div class="flex w-[50%] items-center">
 				<Search class="mr-4 h-10 w-10" />
-				<Input class="w-[100%]" placeholder="Filter Logs..." type="text" disabled />
+				<Input class="w-[100%]" placeholder="Filter OTPs..." type="text" disabled />
 			</div>
 		</div>
 
@@ -182,22 +182,22 @@
 			</div>
 		</div>
 	{/if}
-{:else if !logData.length}
+{:else if !otpData.length}
 	{#if isMobile}
 		<div class="flex flex-row items-center justify-between">
-			<h1>Logs</h1>
+			<h1>OTPs</h1>
 		</div>
 		<div class="mt-2 flex w-[100%] flex-row items-center justify-end">
 			<Search class="mr-4" />
-			<Input class="w-[100%]" placeholder="Filter Logs..." type="text" disabled />
+			<Input class="w-[100%]" placeholder="Filter OTPs..." type="text" disabled />
 		</div>
 		<h3 class="mx-auto mt-4 text-center">No data.</h3>
 	{:else}
 		<div class="flex flex-row items-center justify-between">
-			<h1>Logs</h1>
+			<h1>OTPs</h1>
 			<div class="flex w-[50%] items-center">
 				<Search class="mr-4 h-10 w-10" />
-				<Input class="w-[100%]" placeholder="Filter Logs..." type="text" disabled />
+				<Input class="w-[100%]" placeholder="Filter OTPs..." type="text" disabled />
 			</div>
 		</div>
 		<div class="main-tainer">
@@ -208,21 +208,21 @@
 	{/if}
 {:else if isMobile}
 	<div class="flex flex-row items-center justify-between">
-		<h1>Logs</h1>
+		<h1>OTPs</h1>
 	</div>
 	<div class="mt-2 flex w-[100%] flex-row items-center justify-end">
 		<Search class="mr-4" />
-		<Input class="w-[100%]" placeholder="Filter Logs..." type="text" />
+		<Input class="w-[100%]" placeholder="Filter OTPs..." type="text" />
 	</div>
 {:else}
 	<div class="flex flex-row items-center justify-between">
-		<h1>Logs</h1>
+		<h1>OTPs</h1>
 		<div class="flex w-[50%] items-center">
 			<Search class="mr-4 h-10 w-10" />
 			<Input
 				class="w-[100%]"
 				bind:value={globalFilterValue}
-				placeholder="Filter Logs..."
+				placeholder="Filter OTPs..."
 				type="text"
 			/>
 		</div>

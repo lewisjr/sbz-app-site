@@ -1,5 +1,1 @@
-https://www.shadcn-svelte.com/docs/components/data-table
-adding data table and upgrading accout opening query process
-
-check /admin/tciketse
-check /api/su POST
+Add refresh token to be checking in case someone's session is still active but they have been blocked.

@@ -5,6 +5,6 @@ export const load = async (data) => {
 	scourgeOfClients(data);
 
 	return {
-		logs: dbs.sbz.getAllLogs(),
+		otps: dbs.sbz.getAllOtps(),
 	};
 };

@@ -35,6 +35,7 @@ export type Database = {
 		Tables: {
 			admins: {
 				Row: {
+					approved: boolean;
 					created_at: string;
 					created_by: string;
 					department: string;
@@ -46,6 +47,7 @@ export type Database = {
 					username: string;
 				};
 				Insert: {
+					approved?: boolean;
 					created_at?: string;
 					created_by: string;
 					department: string;
@@ -57,6 +59,7 @@ export type Database = {
 					username: string;
 				};
 				Update: {
+					approved?: boolean;
 					created_at?: string;
 					created_by?: string;
 					department?: string;
