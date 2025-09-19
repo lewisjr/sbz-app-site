@@ -19,8 +19,8 @@
 	//icons
 	import { Facebook, Linkedin, Youtube, MessageCircle, LogIn } from "@lucide/svelte";
 
-	$: isMobile = $screenWidthStore < 768;
-	$: year = new Date().getFullYear();
+	let isMobile = $derived($screenWidthStore < 768);
+	let year = new Date().getFullYear();
 </script>
 
 <Head

@@ -5,7 +5,7 @@ export const load = (data) => {
 
 	const admin = cookies.get("sbz-admin");
 
-	if (admin) redirect(307, "/admin/home");
+	if (admin) redirect(307, "/admin/tickets");
 
 	const client = cookies.get("sbz-client");
 

@@ -117,6 +117,7 @@
 		<p>Tickets</p>
 	</a>
 
+	<!--
 	<a class={`link${path === "/admin/analytics" ? " current" : ""}`} href="/admin/analytics">
 		<ChartNoAxesColumn class="h-8 w-8" />
 		<p>Analytics</p>
@@ -126,6 +127,7 @@
 		<Facebook class="h-8 w-8" />
 		<p>Socials</p>
 	</a>
+	-->
 
 	<!-- Market -->
 	<div class="titl">

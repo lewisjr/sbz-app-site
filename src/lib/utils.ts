@@ -91,6 +91,14 @@ export const referralSourcesArray = [
 	//"RS:Other",
 ] as const;
 
-export const queryTypesArray = ["QT:Account Opening"] as const;
+export const queryTypesArray = [
+	"QT:Account Opening",
+	"QT:Trade Status",
+	"QT:Compliment",
+	"QT:Complaint",
+	"QT:Portfolio",
+	"QT:Contract Note",
+	"QT:Other",
+] as const;
 
 export const platformsArray = ["P:Web", "P:Messenger", "P:Whatsapp"] as const;
