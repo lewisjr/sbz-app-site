@@ -1,7 +1,7 @@
 <script lang="ts">
 	//functions
 	import { goto } from "$app/navigation";
-	import { queryTypesArray } from "$lib/utils";
+	import { queryTypesArray, referralSourcesArray } from "$lib/utils";
 	import isEmail from "is-email";
 
 	//stores
@@ -18,7 +18,7 @@
 	import Textarea from "$lib/components/ui/textarea/textarea.svelte";
 
 	//types
-	import type { Types } from "$lib/types";
+	import type { Types, GenericResponseWData, GenericResponse } from "$lib/types";
 
 	//icons
 	import {
@@ -30,15 +30,16 @@
 		ArrowRight,
 		Upload,
 	} from "@lucide/svelte";
+	import { toast } from "svelte-sonner";
 
 	let isMobile = $derived($screenWidthStore < 768);
 	let year = new Date().getFullYear();
 
-	let loading = $state<boolean>(true);
+	let loading = $state<boolean>(false);
 
-	type Position = "1" | "2" | "3";
+	type Position = "1" | "2" | "3" | "4" | "5";
 
-	let contentPosition = $state<Position>("3");
+	let contentPosition = $state<Position>("4");
 	const changePosition = () => {
 		const num = Number(contentPosition);
 
@@ -59,29 +60,49 @@
 
 	let luseIdValue = $state<string>("");
 
+	let referral = $state<string>("");
+	const changeReferral = (val: Types["ReferralSource"]) => {
+		referral = val;
+	};
+
 	let queryType = $state<string>("");
 	const changeQtype = (val: Types["QueryTypes"]) => {
 		queryType = val;
 	};
+
+	let queryText = $state<string>("");
 
 	const platform = "Web";
 
 	let nextDisabled = $derived.by(() => {
 		let val: boolean = false;
 
+		const v1Disabled =
+			namesValue.length < 5 ||
+			phoneValue.length < 8 ||
+			!isEmail(emailValue) ||
+			idNumValue.length < 5;
+
+		const v2Disabled = isClient ? (luseIdValue.length ? true : false) : false;
+
+		const v3Disabled = referral ? !referral.length : true;
+
+		const preV4 = queryType ? !queryType.length : true;
+
+		const v4Disabled = preV4 || queryText.length < 10;
+
 		switch (contentPosition) {
 			case "1":
-				val =
-					namesValue.length < 5 ||
-					phoneValue.length < 8 ||
-					!isEmail(emailValue) ||
-					idNumValue.length < 5;
+				val = v1Disabled;
 				break;
 			case "2":
-				val = isClient ? (luseIdValue.length ? true : false) : false;
+				val = v2Disabled || v1Disabled;
 				break;
 			case "3":
-				val = !queryType.length;
+				val = v3Disabled || v2Disabled || v1Disabled;
+				break;
+			case "4":
+				val = v4Disabled || v3Disabled || v2Disabled || v1Disabled;
 				break;
 			default:
 				break;
@@ -89,6 +110,118 @@
 
 		return val;
 	});
+
+	let endButtonText = $derived.by(() => {
+		if (queryType === "QT:Compliment") {
+			return "Submit";
+		} else {
+			return "Open Chat";
+		}
+	});
+
+	const addCompliment = async () => {
+		toast.info("Submitting your compliment...");
+		loading = true;
+
+		const obj = {
+			email: emailValue,
+			id_num: idNumValue,
+			luse_id: isClient ? Number(luseIdValue) : -1,
+			names: namesValue,
+			phone: phoneValue,
+			platform,
+			query: queryText,
+			query_type: queryType.replace("QT:", ""),
+			referral_source: referral.replace("RS:", ""),
+			uid: emailValue,
+			is_client: isClient,
+		};
+
+		try {
+			const req = await fetch("/api/cn", {
+				method: "PUT",
+				body: JSON.stringify(obj),
+			});
+
+			const res: GenericResponse = await req.json();
+
+			loading = false;
+
+			if (!res.success) {
+				toast.error(res.message);
+				return;
+			}
+
+			toast.success(res.message);
+			contentPosition = "5";
+		} catch (ex: any) {
+			loading = false;
+			const message =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex?.message || JSON.stringify(ex);
+
+			toast.error(message);
+		}
+	};
+
+	const createChatRoom = async () => {
+		toast.info("Creating chat room...");
+		loading = true;
+
+		const obj = {
+			email: emailValue,
+			id_num: idNumValue,
+			luse_id: isClient ? Number(luseIdValue) : -1,
+			names: namesValue,
+			phone: phoneValue,
+			platform,
+			query: queryText,
+			query_type: queryType.replace("QT:", ""),
+			referral_source: referral.replace("RS:", ""),
+			uid: emailValue,
+			is_client: isClient,
+		};
+
+		try {
+			const req = await fetch("/api/cn", {
+				method: "POST",
+				body: JSON.stringify(obj),
+			});
+
+			const res: GenericResponseWData<string> = await req.json();
+
+			loading = false;
+
+			if (!res.success) {
+				toast.error(res.message);
+				return;
+			}
+
+			toast.success(res.message);
+			goto(res.data);
+		} catch (ex: any) {
+			loading = false;
+			const message =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex?.message || JSON.stringify(ex);
+
+			toast.error(message);
+		}
+	};
+
+	const processQuery = () => {
+		if (queryType === "QT:Compliment") {
+			addCompliment();
+		} else {
+			createChatRoom();
+		}
+	};
 
 	/*
 	let tClass = $state<"fin" | "fout" | "norm">("norm");
@@ -104,6 +237,22 @@
 		setTimeout(() => {
 			changeSection();
 		}, 500);
+	});
+    */
+
+	/* Scaffold
+	const _scaffoldTicket = () => {
+		namesValue = "Test Person";
+		phoneValue = "260776552592";
+		emailValue = "privatodato@gmail.com";
+		idNumValue = "554721101";
+		isClient = false;
+
+		changeReferral("RS:ZBT");
+	};
+
+	$effect(() => {
+		_scaffoldTicket();
 	});
     */
 </script>
@@ -170,7 +319,15 @@
 			{/if}
 
 			{#if contentPosition === "3"}
+				Survey
+			{/if}
+
+			{#if contentPosition === "4"}
 				Query Details
+			{/if}
+
+			{#if contentPosition === "5"}
+				Thank You!
 			{/if}
 		</h3>
 		<section class="inputs">
@@ -180,7 +337,7 @@
 						<Label>Full Names</Label>
 						<Input
 							bind:value={namesValue}
-							placeholder="Bwalya"
+							placeholder="John Banda"
 							disabled={loading}
 							oninput={(e) => {
 								//@ts-ignore
@@ -287,6 +444,26 @@
 			{#if contentPosition === "3"}
 				<div class="items flex">
 					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+						<Label class="mb-1">How Did You Hear of Us?</Label>
+						<AnyPicker
+							data={referralSourcesArray.map((q) => {
+								return { label: q.replace("RS:", ""), value: q };
+							})}
+							handler={changeReferral}
+							value={undefined}
+							pickerTitle="Option"
+						/>
+					</div>
+				</div>
+
+				<Button class="mt-5" disabled={nextDisabled} onclick={changePosition}
+					>Next<ArrowRight /></Button
+				>
+			{/if}
+
+			{#if contentPosition === "4"}
+				<div class="items flex">
+					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
 						<Label class="mb-1">Topic</Label>
 						<AnyPicker
 							data={queryTypesArray.map((q) => {
@@ -299,9 +476,37 @@
 					</div>
 				</div>
 
-				<Button class="mt-5" disabled={nextDisabled} onclick={() => goto("/track/dgTds8345")}
-					>Open Chat<MessageCircle /></Button
-				>
+				{#if queryType}
+					<div class="items tp flex">
+						<div class="flex w-full max-w-sm flex-col gap-1.5">
+							<Label class="mb-1">Query</Label>
+							<Textarea
+								bind:value={queryText}
+								placeholder="Briefly explain your query."
+								disabled={loading}
+								maxlength={200}
+								class="h-[150px] w-[400px] max-w-[100%]"
+							/>
+						</div>
+					</div>
+
+					<Button class="mt-5" disabled={nextDisabled} onclick={processQuery}
+						>{endButtonText}{#if endButtonText === "Submit"}
+							<Upload />
+						{:else}
+							<MessageCircle />
+						{/if}</Button
+					>
+				{/if}
+			{/if}
+
+			{#if contentPosition === "5"}
+				<p class="w-[400px] max-w-[100%] text-justify">
+					Your compliment has been well received! What to do now? Feel free to <a href="/sign-up"
+						>open an account</a
+					>
+					or <a href="/sign-in">sign in</a> and take control of your investments!
+				</p>
 			{/if}
 		</section>
 	</section>

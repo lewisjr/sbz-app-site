@@ -26,203 +26,56 @@ export interface UserObj {
 	idNum: string;
 }
 
-// Confirm OTP and make account opening ticket
-export const POST = async ({ request }) => {
-	const formData = await request.formData();
+type InsertTicket = SBZdb["public"]["Tables"]["odyn-tickets"]["Insert"];
 
-	const otp = Number(formData.get("otp")); // comes in as string → cast to number
-	const emails = JSON.parse(formData.get("emails") as string) as string[]; // if multiple inputs named "emails"
-	const obj = JSON.parse(
-		formData.get("obj") as string,
-	) as SBZdb["public"]["Tables"]["clients"]["Insert"];
-	const referral_source = formData.get("referral") as string;
+export const POST = async ({ request, cookies }) => {
+	const data: InsertTicket = await request.json();
 
-	// now otp, emails, and obj have the right types
-	console.log({ otp, emails, obj });
+	switch (data.query_type) {
+		case "Other":
+			const agent = await dbs.sbz.getTicketCandidate();
+			const ticketResOther = await dbs.sbz.createTicket(data, agent.data);
 
-	const serverOtp = await dbs.sbz.checkOtp({ otp, user: emails.join(",,") });
+			if (!ticketResOther.success)
+				return json(
+					{
+						success: false,
+						message: "Failed to create chat room. Please try again in a few minutes.",
+					},
+					{ status: 400 },
+				);
 
-	if (!serverOtp.success)
-		return json(
-			{
-				success: false,
-				message: "Failed to confirm your OTP, please ensure that it is correct and try again.",
-			},
-			{ status: 400 },
-		);
+			const updateAgentReq = dbs.sbz.updateTicketCandidate(agent.data);
 
-	const files: FileData[] = [];
+			const historyReq = dbs.sbz.appendHistory({
+				creator: "odyn",
+				message: `Odyn assigned this ticket to ${toTitleCase(agent.data.agentId)}.`,
+				ticketId: ticketResOther.data,
+			});
 
-	const { acc_type, is_in_trust_of } = obj;
+			await Promise.all([updateAgentReq, historyReq]);
 
-	let queryHelper: string = "";
-	const details: { name: string; email: string; luseId: number; idNumber: string; phone: string } =
-		{
-			email: "",
-			idNumber: "",
-			luseId: obj.luseId ? obj.luseId : -1,
-			name: "",
-			phone: "",
-		};
+			return json(ticketResOther, { status: ticketResOther.success ? 201 : 400 });
+		default:
+			const ticketRes = await dbs.sbz.createAIticket(data);
 
-	if (acc_type === "individual" && !is_in_trust_of) {
-		const poa = formData.get(`${obj.id_num}-poa`) as File;
-		const poi = formData.get(`${obj.id_num}-poi`) as File;
-
-		files.push({ file: poa, id: obj.id_num, type: "poa" });
-		files.push({ file: poi, id: obj.id_num, type: "poi" });
-
-		details.email = obj.email;
-		details.idNumber = obj.id_num;
-		details.name = `${obj.fname} ${obj.lname}`;
-		details.phone = obj.phone.toString();
-		queryHelper = `Requesting the opening of an individual account for ${details.name}`;
-	}
-
-	if (acc_type === "individual" && is_in_trust_of) {
-		const poa = formData.get(`${obj.manag_id_num}-poa`) as File;
-		const poi = formData.get(`${obj.manag_id_num}-poi`) as File;
-
-		files.push({ file: poa, id: obj.manag_id_num, type: "poa" });
-		files.push({ file: poi, id: obj.manag_id_num, type: "poi" });
-
-		details.email = obj.manag_email;
-		details.idNumber = obj.manag_id_num;
-		details.name = `${obj.manag_fname} ${obj.manag_lname}`;
-		details.phone = obj.manag_phone.toString();
-		queryHelper = `Requesting the opening of an in trust of account for ${obj.fname} ${obj.lname} managed by ${details.name}.`;
-	}
-
-	if (obj.joint_partners.length) {
-		//@ts-ignore
-		const partners: UserObj[] = obj.joint_partners;
-
-		partners.forEach((row, i) => {
-			const poa = formData.get(`${row.idNum}-poa`) as File;
-			const poi = formData.get(`${row.idNum}-poi`) as File;
-
-			files.push({ file: poa, id: row.idNum, type: "poa" });
-			files.push({ file: poi, id: row.idNum, type: "poi" });
-
-			if (!i) {
-				details.email = row.email;
-				details.name = `${row.fname} ${row.lname}`;
-				details.idNumber = row.idNum;
-				details.phone = obj.phone.toString();
+			if (ticketRes.success) {
+				cookies.set("sbz-nootp", "true", {
+					path: "/",
+					httpOnly: true,
+					maxAge: 60 * 60 * 1,
+					secure: true,
+				});
 			}
 
-			if (i && i < partners.length - 1) {
-				details.name = `${details.name}, ${row.fname} ${row.lname}`;
-			} else if (i === partners.length - 1) {
-				details.name = `${details.name}, and ${row.fname} ${row.lname}`;
-			}
-
-			queryHelper = `Requesting the opening of a joint account for ${details.name}.`;
-		});
+			return json(ticketRes, { status: ticketRes.success ? 201 : 400 });
 	}
+};
 
-	if (obj.comp_directors.length) {
-		//@ts-ignore
-		const directors: UserObj[] = obj.comp_directors;
+export const PUT = async ({ request }) => {
+	const data: InsertTicket = await request.json();
 
-		directors.forEach((row) => {
-			const poa = formData.get(`${row.idNum}-poa`) as File;
-			const poi = formData.get(`${row.idNum}-poi`) as File;
+	const res = await dbs.sbz.createCompliment(data);
 
-			files.push({ file: poa, id: row.idNum, type: "poa" });
-			files.push({ file: poi, id: row.idNum, type: "poi" });
-		});
-	}
-
-	if (obj.comp_managers.length) {
-		//@ts-ignore
-		const managers: UserObj[] = obj.comp_managers;
-
-		managers.forEach((row, i) => {
-			const poa = formData.get(`${row.idNum}-poa`) as File;
-			const poi = formData.get(`${row.idNum}-poi`) as File;
-
-			files.push({ file: poa, id: row.idNum, type: "poa" });
-			files.push({ file: poi, id: row.idNum, type: "poi" });
-
-			if (!i) {
-				details.email = row.email;
-				details.name = `${row.fname} ${row.lname}`;
-				details.idNumber = row.idNum;
-				details.phone = obj.phone.toString();
-			}
-
-			if (i && i < managers.length - 1) {
-				details.name = `${details.name}, ${row.fname} ${row.lname}`;
-			} else if (i === managers.length - 1) {
-				details.name = `${details.name}, and ${row.fname} ${row.lname}`;
-			}
-
-			queryHelper = `Requesting the opening of a joint account for ${details.name}.`;
-		});
-	}
-
-	const agent = await dbs.sbz.getTicketCandidate();
-
-	// create ticket
-	const ticketRes = await dbs.sbz.createTicket(
-		{
-			assigned: agent.data.agentId,
-			email: details.email,
-			id: "",
-			id_num: details.idNumber,
-			luse_id: -1,
-			names: details.name,
-			phone: details.phone,
-			query: queryHelper,
-			query_type: "Account Opening",
-			object: obj,
-			platform: "Web",
-			uid: details.email,
-			referral_source,
-		},
-		agent.data,
-	);
-
-	if (!ticketRes.success)
-		return json(
-			{
-				success: false,
-				message: "Failed to submit your request. Please try again in a few minutes.",
-			},
-			{ status: 400 },
-		);
-
-	const updateAgentReq = dbs.sbz.updateTicketCandidate(agent.data);
-	const uploadKycReq = dbs.sbz.uploadKyc(files);
-
-	const emailReqs = emails.map((address) =>
-		notif.email.sendLink(
-			{
-				subject: "Account Opening | Stockbrokers Zambia",
-				title: "Request Received!",
-				body: `Your account opening submission has been received and assigned to <b>${toTitleCase(agent.data.agentId)}</b> with ticket number <b>${ticketRes.data}</b>. This process usually takes <b>24 hours</b> and you will be notified.`,
-				extra:
-					"Please click the link above to view the progress of your request, as well as to upload your biometric signature(s).",
-				link: `https://app.sbz.com.zm/track/${ticketRes.data}`,
-				linkText: "View Progress",
-			},
-			address,
-		),
-	);
-
-	const historyReq = dbs.sbz.appendHistory({
-		creator: "odyn",
-		message: `Odyn assigned this ticket to ${toTitleCase(agent.data.agentId)}.`,
-		ticketId: ticketRes.data,
-	});
-
-	const [updateAgentRes, uploadKycRes] = await Promise.all([
-		updateAgentReq,
-		uploadKycReq,
-		historyReq,
-		...emailReqs,
-	]);
-
-	return json({ success: true, message: "Request submitted!" }, { status: 201 });
+	return json(res, { status: res.success ? 201 : 400 });
 };

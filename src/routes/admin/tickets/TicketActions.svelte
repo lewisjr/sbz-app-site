@@ -30,10 +30,27 @@
 	<DropdownMenu.Content>
 		<DropdownMenu.Group>
 			<DropdownMenu.Label>Support</DropdownMenu.Label>
-			<DropdownMenu.Item onclick={() => null}>Chat</DropdownMenu.Item>
+
+			{#if data.query_type !== "Compliment"}
+				<DropdownMenu.Item onclick={() => null}>Chat</DropdownMenu.Item>
+			{/if}
+
+			{#if data.query_type === "Compliment"}
+				<DropdownMenu.Item disabled>N/A</DropdownMenu.Item>
+			{/if}
+
 			{#if data.query_type === "Account Opening" && !data.is_closed}
 				<DropdownMenu.Item onclick={() => null}>Review KYC</DropdownMenu.Item>
 			{/if}
+
+			{#if data.luse_id > -1}
+				<DropdownMenu.Item onclick={() => null}
+					><a href="https://engine.neos.finance/d/portfolio/473044" target="_blank"
+						>View Portfolio</a
+					></DropdownMenu.Item
+				>
+			{/if}
+
 			{#if !data.is_closed}
 				<DropdownMenu.Item onclick={() => null}>Close</DropdownMenu.Item>
 			{/if}

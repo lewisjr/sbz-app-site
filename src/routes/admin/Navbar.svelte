@@ -102,10 +102,12 @@
 	</a>
 
 	<!-- Actual Links -->
+	<!--
 	<a class={`link${path === "/admin/home" ? " current" : ""}`} href="/admin/home">
 		<Home class="h-8 w-8" />
 		<p>Home</p>
 	</a>
+	-->
 
 	<!-- Odyn -->
 	<div class="titl">
@@ -134,42 +136,60 @@
 		<p>Market</p>
 	</div>
 
-	<a class={`link${path === "/admin/data" ? " current" : ""}`} href="/admin/data">
+	<a
+		class={`link${path === "/admin/data" ? " current" : ""}`}
+		href="https://engine.neos.finance/d/analytics"
+		target="_blank"
+	>
 		<ChartCandlestick class="h-8 w-8" />
 		<p>Data</p>
 	</a>
 
-	<a class={`link${path === "/admin/news" ? " current" : ""}`} href="/admin/news">
+	<a
+		class={`link${path === "/admin/news" ? " current" : ""}`}
+		href="https://engine.neos.finance/d/db/news"
+		target="_blank"
+	>
 		<NotebookText class="h-8 w-8" />
 		<p>News</p>
 	</a>
 
+	<!--
 	<a class={`link${path === "/admin/upload" ? " current" : ""}`} href="/admin/upload">
 		<Upload class="h-8 w-8" />
 		<p>Upload</p>
 	</a>
+	-->
 
 	<!-- SBZ Specific -->
 	<div class="titl">
 		<p>Company</p>
 	</div>
 
+	<!--
 	<a class={`link${path === "/admin/clients" ? " current" : ""}`} href="/admin/clients">
 		<User class="h-8 w-8" />
 		<p>Clients</p>
-		<!-- view file, portfolio plus export -->
+		<!-- view file, portfolio plus export 
 	</a>
+	-->
 
-	<a class={`link${path === "/admin/trades" ? " current" : ""}`} href="/admin/trades">
+	<a
+		class={`link${path === "/admin/trades" ? " current" : ""}`}
+		href="https://engine.neos.finance/d/trades"
+		target="_blank"
+	>
 		<ArrowRightLeft class="h-8 w-8" />
 		<p>Trades</p>
 	</a>
 
+	<!--
 	<a class={`link${path === "/admin/reports" ? " current" : ""}`} href="/admin/reports">
 		<FileChartPie class="h-8 w-8" />
-		<!-- e.g DMR -->
+		<!-- e.g DMR 
 		<p>Reports</p>
 	</a>
+	-->
 
 	<!-- System -->
 	<div class="titl">

@@ -89,6 +89,8 @@ interface SBZutils {
 		obj: OdynInsert,
 		agent: TicketCandidateObjExt,
 	) => Promise<GenericResponseWData<string>>;
+	createCompliment: (obj: OdynInsert) => Promise<GenericResponse>;
+	createAIticket: (obj: OdynInsert) => Promise<GenericResponseWData<string>>;
 	getAllTickets: () => Promise<TicketRowLean[]>;
 	reassignWebTicket: (obj: ReassignByEmailObj) => Promise<GenericResponse>;
 	uploadKyc: (files: FileData[]) => Promise<void>;
@@ -391,6 +393,111 @@ const sbz = (): SBZutils => {
 				success: false,
 				message: "Server error, please wait 10 minutes and try again.",
 				data: "",
+			};
+		}
+	};
+
+	const _createAITicket = async (obj: OdynInsert): Promise<GenericResponseWData<string>> => {
+		try {
+			const ticket = genId();
+
+			obj["id"] = ticket;
+			obj["assigned"] = "odyn";
+
+			const { error } = await sbzdb.from("odyn-tickets").insert(obj);
+
+			if (error) {
+				await _log({ message: error.message, title: "Create AI Ticket Error" });
+				return { data: "", message: error.message, success: false };
+			}
+
+			const subject = `${obj.query_type} #${ticket} | Stockbrokers Zambia`;
+			const link = `/track/${ticket}`;
+
+			const msgId = await notif.email.sendNested(
+				{
+					subject: `${obj.query_type} #${ticket} | Stockbrokers Zambia`,
+					title: "Ticket Opened!",
+					body: `Hi ${obj.names.split(" ")[0]}<br /><br />Your ticket has been opened! You can click the button below to access the chat room.`,
+					extra: `<b>Your query:</b><br /><i>${obj.query}</i>`,
+					link: `https://app.sbz.com.zm${link}`,
+					linkText: "Open Chat",
+				},
+				obj.email,
+			);
+
+			if (msgId) {
+				await sbzdb
+					.from("odyn-tickets")
+					.update({ email_vars: `${msgId},,${subject}` })
+					.eq("id", ticket);
+			}
+
+			return { message: `Opening chat room...`, success: true, data: link };
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Create Ticket Exception" });
+			return {
+				success: false,
+				message: "Server error, please wait 10 minutes and try again.",
+				data: "",
+			};
+		}
+	};
+
+	const _createCompliment = async (obj: OdynInsert): Promise<GenericResponse> => {
+		try {
+			const ticket = genId();
+			const date = genDbTimestamp();
+
+			obj["id"] = ticket;
+			obj["assigned"] = "odyn";
+			obj["closed_by"] = "odyn";
+			obj["close_date"] = date;
+			obj["is_closed"] = true;
+			obj["created_at"] = date;
+
+			const { error } = await sbzdb.from("odyn-tickets").insert(obj);
+
+			if (error) {
+				await _log({ message: error.message, title: "Create Compliment Error" });
+				return { message: error.message, success: false };
+			}
+
+			notif.email.sendLink(
+				{
+					subject: "Compliment Received! | Stockbrokers Zambia",
+					title: "Thank you!",
+					body: `Hi ${obj.names.split(" ")[0]},<br /><br />Your compliment has been well received! What to do now? Click the button below to sign in to your account and take control of your investments!`,
+					extra: `Don't have an account? <a href="https://app.sbz.com.zm/sign-up">Open an account</a>.`,
+					link: `https://app.sbz.com.zm/sign-in`,
+					linkText: "Sign In",
+				},
+				obj.email,
+			);
+
+			return {
+				message: `Compliment submitted!`,
+				success: true,
+			};
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Create Compliment Exception" });
+			return {
+				success: false,
+				message: "Server error, please wait 10 minutes and try again.",
 			};
 		}
 	};
@@ -1042,6 +1149,8 @@ const sbz = (): SBZutils => {
 		checkOtp: _checkOtp,
 		getTicketCandidate: _getTicketCandidate,
 		createTicket: _createTicket,
+		createAIticket: _createAITicket,
+		createCompliment: _createCompliment,
 		getAllTickets: _getAllTickets,
 		updateTicketCandidate: _updateTicketCandidate,
 		uploadKyc: _uploadKyc,

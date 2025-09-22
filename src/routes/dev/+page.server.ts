@@ -21,5 +21,12 @@ export const load = ({ cookies }) => {
 		secure: true,
 	});
 
+	cookies.set("sbz-nootp", "true", {
+		path: "/",
+		httpOnly: true,
+		maxAge: 60 * 60 * 1,
+		secure: true,
+	});
+
 	redirect(307, "/admin/home");
 };

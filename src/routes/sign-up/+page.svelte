@@ -965,7 +965,7 @@
 	});
 
 	// SCAFOLDING
-
+	/*
 	// for testing purposes, prefill the details for an individual
 	const _scaffoldIndividual = () => {
 		activeTab = "individual";
@@ -1113,6 +1113,7 @@
 		// _scaffoldJoint();
 		// _scaffoldCompany();
 	});
+	*/
 </script>
 
 <Head
