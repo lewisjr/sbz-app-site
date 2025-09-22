@@ -39,7 +39,7 @@
 
 	type Position = "1" | "2" | "3" | "4" | "5";
 
-	let contentPosition = $state<Position>("4");
+	let contentPosition = $state<Position>("1");
 	const changePosition = () => {
 		const num = Number(contentPosition);
 
