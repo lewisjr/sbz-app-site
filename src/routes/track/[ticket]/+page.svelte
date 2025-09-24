@@ -23,7 +23,7 @@
 
 	//types
 	import type { PageProps } from "./$types";
-	import type { GenericResponse, SBZdb } from "$lib/types";
+	import type { GenericResponse, SBZdb, GenericResponseWData } from "$lib/types";
 	import type { SupabaseClient, RealtimeChannel } from "@supabase/supabase-js";
 
 	let { data }: PageProps = $props();
@@ -136,11 +136,91 @@
 		}
 	};
 
-	const sendChat = async () => {};
+	const sendChat = async () => {
+		loading = true;
 
-	const msgEventHandler = (payload: any) => {
+		const obj = {
+			body: textValue.trim(),
+			sender: data.ticket.names,
+			ticket_no: data.ticketId,
+			type: "text",
+		};
+
+		const notifConfig = {
+			email: data.assigneeEmail === "none" ? false : data.assigneeEmail,
+			msgId: data.ticket.assignee_email_vars ?? "",
+			subject: "",
+			name: data.ticket.assigned,
+		};
+
+		try {
+			const req = await fetch("/api/chat", {
+				method: "PUT",
+				body: JSON.stringify({ obj, notifConfig }),
+			});
+
+			const res: GenericResponse = await req.json();
+
+			loading = false;
+
+			if (!res.success) {
+				toast.error(res.message);
+				return;
+			}
+
+			textValue = "";
+		} catch (ex: any) {
+			loading = false;
+
+			const message =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex?.message || JSON.stringify(ex);
+
+			toast.error(message);
+			return;
+		}
+	};
+
+	const decryptBody = async (txt: string): Promise<string> => {
+		try {
+			const req = await fetch("/api/chat", {
+				method: "PATCH",
+				body: JSON.stringify({ txt }),
+			});
+
+			const res: GenericResponseWData<string> = await req.json();
+
+			if (!res.success) {
+				toast.error(res.message);
+				return res.data;
+			}
+
+			playNotif();
+			return res.data;
+		} catch (ex: any) {
+			loading = false;
+			const message =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex?.message || JSON.stringify(ex);
+
+			toast.error(message);
+			return "Error decrypting.";
+		}
+	};
+
+	const msgEventHandler = async (payload: any) => {
 		playNotif();
-		messages = [...messages, payload.new];
+		const obj: OdynChat = payload.new;
+
+		obj.body = await decryptBody(obj.body);
+
+		messages = [...messages, obj];
 	};
 
 	let typingTime = $state<number>(0);

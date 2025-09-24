@@ -85,7 +85,7 @@ type StaffRow = SBZdb["public"]["Tables"]["admins"]["Row"];
 export type StaffInsertRow = SBZdb["public"]["Tables"]["admins"]["Insert"];
 type ChatInsert = SBZdb["public"]["Tables"]["odyn-chats"]["Insert"];
 
-interface NotifConfigObj {
+export interface NotifConfigObj {
 	email: string;
 	msgId: string;
 	subject: string;
@@ -130,7 +130,7 @@ interface SBZutils {
 	addStaffMember: (obj: StaffInsertRow) => Promise<GenericResponseWData<StaffRow | undefined>>;
 
 	// chat stuff
-	sendChat: (obj: ChatInsert, notifCongif: NotifConfigObj) => Promise<boolean>;
+	sendChat: (obj: ChatInsert, notifCongif?: NotifConfigObj) => Promise<boolean>;
 	/**Move chat from AI to human */
 	humanifyChatWeb: (ticket: TicketRowLean) => Promise<GenericResponse>;
 	getAllChatMessages: (ticketId: string) => Promise<ChatRow[]>;
@@ -1217,7 +1217,7 @@ const sbz = (): SBZutils => {
 	};
 
 	// chat stuff
-	const _sendChat = async (obj: ChatInsert, notifCongif: NotifConfigObj): Promise<boolean> => {
+	const _sendChat = async (obj: ChatInsert, notifCongif?: NotifConfigObj): Promise<boolean> => {
 		obj.body = tokenise.encode(obj.body);
 
 		try {
