@@ -48,5 +48,6 @@ export interface TicketRowLean {
 	referral_source: string;
 	closed_by: string | null;
 	email_vars: string | null;
+	assignee_email_vars: string | null;
 	uid: string | null;
 }

@@ -3,11 +3,17 @@ import { nfdb, sbzdb } from "./db";
 import { genDbTimestamp, genId } from "$lib/utils";
 import { toTitleCase } from "@cerebrusinc/fstring";
 
+import Tokenise from "../tokenise";
+
 import type { SBZdb, TicketRowLean, GenericResponse, GenericResponseWData } from "$lib/types";
 import type { StorageError } from "@supabase/storage-js";
 
 import { DEV } from "$env/static/private";
+import { email } from "./../email/utils";
+
 const IS_DEV = DEV === "y";
+
+const tokenise = new Tokenise();
 
 // * SBZ DB functions
 interface LogObj {
@@ -77,6 +83,16 @@ type LogRow = SBZdb["public"]["Tables"]["logs"]["Row"];
 type OTPRow = SBZdb["public"]["Tables"]["otps"]["Row"];
 type StaffRow = SBZdb["public"]["Tables"]["admins"]["Row"];
 export type StaffInsertRow = SBZdb["public"]["Tables"]["admins"]["Insert"];
+type ChatInsert = SBZdb["public"]["Tables"]["odyn-chats"]["Insert"];
+
+interface NotifConfigObj {
+	email: string;
+	msgId: string;
+	subject: string;
+	name: string;
+}
+
+type ChatRow = SBZdb["public"]["Tables"]["odyn-chats"]["Row"];
 
 interface SBZutils {
 	log: (obj: LogObj) => Promise<void>;
@@ -92,6 +108,7 @@ interface SBZutils {
 	createCompliment: (obj: OdynInsert) => Promise<GenericResponse>;
 	createAIticket: (obj: OdynInsert) => Promise<GenericResponseWData<string>>;
 	getAllTickets: () => Promise<TicketRowLean[]>;
+	getOneTicket: (ticketId: string) => Promise<TicketRowLean>;
 	reassignWebTicket: (obj: ReassignByEmailObj) => Promise<GenericResponse>;
 	uploadKyc: (files: FileData[]) => Promise<void>;
 
@@ -111,6 +128,12 @@ interface SBZutils {
 	getAllOtps: () => Promise<OTPRow[]>;
 	getAllStaff: () => Promise<StaffRow[]>;
 	addStaffMember: (obj: StaffInsertRow) => Promise<GenericResponseWData<StaffRow | undefined>>;
+
+	// chat stuff
+	sendChat: (obj: ChatInsert, notifCongif: NotifConfigObj) => Promise<boolean>;
+	/**Move chat from AI to human */
+	humanifyChatWeb: (ticket: TicketRowLean) => Promise<GenericResponse>;
+	getAllChatMessages: (ticketId: string) => Promise<ChatRow[]>;
 }
 
 const sbz = (): SBZutils => {
@@ -668,7 +691,7 @@ const sbz = (): SBZutils => {
 			const { data, error } = await sbzdb
 				.from("odyn-tickets")
 				.select(
-					"assigned,close_date,created_at,email,id,id_num,is_closed,luse_id,names,phone,platform,query,query_type,referral_source,closed_by,email_vars,uid",
+					"assigned,close_date,created_at,email,id,id_num,is_closed,luse_id,names,phone,platform,query,query_type,referral_source,closed_by,email_vars,uid,assignee_email_vars",
 				)
 				.order("created_at", { ascending: false });
 
@@ -688,6 +711,57 @@ const sbz = (): SBZutils => {
 
 			_log({ message: error, title: "Get Tickets Exception" });
 			return [];
+		}
+	};
+
+	const _getOneTicket = async (ticketId: string): Promise<TicketRowLean> => {
+		const emptyObj = {
+			assigned: "",
+			close_date: "",
+			closed_by: "",
+			created_at: "",
+			email: "",
+			email_vars: "",
+			assignee_email_vars: "",
+			id: "",
+			id_num: "",
+			is_closed: false,
+			luse_id: -1,
+			names: "",
+			phone: "",
+			platform: "",
+			query: "",
+			query_type: "",
+			referral_source: "",
+			uid: "",
+		};
+
+		try {
+			const { data, error } = await sbzdb
+				.from("odyn-tickets")
+				.select(
+					"assigned,close_date,created_at,email,id,id_num,is_closed,luse_id,names,phone,platform,query,query_type,referral_source,closed_by,email_vars,uid,assignee_email_vars",
+				)
+				.filter("id", "eq", ticketId);
+
+			if (error) {
+				await _log({ message: error.message, title: "Get Ticket Error" });
+				return emptyObj;
+			}
+
+			if (data.length) return data[0];
+
+			return emptyObj;
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Get Ticket Exception" });
+			return emptyObj;
 		}
 	};
 
@@ -1142,6 +1216,153 @@ const sbz = (): SBZutils => {
 		}
 	};
 
+	// chat stuff
+	const _sendChat = async (obj: ChatInsert, notifCongif: NotifConfigObj): Promise<boolean> => {
+		obj.body = tokenise.encode(obj.body);
+
+		try {
+			const { error } = await sbzdb.from("odyn-chats").insert(obj);
+
+			if (error) {
+				_log({ message: error.message, title: "Send Chat Error" });
+				return false;
+			}
+
+			if (notifCongif) {
+				await notif.email.sendNested(
+					{
+						subject: notifCongif.subject,
+						title: "New Response!",
+						body: `Hi ${notifCongif.name}<br /><br /><b>${toTitleCase(obj.sender.split(" ")[0])}</b> has just responded to your message with:<br /><i>${obj.body}</i>`,
+						extra: `Clik`,
+						link: `https://app.sbz.com.zm/track/${obj.ticket_no}`,
+						linkText: "Open Chat",
+					},
+					notifCongif.email,
+					notifCongif.msgId,
+				);
+			}
+
+			return true;
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Send Chat Exception" });
+
+			return false;
+		}
+	};
+
+	/**Move chat from AI to human */
+	const _humanifyChatWeb = async (ticket: TicketRowLean): Promise<GenericResponse> => {
+		try {
+			const agent = await _getTicketCandidate();
+
+			if (!agent.success) {
+				_log({ message: agent.message, title: "Assign Ticket Error - 1" });
+				return {
+					message: "Failed to assign ticket to an agent. Please try again in a few minutes.",
+					success: false,
+				};
+			}
+
+			const clientEmail = ticket.uid ?? ticket.email;
+
+			const reassign = await _reassignWebTicket({
+				clientEmail,
+				clientName: ticket.names.split(" ")[0],
+				message: "The client wants to speak to a human.",
+				new: agent.data.agentId,
+				old: "odyn",
+				queryType: ticket.query_type,
+				sender: "odyn",
+				ticketId: ticket.id,
+			});
+
+			if (!reassign.success) {
+				_log({ message: reassign.message, title: "Assign Ticket Error - 2" });
+				return {
+					message: "Failed to assign ticket to an agent. Please try again in a few minutes.",
+					success: false,
+				};
+			}
+
+			const historyReq = _appendHistory({
+				creator: "odyn",
+				message: `Odyn assigned this ticket to ${toTitleCase(agent.data.agentId)}.`,
+				ticketId: ticket.id,
+			});
+
+			if (!historyReq) {
+				_log({ message: "Failed to append history.", title: "Assign Ticket Error - 3" });
+			}
+
+			return {
+				message: `This ticket has been assigned to ${toTitleCase(agent.data.agentId)}! Expect a response within 24 hours.`,
+				success: true,
+			};
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Assign Ticket Exception" });
+			return { message: "Server error, try again in a few minutes.", success: false };
+		}
+	};
+
+	const _getAllChatMessages = async (ticketId: string): Promise<ChatRow[]> => {
+		try {
+			const { data, error } = await sbzdb
+				.from("odyn-chats")
+				.select()
+				.filter("ticket_no", "eq", ticketId)
+				.order("created_at", { ascending: true });
+
+			if (error) {
+				await _log({ message: error.message, title: "Get Messages Error" });
+				return [];
+			}
+
+			const decoded: ChatRow[] = [];
+
+			data.forEach((row) => {
+				const newRow: ChatRow = JSON.parse(JSON.stringify(row));
+
+				newRow.body = tokenise.decode(newRow.body);
+
+				decoded.push(newRow);
+			});
+
+			decoded.sort((a, b) => {
+				const aDate = new Date(a.created_at);
+				const bDate = new Date(b.created_at);
+
+				return aDate.getTime() - bDate.getTime();
+			});
+
+			return decoded;
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Get Messages Exception" });
+			return [];
+		}
+	};
+
 	return {
 		log: _log,
 		setOtp: _setOtp,
@@ -1152,6 +1373,7 @@ const sbz = (): SBZutils => {
 		createAIticket: _createAITicket,
 		createCompliment: _createCompliment,
 		getAllTickets: _getAllTickets,
+		getOneTicket: _getOneTicket,
 		updateTicketCandidate: _updateTicketCandidate,
 		uploadKyc: _uploadKyc,
 		getAdmin: _getAdmin,
@@ -1166,6 +1388,9 @@ const sbz = (): SBZutils => {
 		getAllOtps: _getAllOtps,
 		getAllStaff: _getAllStaff,
 		addStaffMember: _addStaffMember,
+		getAllChatMessages: _getAllChatMessages,
+		humanifyChatWeb: _humanifyChatWeb,
+		sendChat: _sendChat,
 	};
 };
 

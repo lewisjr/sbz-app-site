@@ -1,7 +1,7 @@
 {
 	"name": "sbz-app-site",
 	"private": true,
-	"version": "0.19.1",
+	"version": "0.20.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev --host",
@@ -44,6 +44,7 @@
 		"@cerebrusinc/fstring": "^0.1.5",
 		"@cerebrusinc/qol": "^1.2.1",
 		"@supabase/supabase-js": "^2.55.0",
+		"crypto": "^1.0.1",
 		"is-email": "^1.0.2",
 		"jsonwebtoken": "^9.0.2",
 		"lottie-web": "^5.13.0",

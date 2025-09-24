@@ -6,18 +6,11 @@
 	import { toTitleCase } from "@cerebrusinc/fstring";
 	import { numParse } from "@cerebrusinc/qol";
 	import { formatDbTime } from "$lib/utils";
-	import { createRawSnippet, onMount } from "svelte";
+	import { createRawSnippet } from "svelte";
 	import { renderSnippet, renderComponent } from "$lib/components/ui/data-table/index";
-	import {
-		percentageHandler,
-		queryTypesArray,
-		platformsArray,
-		referralSourcesArray,
-	} from "$lib/utils";
 
 	//stores
 	import { screenWidthStore } from "$lib/stores";
-	import { page } from "$app/state";
 
 	//components - custom
 	import Head from "$lib/components/Head.svelte";
@@ -29,7 +22,6 @@
 	import Input from "$lib/components/ui/input/input.svelte";
 	import Button from "$lib/components/ui/button/button.svelte";
 	import * as Table from "$lib/components/ui/table/index";
-	import Textarea from "$lib/components/ui/textarea/textarea.svelte";
 	import Label from "$lib/components/ui/label/label.svelte";
 
 	//icons

@@ -235,6 +235,7 @@ export type Database = {
 					id: number;
 					sender: string;
 					ticket_no: string;
+					type: Database["public"]["Enums"]["message_type"];
 				};
 				Insert: {
 					body: string;
@@ -242,6 +243,7 @@ export type Database = {
 					id?: number;
 					sender: string;
 					ticket_no: string;
+					type?: Database["public"]["Enums"]["message_type"];
 				};
 				Update: {
 					body?: string;
@@ -249,6 +251,7 @@ export type Database = {
 					id?: number;
 					sender?: string;
 					ticket_no?: string;
+					type?: Database["public"]["Enums"]["message_type"];
 				};
 				Relationships: [];
 			};
@@ -279,6 +282,7 @@ export type Database = {
 			"odyn-tickets": {
 				Row: {
 					assigned: string;
+					assignee_email_vars: string | null;
 					close_date: string | null;
 					closed_by: string | null;
 					created_at: string;
@@ -300,6 +304,7 @@ export type Database = {
 				};
 				Insert: {
 					assigned: string;
+					assignee_email_vars?: string | null;
 					close_date?: string | null;
 					closed_by?: string | null;
 					created_at?: string;
@@ -321,6 +326,7 @@ export type Database = {
 				};
 				Update: {
 					assigned?: string;
+					assignee_email_vars?: string | null;
 					close_date?: string | null;
 					closed_by?: string | null;
 					created_at?: string;
@@ -389,7 +395,7 @@ export type Database = {
 			[_ in never]: never;
 		};
 		Enums: {
-			[_ in never]: never;
+			message_type: "text" | "pdf" | "command" | "img";
 		};
 		CompositeTypes: {
 			[_ in never]: never;
@@ -517,6 +523,8 @@ export const Constants = {
 		Enums: {},
 	},
 	public: {
-		Enums: {},
+		Enums: {
+			message_type: ["text", "pdf", "command", "img"],
+		},
 	},
 } as const;

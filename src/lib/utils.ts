@@ -47,7 +47,7 @@ export const formatDbTime = (isoString: string) => {
 	const month = date.toLocaleString(undefined, { month: "short" });
 	const year = date.getFullYear();
 
-	let hours = date.getHours();
+	const hours = date.getHours().toString().padStart(2, "0");
 	const minutes = date.getMinutes().toString().padStart(2, "0");
 
 	/*
