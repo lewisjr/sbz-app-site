@@ -1,73 +1,79 @@
 <script lang="ts">
-	//functions
-	import { onMount } from "svelte";
+	//function
 	import { toast } from "svelte-sonner";
-	import { invalidateAll } from "$app/navigation";
-	import { formatDbTime } from "$lib/utils";
 	import { toTitleCase } from "@cerebrusinc/fstring";
+	import { formatDbTime } from "$lib/utils";
+	import { onMount } from "svelte";
 	import { createClient } from "@supabase/supabase-js";
-
-	//components - custom
-	import Head from "$lib/components/Head.svelte";
-	import OTP from "$lib/components/OTP.svelte";
 
 	//components - shadcn
 	import Button from "$lib/components/ui/button/button.svelte";
 	import Textarea from "$lib/components/ui/textarea/textarea.svelte";
 
-	//stores
-	import { screenWidthStore } from "$lib/stores";
-
-	//icons
-	import { Frown, MoveLeft, Upload, Loader2Icon } from "@lucide/svelte";
-
 	//types
-	import type { PageProps } from "./$types";
-	import type { GenericResponse, SBZdb, GenericResponseWData } from "$lib/types";
+	import type {
+		SBZdb,
+		Types,
+		TicketRowLean,
+		GenericResponse,
+		GenericResponseWData,
+	} from "$lib/types";
 	import type { SupabaseClient, RealtimeChannel } from "@supabase/supabase-js";
 
-	let { data }: PageProps = $props();
+	//icons
+	import { Upload, Loader2Icon } from "@lucide/svelte";
 
-	let isMobile = $derived($screenWidthStore < 767);
+	interface Props {
+		data: {
+			ticketId: string;
+			ticket: TicketRowLean;
+			dbUrl: string;
+			dbAuth: string;
+			admin: string;
+		};
+	}
 
-	let loading = $state<boolean>(false);
+	let { data }: Props = $props();
 
-	let otpInput = $state<string>("");
-	const otpInputHandler = (val: string) => {
-		otpInput = val;
+	type OnlineStatus = "onl" | "ofl";
+	let onlineStatus = $state<OnlineStatus>("ofl");
+	const toggleOnlineStatus = (stat: OnlineStatus) => {
+		onlineStatus = stat;
 	};
 
-	const checkOtp = async () => {
-		if (otpInput.length !== 6) {
-			toast.error("Your OTP is too short!");
-			return;
-		}
+	let initialising = $state<boolean>(true);
+	let loading = $state<boolean>(false);
+	let typing = $state<boolean>(false);
 
-		toast.info("Verifying your identity...");
+	type OdynChat = SBZdb["public"]["Tables"]["odyn-chats"]["Row"];
 
-		console.log({ user: data.ticket.email, otp: Number(otpInput) });
+	let messages = $state<OdynChat[]>([]);
+	const initMessage = (msgs: OdynChat[]) => {
+		messages = [
+			{
+				body: data.ticket.query,
+				created_at: data.ticket.created_at,
+				id: -1,
+				sender: data.ticket.names,
+				ticket_no: data.ticketId,
+				type: "text",
+			},
+			...msgs,
+		];
+	};
 
+	const getChats = async () => {
 		try {
-			loading = true;
-			const req = await fetch("/api/chat", {
-				headers: {
-					"Content-Type": "application/json",
-				},
-				method: "POST",
-				body: JSON.stringify({ user: data.ticket.email, otp: Number(otpInput) }),
-			});
+			const req = await fetch(`/api/admin/tickets/chat?t=${data.ticketId}`);
+			const res: GenericResponseWData<OdynChat[]> = await req.json();
 
-			const res: GenericResponse = await req.json();
-
-			loading = false;
-
-			if (res.success) {
-				toast.success(res.message);
-				invalidateAll();
+			if (!res.success) {
+				toast.error(res.message);
 				return;
 			}
 
-			toast.error(res.message);
+			initMessage(res.data);
+			initialising = false;
 		} catch (ex: any) {
 			loading = false;
 
@@ -79,53 +85,9 @@
 						: ex?.message || JSON.stringify(ex);
 
 			toast.error(message);
+			return;
 		}
 	};
-
-	// run check otp when user enters 6 chars
-	$effect(() => {
-		if (otpInput.length === 6) checkOtp();
-	});
-
-	type OnlineStatus = "onl" | "ofl";
-	let onlineStatus = $state<OnlineStatus>("ofl");
-	const toggleOnlineStatus = (stat: OnlineStatus) => {
-		onlineStatus = stat;
-	};
-
-	// set initial online status if room is with odyn only
-	$effect(() => {
-		if (data.assigneeEmail === "none" && !data.error && !data.otp) {
-			toggleOnlineStatus("onl");
-		}
-	});
-
-	let textValue = $state<string>("");
-	let typing = $state<boolean>(false);
-
-	type OdynChat = SBZdb["public"]["Tables"]["odyn-chats"]["Row"];
-
-	let messages = $state<OdynChat[]>([]);
-	const initMessage = () => {
-		messages = [
-			{
-				body: data.ticket.query,
-				created_at: data.ticket.created_at,
-				id: -1,
-				sender: data.ticket.names,
-				ticket_no: data.ticketId,
-				type: "text",
-			},
-			...data.messages,
-		];
-	};
-
-	// set initial message as query
-	$effect(() => {
-		if (!data.error && !data.otp) {
-			initMessage();
-		}
-	});
 
 	const playNotif = () => {
 		if (document) {
@@ -136,61 +98,9 @@
 		}
 	};
 
-	const sendChat = async () => {
-		loading = true;
-
-		const obj = {
-			body: textValue.trim(),
-			sender: data.ticket.names,
-			ticket_no: data.ticketId,
-			type: "text",
-		};
-
-		const notifConfig = {
-			email: data.assigneeEmail === "none" ? false : data.assigneeEmail,
-			msgId: data.ticket.assignee_email_vars ?? "",
-			subject: "",
-			name: data.ticket.assigned,
-		};
-
-		try {
-			const req = await fetch("/api/chat", {
-				method: "PUT",
-				body: JSON.stringify({
-					obj,
-					notifConfig:
-						data.assigneeEmail === "none" || onlineStatus === "onl" ? undefined : notifConfig,
-				}),
-			});
-
-			const res: GenericResponse = await req.json();
-
-			loading = false;
-
-			if (!res.success) {
-				toast.error(res.message);
-				return;
-			}
-
-			textValue = "";
-		} catch (ex: any) {
-			loading = false;
-
-			const message =
-				typeof ex === "string"
-					? ex
-					: ex instanceof Error
-						? ex.message
-						: ex?.message || JSON.stringify(ex);
-
-			toast.error(message);
-			return;
-		}
-	};
-
 	const decryptBody = async (txt: string): Promise<string> => {
 		try {
-			const req = await fetch("/api/chat", {
+			const req = await fetch("/api/admin/tickets/chat", {
 				method: "PATCH",
 				body: JSON.stringify({ txt }),
 			});
@@ -221,7 +131,7 @@
 	const msgEventHandler = async (payload: any) => {
 		const obj: OdynChat = payload.new;
 
-		if (obj.sender !== data.ticket.names) playNotif();
+		if (obj.sender !== data.admin) playNotif();
 
 		obj.body = await decryptBody(obj.body);
 
@@ -234,11 +144,11 @@
 	const typingEventHandler = (payload: any) => {
 		const obj: { sender: string; on: boolean } = payload.payload;
 
-		if (obj.sender !== data.ticket.names && obj.on) {
+		if (obj.sender !== data.admin && obj.on) {
 			typing = true;
 		}
 
-		if (obj.sender !== data.ticket.names && !obj.on) {
+		if (obj.sender !== data.admin && !obj.on) {
 			typing = false;
 		}
 	};
@@ -247,7 +157,7 @@
 	let onlineTimeSelf = $state<number>(0);
 	let onlineEvent = $state<RealtimeChannel | undefined>(undefined);
 
-	const broadcastOnlineSelf = () => {
+	const broadcastSelfOnline = () => {
 		if (onlineEvent && data.ticket.assigned !== "odyn") {
 			const d2 = Date.now();
 			const diff = d2 - onlineTimeSelf;
@@ -255,11 +165,10 @@
 			// initialise and broadcast
 			if (!onlineTimeSelf || diff > 60000) {
 				onlineTimeSelf = Date.now();
-
 				onlineEvent.send({
 					type: "broadcast",
 					event: "online",
-					payload: { sender: data.ticket.names, on: true },
+					payload: { sender: data.admin, on: true },
 				});
 			}
 		}
@@ -268,7 +177,7 @@
 	const onlineEventHandler = (payload: any) => {
 		const obj: { sender: string; on: boolean } = payload.payload;
 
-		if (obj.sender === data.ticket.assigned && obj.on) {
+		if (obj.sender === data.ticket.names && obj.on) {
 			toggleOnlineStatus("onl");
 
 			onlineTime = Date.now();
@@ -278,12 +187,12 @@
 					onlineEvent.send({
 						type: "broadcast",
 						event: "online",
-						payload: { sender: data.ticket.names, on: true },
+						payload: { sender: data.admin, on: true },
 					});
 			}, 100);
 		}
 
-		if (obj.sender === data.ticket.assigned && !obj.on) {
+		if (obj.sender === data.ticket.names && !obj.on) {
 			toggleOnlineStatus("ofl");
 		}
 	};
@@ -304,7 +213,7 @@
 				typingEvent.send({
 					type: "broadcast",
 					event: "typing",
-					payload: { sender: data.ticket.names, on: true },
+					payload: { sender: data.admin, on: true },
 				});
 			}
 
@@ -317,7 +226,7 @@
 					typingEvent.send({
 						type: "broadcast",
 						event: "typing",
-						payload: { sender: data.ticket.names, on: false },
+						payload: { sender: data.admin, on: false },
 					});
 					typingTime = 0; // reset typing time
 				}
@@ -330,8 +239,9 @@
 			const d2 = Date.now();
 			const diff = d2 - onlineTime;
 
-			if (diff > 60010) {
-				onlineTime = Date.now();
+			console.log({ d2, diff, onlineTime });
+
+			if (diff > 58000) {
 				onlineStatus = "ofl";
 			}
 		}
@@ -340,40 +250,98 @@
 	let broadcastOnlineInterval = $state<ReturnType<typeof setInterval> | undefined>(undefined);
 	let checkForOnlineInterval = $state<ReturnType<typeof setInterval> | undefined>(undefined);
 
-	onMount(() => {
-		if (!data.error && !data.otp && data.ticket.assigned !== "odyn") {
-			listener = createClient<SBZdb>(data.dbUrl, data.dbAuth);
+	let textValue = $state<string>("");
 
-			msgEvent = listener
-				.channel(`ticket-${data.ticketId}`)
-				.on(
-					"postgres_changes",
-					{
-						event: "INSERT",
-						schema: "public",
-						table: "odyn-chats",
-						filter: `ticket_no=eq.${data.ticketId}`,
-					},
-					msgEventHandler,
-				)
-				.subscribe();
+	const sendChat = async () => {
+		loading = true;
 
-			typingEvent = listener
-				.channel(`ticket-${data.ticketId}`)
-				.on("broadcast", { event: "typing" }, typingEventHandler)
-				.subscribe();
+		const obj = {
+			body: textValue.trim(),
+			sender: data.admin,
+			ticket_no: data.ticketId,
+			type: "text",
+		};
 
-			onlineEvent = listener
-				.channel(`ticket-${data.ticketId}`)
-				.on("broadcast", { event: "online" }, onlineEventHandler)
-				.subscribe();
+		const notifConfig = {
+			email: data.ticket.uid ?? data.ticket.email,
+			msgId: data.ticket.email_vars ?? "",
+			subject: "",
+			name: data.ticket.names.split(" ")[0],
+		};
 
-			broadcastOnlineSelf();
+		try {
+			const req = await fetch("/api/admin/tickets/chat", {
+				method: "PUT",
+				body: JSON.stringify({
+					obj,
+					notifConfig: onlineStatus === "onl" ? undefined : notifConfig,
+				}),
+			});
 
-			broadcastOnlineInterval = setInterval(broadcastOnlineSelf, 60010);
+			const res: GenericResponse = await req.json();
 
-			checkForOnlineInterval = setInterval(checkForOnline, 60020);
+			loading = false;
+
+			if (!res.success) {
+				toast.error(res.message);
+				return;
+			}
+
+			textValue = "";
+		} catch (ex: any) {
+			loading = false;
+
+			const message =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex?.message || JSON.stringify(ex);
+
+			toast.error(message);
+			return;
 		}
+	};
+
+	// will only listen for messages if not AI
+	onMount(() => {
+		(async () => {
+			await getChats();
+
+			if (data.ticket.assigned !== "odyn") {
+				listener = createClient<SBZdb>(data.dbUrl, data.dbAuth);
+
+				msgEvent = listener
+					.channel(`ticket-${data.ticketId}`)
+					.on(
+						"postgres_changes",
+						{
+							event: "INSERT",
+							schema: "public",
+							table: "odyn-chats",
+							filter: `ticket_no=eq.${data.ticketId}`,
+						},
+						msgEventHandler,
+					)
+					.subscribe();
+
+				typingEvent = listener
+					.channel(`ticket-${data.ticketId}`)
+					.on("broadcast", { event: "typing" }, typingEventHandler)
+					.subscribe();
+
+				onlineEvent = listener
+					.channel(`ticket-${data.ticketId}`)
+					.on("broadcast", { event: "online" }, onlineEventHandler)
+					.subscribe();
+
+				broadcastSelfOnline();
+
+				broadcastOnlineInterval = setInterval(broadcastSelfOnline, 60010);
+
+				checkForOnlineInterval = setInterval(checkForOnline, 60020);
+			}
+		})();
 
 		return () => {
 			clearInterval(broadcastOnlineInterval);
@@ -391,7 +359,7 @@
 				onlineEvent.send({
 					type: "broadcast",
 					event: "online",
-					payload: { sender: data.ticket.names, on: false },
+					payload: { sender: data.admin, on: false },
 				});
 
 				listener.removeChannel(onlineEvent);
@@ -400,31 +368,9 @@
 	});
 </script>
 
-<Head
-	title={`Ticket ${data.ticketId} | SBZ Digital`}
-	ogTitle={`Ticket ${data.ticketId}`}
-	description="Chat with your assigned broker!"
-	ogDescription="Chat with your assigned broker!"
-/>
+<audio id="notif" src="/notif.mp3"></audio>
 
-{#if data.error}
-	<div class="mid-div">
-		<Frown class="h-16 w-16" />
-		<h1 class="my-4">Error!</h1>
-		<p class="w-[89%] text-center">
-			Failed to fetch your chat room! Please try again after 5 minutes.
-		</p>
-	</div>
-{:else if data.otp}
-	<div class="mid-div">
-		<h1>OTP</h1>
-		<p class="my-4 w-[89%] text-center">
-			To ensure privacy and security, we have sent an OTP to your email to confirm your identity.
-		</p>
-		<OTP handler={otpInputHandler} bind:disabled={loading} />
-	</div>
-{:else}
-	<audio id="notif" src="/notif.mp3"></audio>
+{#if initialising}
 	<div class="chat-div">
 		<div class="tp">
 			<p class="font-bold">Ticket #{data.ticketId}</p>
@@ -432,14 +378,72 @@
 			<table>
 				<thead>
 					<tr>
-						<th class="text-center text-sm" colspan="2">Broker</th>
+						<th class="text-center text-sm" colspan="2">Client</th>
 					</tr>
 				</thead>
 				<tbody>
 					<tr>
-						<td class="text-center text-sm"
-							>{data.assigneeEmail === "none" ? "AI" : toTitleCase(data.ticket.assigned)}</td
+						<td class="px-2 text-center text-sm"
+							><span class="loading no-padding">{toTitleCase(data.ticket.names.split(" ")[0])}</span
+							></td
 						>
+						<td><span class={`onl-status loading no-padding`}></span></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+
+		<div class="mid">
+			<ul>
+				<li class="other loading no-padding">
+					<p class="text !text-transparent">Lorem ipsum dolor sit amet consectetur.</p>
+				</li>
+
+				<li class="self loading no-padding">
+					<p class="text !text-transparent">Lorem ipsum dolor sit amet</p>
+				</li>
+
+				<li class="other loading no-padding">
+					<p class="text !text-transparent">Lorem ipsum dolor sit consect.</p>
+				</li>
+
+				<li class="other loading no-padding">
+					<p class="text !text-transparent">Lorem ipsum dolor sit.</p>
+				</li>
+
+				<li class="self loading no-padding">
+					<p class="text !text-transparent">
+						Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet
+					</p>
+				</li>
+			</ul>
+		</div>
+
+		<div class="btm">
+			<Textarea
+				value="lorem"
+				disabled
+				class="loading min-h-[1.5em] w-[80%] resize-none leading-[1.5em]"
+			/>
+			<Button class="loading !rounded-full" disabled>
+				<Upload />
+			</Button>
+		</div>
+	</div>
+{:else}
+	<div class="chat-div">
+		<div class="tp">
+			<p class="font-bold">Ticket #{data.ticketId}</p>
+
+			<table>
+				<thead>
+					<tr>
+						<th class="text-center text-sm" colspan="2">Client</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="px-2 text-center text-sm">{toTitleCase(data.ticket.names.split(" ")[0])}</td>
 						<td><span class={`onl-status ${onlineStatus}`}></span></td>
 					</tr>
 				</tbody>
@@ -450,13 +454,13 @@
 			<ul>
 				{#each messages as msg}
 					{#if msg.sender === data.ticket.names}
-						<li class="self">
+						<li class="other">
 							<p class="text">{msg.body}</p>
 							<p class="note">{formatDbTime(msg.created_at)}</p>
 						</li>
 					{:else}
-						<li class="other">
-							<p class="note">{msg.sender === "odyn" ? "AI" : toTitleCase(msg.sender)}</p>
+						<li class="self">
+							<p class="note">{toTitleCase(msg.sender)}</p>
 							<p class="text">{msg.body}</p>
 							<p class="note">{formatDbTime(msg.created_at)}</p>
 						</li>
@@ -473,51 +477,53 @@
 			</ul>
 		</div>
 
-		<div class="btm">
-			<Textarea
-				bind:value={textValue}
-				disabled={loading}
-				class="max-h-[4.5em] min-h-[1.5em] w-[80%] resize-none overflow-y-auto leading-[1.5em]"
-				maxlength={200}
-				oninput={() => broadcastTyping()}
-				onkeypress={(e) => {
-					if (e.key === "Enter") {
-						e.preventDefault();
+		{#if data.admin === data.ticket.assigned}
+			<div class="btm">
+				<Textarea
+					bind:value={textValue}
+					disabled={loading}
+					class="max-h-[4.5em] min-h-[1.5em] w-[80%] resize-none overflow-y-auto leading-[1.5em]"
+					maxlength={200}
+					oninput={() => broadcastTyping()}
+					onkeypress={(e) => {
+						if (e.key === "Enter") {
+							e.preventDefault();
 
-						if (!(textValue.length < 10 || loading)) sendChat();
-					}
-				}}
-			/>
-			<Button class="rounded-full" disabled={textValue.length < 10 || loading} onclick={sendChat}>
-				{#if loading}
-					<Loader2Icon class="animate-spin" />
-				{:else}
+							if (!(textValue.length < 10 || loading)) sendChat();
+						}
+					}}
+				/>
+				<Button class="rounded-full" disabled={textValue.length < 10 || loading} onclick={sendChat}>
+					{#if loading}
+						<Loader2Icon class="animate-spin" />
+					{:else}
+						<Upload />
+					{/if}
+				</Button>
+			</div>
+		{:else}
+			<div class="btm">
+				<Textarea
+					value="lorem"
+					disabled
+					class="max-h-[4.5em] min-h-[1.5em] w-[80%] resize-none overflow-y-auto leading-[1.5em] text-transparent"
+				/>
+				<Button class="rounded-full" disabled>
 					<Upload />
-				{/if}
-			</Button>
-		</div>
+				</Button>
+			</div>
+		{/if}
 	</div>
 {/if}
 
 <style lang="scss">
-	.mid-div {
-		width: 100%;
-		height: 100vh;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-
-		@media screen and (max-width: 1024px) {
-			height: 100dvh;
-		}
-	}
-
 	.chat-div {
-		height: 100dvh;
+		height: 100%;
 		width: 100%;
 		display: flex;
 		flex-direction: column; // critical
+		border-top: 1px solid var(--muted);
+		border-bottom: 1px solid var(--muted);
 
 		.tp {
 			flex: 0 0 auto; // natural height
@@ -551,6 +557,7 @@
 			width: 100%;
 			background-color: var(--secondary);
 			overflow-y: auto; // so chat can scroll
+			overflow-x: hidden;
 			display: flex;
 			align-items: flex-end;
 

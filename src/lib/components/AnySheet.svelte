@@ -53,7 +53,7 @@
 
 <Sheet.Root bind:open>
 	<!-- <Sheet.Trigger>Open</Sheet.Trigger> -->
-	<Sheet.Content class={`w-[${width}px]`}>
+	<Sheet.Content class={width ? `w-[${width}px]` : "w-3/4"}>
 		<Sheet.Header>
 			<Sheet.Title>{title}</Sheet.Title>
 			{#if description}

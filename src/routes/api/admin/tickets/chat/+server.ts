@@ -1,13 +1,29 @@
 import { json } from "@sveltejs/kit";
 import dbs from "$lib/server/db";
-import kratos from "$lib/server/kratos.js";
 import Tokenise from "$lib/server/tokenise";
+import kratos from "$lib/server/kratos.js";
 
 import type { SBZdb } from "$lib/types/index";
 import type { NotifConfigObj } from "$lib/server/db/utils.js";
 
 const tokenise = new Tokenise();
 
+export const GET = async (event) => {
+	const sender = await kratos.admin(event);
+	if (sender instanceof Response) return sender;
+
+	const { url } = event;
+	const ticketId = url.searchParams.get("t");
+
+	if (!ticketId)
+		return json({ success: false, message: "Invalid URL provided.", data: [] }, { status: 400 });
+
+	const data = await dbs.sbz.getAllChatMessages(ticketId);
+
+	return json({ success: true, message: "", data }, { status: 200 });
+};
+
+/*
 export const POST = async ({ request, cookies }) => {
 	const { user, otp }: { user: string; otp: number } = await request.json();
 
@@ -30,9 +46,10 @@ export const POST = async ({ request, cookies }) => {
 		{ status: correct.success ? 200 : 400 },
 	);
 };
+*/
 
 export const PATCH = async (event) => {
-	const sender = await kratos.chat(event);
+	const sender = await kratos.admin(event);
 	if (sender instanceof Response) return sender;
 
 	const { request } = event;
@@ -49,7 +66,7 @@ export const PATCH = async (event) => {
 };
 
 export const PUT = async (event) => {
-	const sender = await kratos.chat(event);
+	const sender = await kratos.admin(event);
 	if (sender instanceof Response) return sender;
 
 	const { request } = event;

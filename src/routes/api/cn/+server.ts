@@ -1,30 +1,8 @@
 import dbs from "$lib/server/db";
-import notif from "$lib/server/email";
-import { genOTP } from "$lib/utils";
 import { json } from "@sveltejs/kit";
 import { toTitleCase } from "@cerebrusinc/fstring";
 
 import type { SBZdb } from "$lib/types";
-import type { FileData } from "$lib/server/db/utils.js";
-
-export interface UserObj {
-	//details
-	fname: string;
-	lname: string;
-	phone: string;
-	email: string;
-	dob: string;
-	gender: string;
-	mstatus: string;
-	nationality: string;
-	//address
-	street: string;
-	city: string;
-	country: string;
-	//identity
-	idType: string;
-	idNum: string;
-}
 
 type InsertTicket = SBZdb["public"]["Tables"]["odyn-tickets"]["Insert"];
 

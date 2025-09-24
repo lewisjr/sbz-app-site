@@ -24,6 +24,7 @@
 	import AnyCombobox from "$lib/components/AnyCombobox/AnyCombobox.svelte";
 	import AnySheet from "$lib/components/AnySheet.svelte";
 	import TicketActions from "./TicketActions.svelte";
+	import ChatUI from "./ChatUI.svelte";
 
 	//components - shadcn
 	import Input from "$lib/components/ui/input/input.svelte";
@@ -84,6 +85,7 @@
 		close_date: null,
 		closed_by: null,
 		email_vars: null,
+		assignee_email_vars: null,
 	};
 
 	let activeRow = $state<TicketRowLean>(initTicket);
@@ -177,15 +179,26 @@
 			case "reassign":
 				sheetTitle = `Reassign ${row.names}'s Ticket`;
 				sheetDesc = `The current broker responsible for this ticket (${row.id}) is ${toTitleCase(row.assigned)}.`;
+				sheetWidth = undefined;
 				break;
 			case "audit":
-				sheetTitle = `Audit Trail - ${row.id}`;
+				sheetTitle = `Audit Trail - #${row.id}`;
 				sheetDesc = `Take a look at all the activity carried out by the asigned broker(s) and the client.`;
+				sheetWidth = undefined;
 				fetchHistory();
+				break;
+			case "chat":
+				sheetTitle = "View Chat";
+				sheetDesc =
+					row.assigned === data.admin
+						? `Chat with ${row.names.split(" ")[0]} and resolve their query!`
+						: `Observe the chat between ${toTitleCase(row.assigned)} and ${row.names.split(" ")[0]}.`;
+				sheetWidth = undefined;
 				break;
 			default:
 				sheetTitle = "Error";
 				sheetDesc = "This should not be possible.";
+				sheetWidth = undefined;
 				break;
 		}
 
@@ -621,7 +634,15 @@
 		if (q) globalFilterValue = q;
 	});
 
-	$effect(() => {});
+	/*
+	$effect(() => {
+		const ticket = filteredTickets.find((item) => item.id === "uiGtxuPoXEc");
+
+		if (ticket) {
+			openSheet("chat", ticket);
+		}
+	});
+	*/
 </script>
 
 <Head
@@ -1025,6 +1046,18 @@
 						</div>
 					{/each}
 				{/if}
+			{/if}
+
+			{#if sheetConfig === "chat"}
+				<ChatUI
+					data={{
+						ticket: activeRow,
+						ticketId: activeRow.id,
+						dbAuth: data.dbAuth,
+						dbUrl: data.dbUrl,
+						admin: data.admin,
+					}}
+				/>
 			{/if}
 		{/snippet}
 

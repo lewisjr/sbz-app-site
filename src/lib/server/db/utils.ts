@@ -389,9 +389,11 @@ const sbz = (): SBZutils => {
 				return { data: "", message: error.message, success: false };
 			}
 
-			notif.email.sendLink(
+			const subject = `New Ticket | ${obj.query_type} ${ticket}`;
+
+			const msgId = await notif.email.sendNested(
 				{
-					subject: `New Ticket | ${obj.query_type} ${ticket}`,
+					subject,
 					title: `Ticket ${ticket}`,
 					body: `A new <b>${obj.query_type}</b> ticket has been opened and assigned to <b>${toTitleCase(obj.assigned)}</b>. Please click below to review.`,
 					link: `https://app.sbz.com.zm/admin/tickets?q=${ticket}`,
@@ -401,6 +403,11 @@ const sbz = (): SBZutils => {
 				},
 				IS_DEV ? "privatodato@gmail.com" : agent.email,
 			);
+
+			await sbzdb
+				.from("odyn-tickets")
+				.update({ assignee_email_vars: `${msgId},,${subject}` })
+				.eq("id", ticket);
 
 			return { message: `Successfully created ticket #${ticket}`, success: true, data: ticket };
 		} catch (ex: any) {
@@ -1218,7 +1225,8 @@ const sbz = (): SBZutils => {
 
 	// chat stuff
 	const _sendChat = async (obj: ChatInsert, notifCongif?: NotifConfigObj): Promise<boolean> => {
-		obj.body = tokenise.encode(obj.body);
+		const oldBody = obj.body;
+		obj.body = tokenise.encode(oldBody);
 
 		try {
 			const { error } = await sbzdb.from("odyn-chats").insert(obj);
@@ -1233,8 +1241,8 @@ const sbz = (): SBZutils => {
 					{
 						subject: notifCongif.subject,
 						title: "New Response!",
-						body: `Hi ${notifCongif.name}<br /><br /><b>${toTitleCase(obj.sender.split(" ")[0])}</b> has just responded to your message with:<br /><i>${obj.body}</i>`,
-						extra: `Clik`,
+						body: `Hi ${notifCongif.name}<br /><br /><b>${toTitleCase(obj.sender.split(" ")[0])}</b> has just responded to your message with:<br /><i>${oldBody}</i>`,
+						extra: `Click the button above to respond!`,
 						link: `https://app.sbz.com.zm/track/${obj.ticket_no}`,
 						linkText: "Open Chat",
 					},

@@ -32,7 +32,7 @@
 			<DropdownMenu.Label>Support</DropdownMenu.Label>
 
 			{#if data.query_type !== "Compliment"}
-				<DropdownMenu.Item onclick={() => null}>Chat</DropdownMenu.Item>
+				<DropdownMenu.Item onclick={() => openSheet("chat", data)}>Chat</DropdownMenu.Item>
 			{/if}
 
 			{#if data.query_type === "Compliment"}
@@ -51,7 +51,7 @@
 				>
 			{/if}
 
-			{#if !data.is_closed}
+			{#if !data.is_closed && data.assigned !== "odyn"}
 				<DropdownMenu.Item onclick={() => null}>Close</DropdownMenu.Item>
 			{/if}
 		</DropdownMenu.Group>
@@ -60,7 +60,7 @@
 
 		<DropdownMenu.Group>
 			<DropdownMenu.Label>Admin</DropdownMenu.Label>
-			{#if !data.is_closed}
+			{#if !data.is_closed && data.assigned !== "odyn"}
 				<DropdownMenu.Item onclick={() => openSheet("reassign", data)}
 					>Reassign Ticket</DropdownMenu.Item
 				>
