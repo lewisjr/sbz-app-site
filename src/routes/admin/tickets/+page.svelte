@@ -86,6 +86,7 @@
 		closed_by: null,
 		email_vars: null,
 		assignee_email_vars: null,
+		close_reason: null,
 	};
 
 	let activeRow = $state<TicketRowLean>(initTicket);
@@ -145,7 +146,7 @@
 					created_at: activeRow.close_date,
 					creator: activeRow.closed_by,
 					id: -1,
-					message: `${toTitleCase(activeRow.closed_by)} closed this ticket.`,
+					message: `${toTitleCase(activeRow.closed_by)} closed this ticket with reason: ${activeRow.close_reason}.`,
 					ticket_no: activeRow.id,
 				});
 
@@ -301,7 +302,8 @@
 			header: "Details",
 			cell: ({ cell }) => {
 				const renderCell = createRawSnippet<[string]>(() => {
-					const value = cell.getValue() as string;
+					const _value = cell.getValue() as string;
+					const value = _value.substring(0, 2) === "--" ? _value.substring(2) : _value;
 					return {
 						render: () => `<p class="w-[400px] whitespace-normal">${value}</p>`,
 					};
@@ -602,6 +604,55 @@
 						clientName: activeRow.names.split(" ")[0],
 						queryType: activeRow.query_type,
 						message: udf1,
+					},
+				}),
+			});
+
+			const res: { success: boolean; message: string } = await req.json();
+
+			loading = false;
+
+			if (!res.success) {
+				toast.error(res.message);
+				return;
+			}
+
+			toast.success(res.message);
+
+			const updatedTicket: TicketRowLean = JSON.parse(JSON.stringify(activeRow));
+			updatedTicket.assigned = udp1;
+			updateTicket(updatedTicket);
+		} catch (ex: any) {
+			loading = false;
+			const message =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex?.message || JSON.stringify(ex);
+
+			toast.error(message);
+		}
+	};
+
+	const closeTicket = async () => {
+		if (udf1.length < 10) {
+			toast.error("You must give a close reason of at least 10 characters.");
+			return;
+		}
+
+		loading = true;
+		toast.info("Closing ticket...");
+
+		try {
+			const req = await fetch("/api/admin/tickets", {
+				method: "POST",
+				body: JSON.stringify({
+					action: sheetConfig,
+					obj: {
+						userEmail: activeRow.email,
+						ticketId: activeRow.id,
+						reason: udf1.trim(),
 					},
 				}),
 			});
@@ -1068,6 +1119,12 @@
 		{/snippet}
 
 		{#snippet actionButton()}
+			{#if sheetConfig === "reassign"}
+				<Button disabled={!udp1.length || udf1.length < 10} onclick={reassignTicket}
+					>Submit<Upload class="ml-2 h-4 w-4" /></Button
+				>
+			{/if}
+
 			{#if sheetConfig === "reassign"}
 				<Button disabled={!udp1.length || udf1.length < 10} onclick={reassignTicket}
 					>Submit<Upload class="ml-2 h-4 w-4" /></Button

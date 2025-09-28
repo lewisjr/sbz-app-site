@@ -9,7 +9,6 @@ import type { SBZdb, TicketRowLean, GenericResponse, GenericResponseWData } from
 import type { StorageError } from "@supabase/storage-js";
 
 import { DEV } from "$env/static/private";
-import { email } from "./../email/utils";
 
 const IS_DEV = DEV === "y";
 
@@ -90,6 +89,12 @@ export interface NotifConfigObj {
 	msgId: string;
 	subject: string;
 	name: string;
+}
+
+interface CloseTicketObj {
+	userEmail: string;
+	ticketId: string;
+	reason: string;
 }
 
 type ChatRow = SBZdb["public"]["Tables"]["odyn-chats"]["Row"];
@@ -427,6 +432,60 @@ const sbz = (): SBZutils => {
 		}
 	};
 
+	const _closeTicket = async (
+		obj: OdynInsert,
+		agent: TicketCandidateObjExt,
+	): Promise<GenericResponseWData<string>> => {
+		try {
+			const ticket = genId();
+
+			obj.id = ticket;
+
+			const { error } = await sbzdb.from("odyn-tickets").insert(obj);
+
+			if (error) {
+				await _log({ message: error.message, title: "Create Ticket Error" });
+				return { data: "", message: error.message, success: false };
+			}
+
+			const subject = `New Ticket | ${obj.query_type} ${ticket}`;
+
+			const msgId = await notif.email.sendNested(
+				{
+					subject,
+					title: `Ticket ${ticket}`,
+					body: `A new <b>${obj.query_type}</b> ticket has been opened and assigned to <b>${toTitleCase(obj.assigned)}</b>. Please click below to review.`,
+					link: `https://app.sbz.com.zm/admin/tickets?q=${ticket}`,
+					linkText: "View Ticket",
+					extra: obj.query.length ? `Original query:<br />${obj.query}` : "",
+					cc: IS_DEV ? "sbzlewis@gmail.com" : "trading@sbz.com.zm",
+				},
+				IS_DEV ? "privatodato@gmail.com" : agent.email,
+			);
+
+			await sbzdb
+				.from("odyn-tickets")
+				.update({ assignee_email_vars: `${msgId},,${subject}` })
+				.eq("id", ticket);
+
+			return { message: `Successfully created ticket #${ticket}`, success: true, data: ticket };
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Create Ticket Exception" });
+			return {
+				success: false,
+				message: "Server error, please wait 10 minutes and try again.",
+				data: "",
+			};
+		}
+	};
+
 	const _createAITicket = async (obj: OdynInsert): Promise<GenericResponseWData<string>> => {
 		try {
 			const ticket = genId();
@@ -698,7 +757,7 @@ const sbz = (): SBZutils => {
 			const { data, error } = await sbzdb
 				.from("odyn-tickets")
 				.select(
-					"assigned,close_date,created_at,email,id,id_num,is_closed,luse_id,names,phone,platform,query,query_type,referral_source,closed_by,email_vars,uid,assignee_email_vars",
+					"assigned,close_date,created_at,email,id,id_num,is_closed,luse_id,names,phone,platform,query,query_type,referral_source,closed_by,email_vars,uid,assignee_email_vars,close_reason",
 				)
 				.order("created_at", { ascending: false });
 
@@ -741,13 +800,14 @@ const sbz = (): SBZutils => {
 			query_type: "",
 			referral_source: "",
 			uid: "",
+			close_reason: "",
 		};
 
 		try {
 			const { data, error } = await sbzdb
 				.from("odyn-tickets")
 				.select(
-					"assigned,close_date,created_at,email,id,id_num,is_closed,luse_id,names,phone,platform,query,query_type,referral_source,closed_by,email_vars,uid,assignee_email_vars",
+					"assigned,close_date,created_at,email,id,id_num,is_closed,luse_id,names,phone,platform,query,query_type,referral_source,closed_by,email_vars,uid,assignee_email_vars,close_reason",
 				)
 				.filter("id", "eq", ticketId);
 

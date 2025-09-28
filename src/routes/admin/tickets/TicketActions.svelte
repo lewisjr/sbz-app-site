@@ -39,7 +39,7 @@
 				<DropdownMenu.Item disabled>N/A</DropdownMenu.Item>
 			{/if}
 
-			{#if data.query_type === "Account Opening" && !data.is_closed}
+			{#if data.query_type === "Account Opening" && !data.is_closed && data.query.substring(0, 2) === "--"}
 				<DropdownMenu.Item onclick={() => null}>Review KYC</DropdownMenu.Item>
 			{/if}
 

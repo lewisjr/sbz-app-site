@@ -284,6 +284,7 @@ export type Database = {
 					assigned: string;
 					assignee_email_vars: string | null;
 					close_date: string | null;
+					close_reason: string | null;
 					closed_by: string | null;
 					created_at: string;
 					email: string;
@@ -306,6 +307,7 @@ export type Database = {
 					assigned: string;
 					assignee_email_vars?: string | null;
 					close_date?: string | null;
+					close_reason?: string | null;
 					closed_by?: string | null;
 					created_at?: string;
 					email: string;
@@ -328,6 +330,7 @@ export type Database = {
 					assigned?: string;
 					assignee_email_vars?: string | null;
 					close_date?: string | null;
+					close_reason?: string | null;
 					closed_by?: string | null;
 					created_at?: string;
 					email?: string;

@@ -50,4 +50,5 @@ export interface TicketRowLean {
 	email_vars: string | null;
 	assignee_email_vars: string | null;
 	uid: string | null;
+	close_reason: string | null;
 }
