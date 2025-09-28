@@ -6,7 +6,7 @@
 	import { toTitleCase } from "@cerebrusinc/fstring";
 	import { numParse } from "@cerebrusinc/qol";
 	import { formatDbTime } from "$lib/utils";
-	import { createRawSnippet, onMount } from "svelte";
+	import { createRawSnippet, onMount, tick } from "svelte";
 	import { renderSnippet, renderComponent } from "$lib/components/ui/data-table/index";
 	import {
 		percentageHandler,
@@ -574,7 +574,7 @@
 		});
 	});
 
-	const updateTicket = (ticket: TicketRowLean) => {
+	const updateAssigned = (ticket: TicketRowLean) => {
 		const temp: TicketRowLean[] = JSON.parse(JSON.stringify(ticketData));
 
 		const index = temp.findIndex((item) => (item.id = ticket.id));
@@ -582,6 +582,21 @@
 		temp[index].assigned = ticket.assigned;
 
 		ticketData = temp;
+
+		closeSheet();
+	};
+
+	const updateTicket = async (ticket: TicketRowLean) => {
+		const temp: TicketRowLean[] = JSON.parse(JSON.stringify(ticketData));
+
+		const index = temp.findIndex((item) => (item.id = ticket.id));
+
+		// console.log({ index, ticket, temp_index: temp[index] });
+
+		temp[index] = ticket;
+
+		ticketData = temp;
+		await tick();
 
 		closeSheet();
 	};
@@ -627,7 +642,7 @@
 
 			const updatedTicket: TicketRowLean = JSON.parse(JSON.stringify(activeRow));
 			updatedTicket.assigned = udp1;
-			updateTicket(updatedTicket);
+			updateAssigned(updatedTicket);
 		} catch (ex: any) {
 			loading = false;
 			const message =
@@ -677,12 +692,49 @@
 
 			toast.success(res.message);
 
-			const updatedTicket: TicketRowLean = JSON.parse(JSON.stringify(activeRow));
+			const {
+				assigned,
+				assignee_email_vars,
+				created_at,
+				email,
+				email_vars,
+				id,
+				id_num,
+				luse_id,
+				names,
+				phone,
+				platform,
+				query,
+				query_type,
+				referral_source,
+				uid,
+			} = activeRow;
 
-			updatedTicket.close_date = res.data.close_date;
-			updatedTicket.close_reason = res.data.close_reason;
-			updatedTicket.closed_by = res.data.closed_by;
-			updatedTicket.is_closed = res.data.is_closed;
+			const { close_date, close_reason, closed_by, is_closed } = res.data;
+
+			const updatedTicket: TicketRowLean = {
+				assigned,
+				assignee_email_vars,
+				close_date,
+				close_reason,
+				closed_by,
+				created_at,
+				email,
+				email_vars,
+				id,
+				id_num,
+				is_closed,
+				luse_id,
+				names,
+				phone,
+				platform,
+				query,
+				query_type,
+				referral_source,
+				uid,
+			};
+
+			//console.log({ updatedTicket, res });
 
 			updateTicket(updatedTicket);
 		} catch (ex: any) {
@@ -1165,7 +1217,7 @@
 			{/if}
 
 			{#if sheetConfig === "close"}
-				<Button variant="destructive" disabled={udf1.length < 10} onclick={closeTicket}
+				<Button variant="destructive" disabled={udf1.length < 10 || loading} onclick={closeTicket}
 					>Submit<Upload class="ml-2 h-4 w-4" /></Button
 				>
 			{/if}
