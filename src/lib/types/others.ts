@@ -7,7 +7,7 @@ type QueryTypes = (typeof queryTypesArray)[number];
 
 type Platforms = (typeof platformsArray)[number];
 
-type ActionConfig = "reassign" | "audit" | "chat";
+type ActionConfig = "reassign" | "audit" | "chat" | "close";
 
 type StaffActionConfig = "block" | "unblock" | "edit" | "perms" | "new";
 

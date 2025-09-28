@@ -92,6 +92,8 @@ export const POST = async ({ request }) => {
 	const { acc_type, is_in_trust_of } = obj;
 
 	let queryHelper: string = "";
+	let qWord = obj.luseId ? "opening" : "linking";
+
 	const details: { name: string; email: string; luseId: number; idNumber: string; phone: string } =
 		{
 			email: "",
@@ -112,7 +114,7 @@ export const POST = async ({ request }) => {
 		details.idNumber = obj.id_num;
 		details.name = `${obj.fname} ${obj.lname}`;
 		details.phone = obj.phone.toString();
-		queryHelper = `Requesting the opening of an individual account for ${details.name}`;
+		queryHelper = `Requesting the ${qWord} of an individual account for ${details.name}`;
 	}
 
 	if (acc_type === "individual" && is_in_trust_of) {
@@ -126,7 +128,7 @@ export const POST = async ({ request }) => {
 		details.idNumber = obj.manag_id_num;
 		details.name = `${obj.manag_fname} ${obj.manag_lname}`;
 		details.phone = obj.manag_phone.toString();
-		queryHelper = `Requesting the opening of an in trust of account for ${obj.fname} ${obj.lname} managed by ${details.name}.`;
+		queryHelper = `Requesting the ${qWord} of an in trust of account for ${obj.fname} ${obj.lname} managed by ${details.name}.`;
 	}
 
 	if (obj.joint_partners.length) {
@@ -153,7 +155,7 @@ export const POST = async ({ request }) => {
 				details.name = `${details.name}, and ${row.fname} ${row.lname}`;
 			}
 
-			queryHelper = `Requesting the opening of a joint account for ${details.name}.`;
+			queryHelper = `Requesting the ${qWord} of a joint account for ${details.name}.`;
 		});
 	}
 
@@ -167,6 +169,8 @@ export const POST = async ({ request }) => {
 
 			files.push({ file: poa, id: row.idNum, type: "poa" });
 			files.push({ file: poi, id: row.idNum, type: "poi" });
+
+			queryHelper = `Requesting the ${qWord} of an institutional account for ${obj.fname}.`;
 		});
 	}
 
@@ -182,19 +186,19 @@ export const POST = async ({ request }) => {
 			files.push({ file: poi, id: row.idNum, type: "poi" });
 
 			if (!i) {
-				details.email = row.email;
 				details.name = `${row.fname} ${row.lname}`;
 				details.idNumber = row.idNum;
+				details.email = row.email;
 				details.phone = obj.phone.toString();
 			}
 
+			/*
 			if (i && i < managers.length - 1) {
-				details.name = `${details.name}, ${row.fname} ${row.lname}`;
+				// details.name = `${details.name}, ${row.fname} ${row.lname}`;
 			} else if (i === managers.length - 1) {
 				details.name = `${details.name}, and ${row.fname} ${row.lname}`;
 			}
-
-			queryHelper = `Requesting the opening of a joint account for ${details.name}.`;
+				*/
 		});
 	}
 
@@ -210,7 +214,7 @@ export const POST = async ({ request }) => {
 			luse_id: -1,
 			names: details.name,
 			phone: details.phone,
-			query: queryHelper,
+			query: `--${queryHelper}`,
 			query_type: "Account Opening",
 			object: obj,
 			platform: "Web",
@@ -233,15 +237,12 @@ export const POST = async ({ request }) => {
 	const uploadKycReq = dbs.sbz.uploadKyc(files);
 
 	const emailReqs = emails.map((address) =>
-		notif.email.sendLink(
+		notif.email.sendUpdate(
 			{
 				subject: "Account Opening | Stockbrokers Zambia",
 				title: "Request Received!",
 				body: `Your account opening submission has been received and assigned to <b>${toTitleCase(agent.data.agentId)}</b> with ticket number <b>${ticketRes.data}</b>. This process usually takes <b>24 hours</b> and you will be notified.`,
-				extra:
-					"Please click the link above to view the progress of your request, as well as to upload your biometric signature(s).",
-				link: `https://app.sbz.com.zm/track/${ticketRes.data}`,
-				linkText: "View Progress",
+				extra: "",
 			},
 			address,
 		),

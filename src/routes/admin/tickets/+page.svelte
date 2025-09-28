@@ -195,6 +195,12 @@
 						: `Observe the chat between ${toTitleCase(row.assigned)} and ${row.names.split(" ")[0]}.`;
 				sheetWidth = undefined;
 				break;
+			case "close":
+				const name = row.names.split(" ")[0];
+				sheetTitle = `Close ${name}'${name.toLowerCase().endsWith("s") ? "" : "s"} Ticket'`;
+				sheetDesc = `This action is irreversible, ticket #${row.id} will be closed and the client and SBZ staff informed.`;
+				sheetWidth = undefined;
+				break;
 			default:
 				sheetTitle = "Error";
 				sheetDesc = "This should not be possible.";
@@ -854,7 +860,7 @@
 								{#each headerGroup.headers as header (header.id)}
 									<Table.Head
 										colspan={header.colSpan}
-										class="max-w-[400px] px-5 text-center font-bold"
+										class="max-w-[400px] px-8 text-center font-bold"
 									>
 										{#if !header.isPlaceholder}
 											<FlexRender

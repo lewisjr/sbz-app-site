@@ -52,7 +52,7 @@
 			{/if}
 
 			{#if !data.is_closed && data.assigned !== "odyn"}
-				<DropdownMenu.Item onclick={() => null}>Close</DropdownMenu.Item>
+				<DropdownMenu.Item onclick={() => openSheet("close", data)}>Close</DropdownMenu.Item>
 			{/if}
 		</DropdownMenu.Group>
 
