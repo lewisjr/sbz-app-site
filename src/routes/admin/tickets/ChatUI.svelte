@@ -2,8 +2,8 @@
 	//function
 	import { toast } from "svelte-sonner";
 	import { toTitleCase } from "@cerebrusinc/fstring";
-	import { formatDbTime } from "$lib/utils";
-	import { onMount } from "svelte";
+	import { formatDbTime, genId } from "$lib/utils";
+	import { onMount, tick } from "svelte";
 	import { createClient } from "@supabase/supabase-js";
 
 	//components - shadcn
@@ -57,9 +57,90 @@
 				sender: data.ticket.names,
 				ticket_no: data.ticketId,
 				type: "text",
+			} /*
+			{
+				body: data.ticket.query + " " + genId(),
+				created_at: data.ticket.created_at,
+				id: -1,
+				sender: data.ticket.names,
+				ticket_no: data.ticketId,
+				type: "text",
 			},
+			{
+				body: data.ticket.query + " " + genId(),
+				created_at: data.ticket.created_at,
+				id: -1,
+				sender: data.ticket.names,
+				ticket_no: data.ticketId,
+				type: "text",
+			},
+			{
+				body: data.ticket.query + " " + genId(),
+				created_at: data.ticket.created_at,
+				id: -1,
+				sender: data.ticket.names,
+				ticket_no: data.ticketId,
+				type: "text",
+			},
+			{
+				body: data.ticket.query + " " + genId(),
+				created_at: data.ticket.created_at,
+				id: -1,
+				sender: data.ticket.names,
+				ticket_no: data.ticketId,
+				type: "text",
+			},
+			{
+				body: data.ticket.query + " " + genId(),
+				created_at: data.ticket.created_at,
+				id: -1,
+				sender: data.ticket.names,
+				ticket_no: data.ticketId,
+				type: "text",
+			},
+			{
+				body: data.ticket.query + " " + genId(),
+				created_at: data.ticket.created_at,
+				id: -1,
+				sender: data.ticket.names,
+				ticket_no: data.ticketId,
+				type: "text",
+			},
+			{
+				body: data.ticket.query + " " + genId(),
+				created_at: data.ticket.created_at,
+				id: -1,
+				sender: data.ticket.names,
+				ticket_no: data.ticketId,
+				type: "text",
+			},
+			{
+				body: data.ticket.query + " " + genId(),
+				created_at: data.ticket.created_at,
+				id: -1,
+				sender: data.ticket.names,
+				ticket_no: data.ticketId,
+				type: "text",
+			},
+			{
+				body: data.ticket.query + " " + genId(),
+				created_at: data.ticket.created_at,
+				id: -1,
+				sender: data.ticket.names,
+				ticket_no: data.ticketId,
+				type: "text",
+			},*/,
 			...msgs,
 		];
+	};
+
+	const scrollToBottom = () => {
+		if (document) {
+			const mid = document.getElementById("mid");
+			if (mid) {
+				mid.scrollTop = mid.scrollHeight;
+			}
+		}
 	};
 
 	const getChats = async () => {
@@ -74,6 +155,9 @@
 
 			initMessage(res.data);
 			initialising = false;
+
+			await tick();
+			scrollToBottom();
 		} catch (ex: any) {
 			loading = false;
 
@@ -136,6 +220,7 @@
 		obj.body = await decryptBody(obj.body);
 
 		messages = [...messages, obj];
+		scrollToBottom();
 	};
 
 	let typingTime = $state<number>(0);
@@ -146,6 +231,7 @@
 
 		if (obj.sender !== data.admin && obj.on) {
 			typing = true;
+			scrollToBottom();
 		}
 
 		if (obj.sender !== data.admin && !obj.on) {
@@ -308,7 +394,7 @@
 		(async () => {
 			await getChats();
 
-			if (data.ticket.assigned !== "odyn") {
+			if (data.ticket.assigned !== "odyn" && !data.ticket.is_closed) {
 				listener = createClient<SBZdb>(data.dbUrl, data.dbAuth);
 
 				msgEvent = listener
@@ -450,7 +536,7 @@
 			</table>
 		</div>
 
-		<div class="mid">
+		<div id="mid" class="mid">
 			<ul>
 				{#each messages as msg}
 					{#if msg.sender === data.ticket.names}
@@ -474,10 +560,23 @@
 						<div class="ball three"></div>
 					</li>
 				{/if}
+
+				{#if data.ticket.closed_by && data.ticket.close_date && data.ticket.close_reason}
+					<p class="mx-auto mt-5 w-[93%] text-center text-sm text-muted-foreground">
+						<b
+							>{data.ticket.closed_by === data.admin
+								? "You"
+								: toTitleCase(data.ticket.closed_by)}</b
+						>
+						closed this ticket at
+						<b>{formatDbTime(data.ticket.close_date)}</b>
+						with the following reason:<br /><br /><i>{data.ticket.close_reason}</i>
+					</p>
+				{/if}
 			</ul>
 		</div>
 
-		{#if data.admin === data.ticket.assigned}
+		{#if data.admin === data.ticket.assigned && !data.ticket.is_closed}
 			<div class="btm">
 				<Textarea
 					bind:value={textValue}
@@ -557,15 +656,16 @@
 			width: 100%;
 			background-color: var(--secondary);
 			overflow-y: auto; // so chat can scroll
-			overflow-x: hidden;
 			display: flex;
-			align-items: flex-end;
+			flex-direction: column;
 
 			ul {
 				padding: 10px;
 				width: 100%;
 				display: flex;
 				flex-direction: column;
+				justify-content: flex-end;
+				flex: 1;
 
 				li {
 					margin-bottom: 8px;

@@ -3,13 +3,14 @@ import notif from "$lib/server/email";
 import { genOTP } from "$lib/utils.js";
 
 import type { SBZdb } from "$lib/types/index.js";
+import type { TicketRowLean } from "$lib/types/index.js";
 
 import { DB_URL, DB_ANON } from "$env/static/private";
 
 export const load = async ({ cookies, params }) => {
 	const cookie = cookies.get("sbz-nootp");
 
-	let ticket = {
+	let ticket: TicketRowLean = {
 		assigned: "",
 		close_date: "",
 		closed_by: "",
@@ -28,6 +29,7 @@ export const load = async ({ cookies, params }) => {
 		query_type: "",
 		referral_source: "",
 		uid: "",
+		close_reason: "",
 	};
 
 	let assigneeEmail: string = "";

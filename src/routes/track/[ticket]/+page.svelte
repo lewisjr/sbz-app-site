@@ -15,11 +15,8 @@
 	import Button from "$lib/components/ui/button/button.svelte";
 	import Textarea from "$lib/components/ui/textarea/textarea.svelte";
 
-	//stores
-	import { screenWidthStore } from "$lib/stores";
-
 	//icons
-	import { Frown, MoveLeft, Upload, Loader2Icon } from "@lucide/svelte";
+	import { Frown, Upload, Loader2Icon } from "@lucide/svelte";
 
 	//types
 	import type { PageProps } from "./$types";
@@ -27,8 +24,6 @@
 	import type { SupabaseClient, RealtimeChannel } from "@supabase/supabase-js";
 
 	let { data }: PageProps = $props();
-
-	let isMobile = $derived($screenWidthStore < 767);
 
 	let loading = $state<boolean>(false);
 
@@ -38,47 +33,47 @@
 	};
 
 	const checkOtp = async () => {
-		if (otpInput.length !== 6) {
-			toast.error("Your OTP is too short!");
-			return;
-		}
-
-		toast.info("Verifying your identity...");
-
-		console.log({ user: data.ticket.email, otp: Number(otpInput) });
-
-		try {
-			loading = true;
-			const req = await fetch("/api/chat", {
-				headers: {
-					"Content-Type": "application/json",
-				},
-				method: "POST",
-				body: JSON.stringify({ user: data.ticket.email, otp: Number(otpInput) }),
-			});
-
-			const res: GenericResponse = await req.json();
-
-			loading = false;
-
-			if (res.success) {
-				toast.success(res.message);
-				invalidateAll();
+		if (data.otp) {
+			if (otpInput.length !== 6) {
+				toast.error("Your OTP is too short!");
 				return;
 			}
 
-			toast.error(res.message);
-		} catch (ex: any) {
-			loading = false;
+			toast.info("Verifying your identity...");
 
-			const message =
-				typeof ex === "string"
-					? ex
-					: ex instanceof Error
-						? ex.message
-						: ex?.message || JSON.stringify(ex);
+			try {
+				loading = true;
+				const req = await fetch("/api/chat", {
+					headers: {
+						"Content-Type": "application/json",
+					},
+					method: "POST",
+					body: JSON.stringify({ user: data.ticket.email, otp: Number(otpInput) }),
+				});
 
-			toast.error(message);
+				const res: GenericResponse = await req.json();
+
+				loading = false;
+
+				if (res.success) {
+					toast.success(res.message);
+					invalidateAll();
+					return;
+				}
+
+				toast.error(res.message);
+			} catch (ex: any) {
+				loading = false;
+
+				const message =
+					typeof ex === "string"
+						? ex
+						: ex instanceof Error
+							? ex.message
+							: ex?.message || JSON.stringify(ex);
+
+				toast.error(message);
+			}
 		}
 	};
 
@@ -100,7 +95,7 @@
 		}
 	});
 
-	let textValue = $state<string>("");
+	let textValue = $state<string>(data.ticket.is_closed ? "lorem ipsum" : "");
 	let typing = $state<boolean>(false);
 
 	type OdynChat = SBZdb["public"]["Tables"]["odyn-chats"]["Row"];
@@ -115,9 +110,98 @@
 				sender: data.ticket.names,
 				ticket_no: data.ticketId,
 				type: "text",
+			} /*
+			{
+				body: data.ticket.query + " " + genId(),
+				created_at: data.ticket.created_at,
+				id: -1,
+				sender: data.ticket.names,
+				ticket_no: data.ticketId,
+				type: "text",
 			},
+			{
+				body: data.ticket.query + " " + genId(),
+				created_at: data.ticket.created_at,
+				id: -1,
+				sender: data.ticket.names,
+				ticket_no: data.ticketId,
+				type: "text",
+			},
+			{
+				body: data.ticket.query + " " + genId(),
+				created_at: data.ticket.created_at,
+				id: -1,
+				sender: data.ticket.names,
+				ticket_no: data.ticketId,
+				type: "text",
+			},
+			{
+				body: data.ticket.query + " " + genId(),
+				created_at: data.ticket.created_at,
+				id: -1,
+				sender: data.ticket.names,
+				ticket_no: data.ticketId,
+				type: "text",
+			},
+			{
+				body: data.ticket.query + " " + genId(),
+				created_at: data.ticket.created_at,
+				id: -1,
+				sender: data.ticket.names,
+				ticket_no: data.ticketId,
+				type: "text",
+			},
+			{
+				body: data.ticket.query + " " + genId(),
+				created_at: data.ticket.created_at,
+				id: -1,
+				sender: data.ticket.names,
+				ticket_no: data.ticketId,
+				type: "text",
+			},
+			{
+				body: data.ticket.query + " " + genId(),
+				created_at: data.ticket.created_at,
+				id: -1,
+				sender: data.ticket.names,
+				ticket_no: data.ticketId,
+				type: "text",
+			},
+			{
+				body: data.ticket.query + " " + genId(),
+				created_at: data.ticket.created_at,
+				id: -1,
+				sender: data.ticket.names,
+				ticket_no: data.ticketId,
+				type: "text",
+			},
+			{
+				body: data.ticket.query + " " + genId(),
+				created_at: data.ticket.created_at,
+				id: -1,
+				sender: data.ticket.names,
+				ticket_no: data.ticketId,
+				type: "text",
+			},
+			{
+				body: data.ticket.query + " " + genId(),
+				created_at: data.ticket.created_at,
+				id: -1,
+				sender: data.ticket.names,
+				ticket_no: data.ticketId,
+				type: "text",
+			},*/,
 			...data.messages,
 		];
+	};
+
+	const scrollToBottom = () => {
+		if (document) {
+			const mid = document.getElementById("mid");
+			if (mid) {
+				mid.scrollTop = mid.scrollHeight;
+			}
+		}
 	};
 
 	// set initial message as query
@@ -226,6 +310,8 @@
 		obj.body = await decryptBody(obj.body);
 
 		messages = [...messages, obj];
+
+		scrollToBottom();
 	};
 
 	let typingTime = $state<number>(0);
@@ -236,6 +322,7 @@
 
 		if (obj.sender !== data.ticket.names && obj.on) {
 			typing = true;
+			scrollToBottom();
 		}
 
 		if (obj.sender !== data.ticket.names && !obj.on) {
@@ -341,38 +428,46 @@
 	let checkForOnlineInterval = $state<ReturnType<typeof setInterval> | undefined>(undefined);
 
 	onMount(() => {
-		if (!data.error && !data.otp && data.ticket.assigned !== "odyn") {
+		if (!data.error && !data.otp) {
 			listener = createClient<SBZdb>(data.dbUrl, data.dbAuth);
 
-			msgEvent = listener
-				.channel(`ticket-${data.ticketId}`)
-				.on(
-					"postgres_changes",
-					{
-						event: "INSERT",
-						schema: "public",
-						table: "odyn-chats",
-						filter: `ticket_no=eq.${data.ticketId}`,
-					},
-					msgEventHandler,
-				)
-				.subscribe();
+			scrollToBottom();
 
-			typingEvent = listener
-				.channel(`ticket-${data.ticketId}`)
-				.on("broadcast", { event: "typing" }, typingEventHandler)
-				.subscribe();
+			// sub to odyn-chat table insert
+			if (!data.ticket.is_closed) {
+				msgEvent = listener
+					.channel(`ticket-${data.ticketId}`)
+					.on(
+						"postgres_changes",
+						{
+							event: "INSERT",
+							schema: "public",
+							table: "odyn-chats",
+							filter: `ticket_no=eq.${data.ticketId}`,
+						},
+						msgEventHandler,
+					)
+					.subscribe();
+			}
 
-			onlineEvent = listener
-				.channel(`ticket-${data.ticketId}`)
-				.on("broadcast", { event: "online" }, onlineEventHandler)
-				.subscribe();
+			// sub to other events and broadcasts
+			if (data.ticket.assigned !== "odyn") {
+				typingEvent = listener
+					.channel(`ticket-${data.ticketId}`)
+					.on("broadcast", { event: "typing" }, typingEventHandler)
+					.subscribe();
 
-			broadcastOnlineSelf();
+				onlineEvent = listener
+					.channel(`ticket-${data.ticketId}`)
+					.on("broadcast", { event: "online" }, onlineEventHandler)
+					.subscribe();
 
-			broadcastOnlineInterval = setInterval(broadcastOnlineSelf, 60010);
+				broadcastOnlineSelf();
 
-			checkForOnlineInterval = setInterval(checkForOnline, 60020);
+				broadcastOnlineInterval = setInterval(broadcastOnlineSelf, 60010);
+
+				checkForOnlineInterval = setInterval(checkForOnline, 60020);
+			}
 		}
 
 		return () => {
@@ -437,7 +532,7 @@
 				</thead>
 				<tbody>
 					<tr>
-						<td class="text-center text-sm"
+						<td class="px-2 text-center text-sm"
 							>{data.assigneeEmail === "none" ? "AI" : toTitleCase(data.ticket.assigned)}</td
 						>
 						<td><span class={`onl-status ${onlineStatus}`}></span></td>
@@ -446,7 +541,7 @@
 			</table>
 		</div>
 
-		<div class="mid">
+		<div id="mid" class="mid">
 			<ul>
 				{#each messages as msg}
 					{#if msg.sender === data.ticket.names}
@@ -470,14 +565,22 @@
 						<div class="ball three"></div>
 					</li>
 				{/if}
+
+				{#if data.ticket.closed_by && data.ticket.close_date && data.ticket.close_reason}
+					<p class="mx-auto mt-5 w-[93%] text-center text-sm text-muted-foreground">
+						<b>{toTitleCase(data.ticket.closed_by)}</b> closed this ticket at
+						<b>{formatDbTime(data.ticket.close_date)}</b>
+						with the following reason:<br /><br /><i>{data.ticket.close_reason}</i>
+					</p>
+				{/if}
 			</ul>
 		</div>
 
 		<div class="btm">
 			<Textarea
 				bind:value={textValue}
-				disabled={loading}
-				class="max-h-[4.5em] min-h-[1.5em] w-[80%] resize-none overflow-y-auto leading-[1.5em]"
+				disabled={data.ticket.is_closed ? true : loading}
+				class={`max-h-[4.5em] min-h-[1.5em] w-[80%] resize-none overflow-y-auto leading-[1.5em]${data.ticket.is_closed ? " text-transparent" : ""}`}
 				maxlength={200}
 				oninput={() => broadcastTyping()}
 				onkeypress={(e) => {
@@ -488,7 +591,11 @@
 					}
 				}}
 			/>
-			<Button class="rounded-full" disabled={textValue.length < 10 || loading} onclick={sendChat}>
+			<Button
+				class="rounded-full"
+				disabled={data.ticket.is_closed ? true : textValue.length < 10 || loading}
+				onclick={sendChat}
+			>
 				{#if loading}
 					<Loader2Icon class="animate-spin" />
 				{:else}
@@ -552,13 +659,15 @@
 			background-color: var(--secondary);
 			overflow-y: auto; // so chat can scroll
 			display: flex;
-			align-items: flex-end;
+			flex-direction: column;
 
 			ul {
 				padding: 10px;
 				width: 100%;
 				display: flex;
 				flex-direction: column;
+				justify-content: flex-end;
+				flex: 1;
 
 				li {
 					margin-bottom: 8px;

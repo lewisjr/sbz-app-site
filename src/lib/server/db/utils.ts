@@ -5,7 +5,13 @@ import { toTitleCase } from "@cerebrusinc/fstring";
 
 import Tokenise from "../tokenise";
 
-import type { SBZdb, TicketRowLean, GenericResponse, GenericResponseWData } from "$lib/types";
+import type {
+	SBZdb,
+	TicketRowLean,
+	GenericResponse,
+	GenericResponseWData,
+	CloseTicketReturnObj,
+} from "$lib/types";
 import type { StorageError } from "@supabase/storage-js";
 
 import { DEV } from "$env/static/private";
@@ -91,10 +97,18 @@ export interface NotifConfigObj {
 	name: string;
 }
 
-interface CloseTicketObj {
-	userEmail: string;
+export interface CloseTicketObj {
+	clientEmail: string;
 	ticketId: string;
 	reason: string;
+	assigneeVars: string;
+	clientVars: string;
+	names: string;
+}
+
+interface CloseTicketObjInternal extends CloseTicketObj {
+	adminEmail: string;
+	admin: string;
 }
 
 type ChatRow = SBZdb["public"]["Tables"]["odyn-chats"]["Row"];
@@ -113,6 +127,7 @@ interface SBZutils {
 	createCompliment: (obj: OdynInsert) => Promise<GenericResponse>;
 	createAIticket: (obj: OdynInsert) => Promise<GenericResponseWData<string>>;
 	getAllTickets: () => Promise<TicketRowLean[]>;
+	closeTicket: (obj: CloseTicketObjInternal) => Promise<GenericResponseWData<CloseTicketReturnObj>>;
 	getOneTicket: (ticketId: string) => Promise<TicketRowLean>;
 	reassignWebTicket: (obj: ReassignByEmailObj) => Promise<GenericResponse>;
 	uploadKyc: (files: FileData[]) => Promise<void>;
@@ -433,42 +448,62 @@ const sbz = (): SBZutils => {
 	};
 
 	const _closeTicket = async (
-		obj: OdynInsert,
-		agent: TicketCandidateObjExt,
-	): Promise<GenericResponseWData<string>> => {
+		obj: CloseTicketObjInternal,
+	): Promise<GenericResponseWData<CloseTicketReturnObj>> => {
+		const emptyObj: CloseTicketReturnObj = {
+			close_date: "",
+			close_reason: "",
+			closed_by: "",
+			is_closed: false,
+		};
+
 		try {
-			const ticket = genId();
+			const { admin, adminEmail, reason, ticketId, clientEmail, assigneeVars, clientVars, names } =
+				obj;
 
-			obj.id = ticket;
+			const closeObj: CloseTicketReturnObj = {
+				close_date: genDbTimestamp(),
+				close_reason: reason,
+				closed_by: admin,
+				is_closed: true,
+			};
 
-			const { error } = await sbzdb.from("odyn-tickets").insert(obj);
+			const { error } = await sbzdb.from("odyn-tickets").update(closeObj).eq("id", ticketId);
 
 			if (error) {
-				await _log({ message: error.message, title: "Create Ticket Error" });
-				return { data: "", message: error.message, success: false };
+				await _log({ message: error.message, title: "Close Ticket Error" });
+				return { data: emptyObj, message: error.message, success: false };
 			}
 
-			const subject = `New Ticket | ${obj.query_type} ${ticket}`;
+			const [adminMsgId, adminSubject] = assigneeVars ? assigneeVars.split(",,") : ",,";
+			const [clientMsgId, clientSubject] = clientVars ? clientVars.split(",,") : ",,";
 
-			const msgId = await notif.email.sendNested(
+			const adminMailReq = notif.email.sendNestedNoButton(
 				{
-					subject,
-					title: `Ticket ${ticket}`,
-					body: `A new <b>${obj.query_type}</b> ticket has been opened and assigned to <b>${toTitleCase(obj.assigned)}</b>. Please click below to review.`,
-					link: `https://app.sbz.com.zm/admin/tickets?q=${ticket}`,
-					linkText: "View Ticket",
-					extra: obj.query.length ? `Original query:<br />${obj.query}` : "",
+					subject: adminSubject.length ? adminSubject : `Ticket #${ticketId} Closed`,
+					title: `Ticket Closed!`,
+					body: `Hi <b>${toTitleCase(admin)}</b>,<br /><br />You just closed this ticket with the following reason:`,
+					extra: `<i>${reason}</i>`,
 					cc: IS_DEV ? "sbzlewis@gmail.com" : "trading@sbz.com.zm",
 				},
-				IS_DEV ? "privatodato@gmail.com" : agent.email,
+				IS_DEV ? "privatodato@gmail.com" : adminEmail,
+				adminMsgId.length ? adminMsgId : undefined,
 			);
 
-			await sbzdb
-				.from("odyn-tickets")
-				.update({ assignee_email_vars: `${msgId},,${subject}` })
-				.eq("id", ticket);
+			const clientMailReq = notif.email.sendNestedNoButton(
+				{
+					subject: clientSubject.length ? clientSubject : `Ticket #${ticketId} Closed`,
+					title: `Ticket Closed!`,
+					body: `Hi <b>${names.split(" ")[0]}</b>,<br /><br /><b>${toTitleCase(admin)}</b> just closed this ticket with the following reason:`,
+					extra: `<i>${reason}</i>`,
+				},
+				IS_DEV ? "privatodato@gmail.com" : clientEmail,
+				clientMsgId.length ? clientMsgId : undefined,
+			);
 
-			return { message: `Successfully created ticket #${ticket}`, success: true, data: ticket };
+			await Promise.all([adminMailReq, clientMailReq]);
+
+			return { message: `Successfully closed ticket #${ticketId}!`, success: true, data: closeObj };
 		} catch (ex: any) {
 			const error =
 				typeof ex === "string"
@@ -477,11 +512,11 @@ const sbz = (): SBZutils => {
 						? ex.message
 						: ex.message || JSON.stringify(ex);
 
-			_log({ message: error, title: "Create Ticket Exception" });
+			_log({ message: error, title: "Close Ticket Exception" });
 			return {
 				success: false,
 				message: "Server error, please wait 10 minutes and try again.",
-				data: "",
+				data: emptyObj,
 			};
 		}
 	};
@@ -1439,6 +1474,7 @@ const sbz = (): SBZutils => {
 		getTicketCandidate: _getTicketCandidate,
 		createTicket: _createTicket,
 		createAIticket: _createAITicket,
+		closeTicket: _closeTicket,
 		createCompliment: _createCompliment,
 		getAllTickets: _getAllTickets,
 		getOneTicket: _getOneTicket,

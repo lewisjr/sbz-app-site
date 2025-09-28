@@ -160,10 +160,54 @@ const sendNested = async (
 	}
 };
 
+const sendNestedNoButton = async (
+	{ subject, title, body, extra, cc }: GenericEmailObj,
+	recipient: string,
+	msgId?: string | null,
+): Promise<boolean> => {
+	const { html, plain } = templates.generic({ title, body, extra, subject });
+
+	try {
+		const res = await client.sendEmail({
+			From: "app@sbz.com.zm",
+			To: recipient,
+			Cc: cc,
+			Subject: subject,
+			HtmlBody: html,
+			TextBody: plain,
+			MessageStream: "outbound",
+			Headers: msgId
+				? [
+						{ Name: "In-Reply-To", Value: msgId },
+						{ Name: "References", Value: msgId },
+					]
+				: undefined,
+		});
+
+		if (res.ErrorCode) {
+			await dbs.sbz.log({
+				title: "Send Nested NB Error: Email",
+				message: `Failed to send email to ${recipient}. Code ${res.ErrorCode}`,
+			});
+			return false;
+		} else return true;
+	} catch (ex: any) {
+		const error =
+			typeof ex === "string"
+				? ex
+				: ex instanceof Error
+					? ex.message
+					: ex.message || JSON.stringify(ex);
+		await dbs.sbz.log({ title: "Send Nested NB Exception: Email", message: error });
+		return false;
+	}
+};
+
 export const email = {
 	sendOtp,
 	sendUpdate,
 	sendLink,
 	/**Keeps the emails all in one chain... theoretically */
 	sendNested,
+	sendNestedNoButton,
 };

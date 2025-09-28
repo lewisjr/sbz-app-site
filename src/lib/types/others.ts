@@ -52,3 +52,10 @@ export interface TicketRowLean {
 	uid: string | null;
 	close_reason: string | null;
 }
+
+export interface CloseTicketReturnObj {
+	close_date: string;
+	close_reason: string;
+	closed_by: string;
+	is_closed: boolean;
+}

@@ -38,7 +38,13 @@
 
 	//types
 	import type { PageProps } from "./$types";
-	import type { SBZdb, Types, TicketRowLean } from "$lib/types";
+	import type {
+		SBZdb,
+		Types,
+		TicketRowLean,
+		GenericResponseWData,
+		CloseTicketReturnObj,
+	} from "$lib/types";
 	import type { ColumnDef, PaginationState } from "@tanstack/table-core";
 
 	let { data }: PageProps = $props();
@@ -650,14 +656,17 @@
 				body: JSON.stringify({
 					action: sheetConfig,
 					obj: {
-						userEmail: activeRow.email,
+						clientEmail: activeRow.email,
 						ticketId: activeRow.id,
 						reason: udf1.trim(),
+						assigneeVars: activeRow.assignee_email_vars,
+						clientVars: activeRow.email_vars,
+						names: activeRow.names,
 					},
 				}),
 			});
 
-			const res: { success: boolean; message: string } = await req.json();
+			const res: GenericResponseWData<CloseTicketReturnObj> = await req.json();
 
 			loading = false;
 
@@ -669,7 +678,12 @@
 			toast.success(res.message);
 
 			const updatedTicket: TicketRowLean = JSON.parse(JSON.stringify(activeRow));
-			updatedTicket.assigned = udp1;
+
+			updatedTicket.close_date = res.data.close_date;
+			updatedTicket.close_reason = res.data.close_reason;
+			updatedTicket.closed_by = res.data.closed_by;
+			updatedTicket.is_closed = res.data.is_closed;
+
 			updateTicket(updatedTicket);
 		} catch (ex: any) {
 			loading = false;
@@ -1035,14 +1049,16 @@
 						placeholder="E.g The previous assignee is out of office."
 						disabled={loading}
 						onkeypress={(e) => {
-							if (e.key === "Enter") reassignTicket();
+							if (e.key === "Enter") {
+								e.preventDefault();
+								reassignTicket();
+							}
 						}}
 						maxlength={120}
 						class="h-[100px]"
 					/>
 					<p class="text-justify text-sm text-muted-foreground">
-						This will be shown in the audit trail, and in an email to the client, and the trading
-						desk.
+						This will be shown in the audit trail, and in an email to the trading desk.
 					</p>
 				</div>
 			{/if}
@@ -1116,6 +1132,29 @@
 					}}
 				/>
 			{/if}
+
+			{#if sheetConfig === "close"}
+				<div class="flex w-full max-w-sm flex-col gap-1.5">
+					<Label>Close Reason</Label>
+					<Textarea
+						bind:value={udf1}
+						placeholder="E.g The account has been opened."
+						disabled={loading}
+						onkeypress={(e) => {
+							if (e.key === "Enter") {
+								e.preventDefault();
+								closeTicket();
+							}
+						}}
+						maxlength={120}
+						class="h-[100px]"
+					/>
+					<p class="text-justify text-sm text-muted-foreground">
+						This will be shown in the audit trail, and in an email to the client, and the trading
+						desk.
+					</p>
+				</div>
+			{/if}
 		{/snippet}
 
 		{#snippet actionButton()}
@@ -1125,8 +1164,8 @@
 				>
 			{/if}
 
-			{#if sheetConfig === "reassign"}
-				<Button disabled={!udp1.length || udf1.length < 10} onclick={reassignTicket}
+			{#if sheetConfig === "close"}
+				<Button variant="destructive" disabled={udf1.length < 10} onclick={closeTicket}
 					>Submit<Upload class="ml-2 h-4 w-4" /></Button
 				>
 			{/if}

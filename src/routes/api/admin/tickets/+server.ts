@@ -3,6 +3,7 @@ import kratos from "$lib/server/kratos";
 import dbs from "$lib/server/db";
 
 import type { Types } from "$lib/types";
+import type { CloseTicketObj } from "$lib/server/db/utils.js";
 
 export const POST = async (event) => {
 	const sender = await kratos.admin(event);
@@ -37,6 +38,22 @@ export const POST = async (event) => {
 					data: auditReq.data,
 				},
 				{ status: auditReq.success ? 200 : 400 },
+			);
+		case "close":
+			const _obj: CloseTicketObj = obj;
+
+			const closeReq = await dbs.sbz.closeTicket({
+				admin: sender.username,
+				adminEmail: sender.email,
+				..._obj,
+			});
+			return json(
+				{
+					success: closeReq.success,
+					message: closeReq.message,
+					data: closeReq.data,
+				},
+				{ status: closeReq.success ? 200 : 400 },
 			);
 		default:
 			return json(
