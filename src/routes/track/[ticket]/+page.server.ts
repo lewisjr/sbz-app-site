@@ -42,7 +42,6 @@ export const load = async ({ cookies, params }) => {
 
 	const _ticket = await dbs.sbz.getOneTicket(params.ticket);
 
-	/*
 	if (_ticket.platform === "") {
 		return {
 			otp: false,
@@ -77,7 +76,6 @@ export const load = async ({ cookies, params }) => {
 			error: false,
 		};
 	}
-	*/
 
 	const [assignee, _messages] = await Promise.all([
 		dbs.sbz.getAdmin(_ticket.assigned),

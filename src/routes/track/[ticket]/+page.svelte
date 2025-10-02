@@ -152,8 +152,6 @@
 			return;
 		}
 
-		toast.info("running!");
-
 		await processAI();
 	};
 
@@ -308,6 +306,7 @@
 			const res: GenericResponse = await req.json();
 
 			if (!res.success) {
+				loading = false;
 				toast.error(res.message);
 				return;
 			}
@@ -658,13 +657,13 @@
 					if (e.key === "Enter") {
 						e.preventDefault();
 
-						if (!(textValue.length < 10 || loading)) sendChat();
+						if (!(textValue.length < 3 || loading)) sendChat();
 					}
 				}}
 			/>
 			<Button
 				class="rounded-full"
-				disabled={data.ticket.is_closed ? true : textValue.length < 10 || loading}
+				disabled={data.ticket.is_closed ? true : textValue.length < 3 || loading}
 				onclick={sendChat}
 			>
 				{#if loading}

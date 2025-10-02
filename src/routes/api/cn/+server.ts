@@ -10,7 +10,7 @@ type InsertTicket = SBZdb["public"]["Tables"]["odyn-tickets"]["Insert"];
 export const POST = async ({ request, cookies }) => {
 	const data: InsertTicket = await request.json();
 
-	const aiOnly = ["Account Opening"];
+	const aiOnly: string[] = [];
 
 	if (aiOnly.includes(data.query_type)) {
 		const ticketRes = await dbs.sbz.createAIticket(data);

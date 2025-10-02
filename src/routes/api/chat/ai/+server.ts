@@ -8,10 +8,8 @@ import type { GenericResponseWData, SBZdb } from "$lib/types/index";
 import { toTitleCase } from "@cerebrusinc/fstring";
 
 export const POST = async (event) => {
-	/*
 	const sender = await kratos.chat(event);
 	if (sender instanceof Response) return sender;
-    */
 
 	const { request } = event;
 

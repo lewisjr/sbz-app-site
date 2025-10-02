@@ -547,7 +547,15 @@
 					{:else}
 						<li class="self">
 							<p class="note">{toTitleCase(msg.sender)}</p>
-							<p class="text">{msg.body}</p>
+							<p class="text">
+								{#each msg.body.split("||") as txt}
+									{#if txt === "newline"}
+										<br /><br />
+									{:else}
+										<span>{txt}</span>
+									{/if}
+								{/each}
+							</p>
 							<p class="note">{formatDbTime(msg.created_at)}</p>
 						</li>
 					{/if}

@@ -160,7 +160,7 @@
 	};
 
 	const createChatRoom = async () => {
-		toast.info("Creating chat room...");
+		toast.info("Creating ticket...");
 		loading = true;
 
 		const obj = {
