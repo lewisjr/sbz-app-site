@@ -1,6 +1,6 @@
 <script lang="ts">
 	//functions
-	import { onMount } from "svelte";
+	import { onMount, tick } from "svelte";
 	import { toast } from "svelte-sonner";
 	import { invalidateAll } from "$app/navigation";
 	import { formatDbTime } from "$lib/utils";
@@ -101,6 +101,62 @@
 	type OdynChat = SBZdb["public"]["Tables"]["odyn-chats"]["Row"];
 
 	let messages = $state<OdynChat[]>([]);
+
+	const processAI = async () => {
+		try {
+			typing = true;
+
+			const req = await fetch("/api/chat/ai", {
+				method: "POST",
+				body: JSON.stringify({
+					ticketId: data.ticketId,
+					clientEmail: data.ticket.uid,
+					clientName: data.ticket.names,
+					history: messages,
+					queryType: data.ticket.query_type,
+				}),
+			});
+
+			const res: GenericResponseWData<string> = await req.json();
+
+			typing = false;
+
+			if (!res.success) toast.error(res.message);
+
+			if (res.data === "reassign") {
+				if (res.success) toast.success(res.message);
+				invalidateAll();
+			}
+		} catch (ex: any) {
+			loading = false;
+
+			console.error("===== EX\n", ex);
+
+			const message =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex?.message || JSON.stringify(ex);
+
+			toast.error(message);
+			return;
+		}
+	};
+
+	const getAiResponse = async () => {
+		await tick();
+		const len = messages.length;
+
+		if (data.ticket.assigned !== "odyn" || messages[len - 1].sender === "odyn") {
+			return;
+		}
+
+		toast.info("running!");
+
+		await processAI();
+	};
+
 	const initMessage = () => {
 		messages = [
 			{
@@ -193,6 +249,8 @@
 			},*/,
 			...data.messages,
 		];
+
+		getAiResponse();
 	};
 
 	const scrollToBottom = () => {
@@ -249,14 +307,18 @@
 
 			const res: GenericResponse = await req.json();
 
-			loading = false;
-
 			if (!res.success) {
 				toast.error(res.message);
 				return;
 			}
 
 			textValue = "";
+
+			if (data.ticket.assigned === "odyn") {
+				processAI();
+			}
+
+			loading = false;
 		} catch (ex: any) {
 			loading = false;
 
@@ -552,7 +614,16 @@
 					{:else}
 						<li class="other">
 							<p class="note">{msg.sender === "odyn" ? "AI" : toTitleCase(msg.sender)}</p>
-							<p class="text">{msg.body}</p>
+
+							<p class="text">
+								{#each msg.body.split("||") as txt}
+									{#if txt === "newline"}
+										<br />
+									{:else}
+										<span>{txt}</span>
+									{/if}
+								{/each}
+							</p>
 							<p class="note">{formatDbTime(msg.created_at)}</p>
 						</li>
 					{/if}

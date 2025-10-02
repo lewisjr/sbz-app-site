@@ -3,6 +3,8 @@ import dbs from "$lib/server/db";
 import Tokenise from "$lib/server/tokenise";
 import kratos from "$lib/server/kratos.js";
 
+import { SERVER_API_KEY, SERVER_BASE_URL } from "$env/static/private";
+
 import type { SBZdb } from "$lib/types/index";
 import type { NotifConfigObj } from "$lib/server/db/utils.js";
 
@@ -22,31 +24,6 @@ export const GET = async (event) => {
 
 	return json({ success: true, message: "", data }, { status: 200 });
 };
-
-/*
-export const POST = async ({ request, cookies }) => {
-	const { user, otp }: { user: string; otp: number } = await request.json();
-
-	const correct = await dbs.sbz.checkOtp({ otp, user });
-
-	if (correct.success) {
-		cookies.set("sbz-nootp", "true", {
-			path: "/",
-			httpOnly: true,
-			maxAge: 60 * 60 * 1,
-			secure: true,
-		});
-	}
-
-	return json(
-		{
-			success: correct.success,
-			message: correct.success ? "Succesfully verified your identity!" : correct.message,
-		},
-		{ status: correct.success ? 200 : 400 },
-	);
-};
-*/
 
 export const PATCH = async (event) => {
 	const sender = await kratos.admin(event);

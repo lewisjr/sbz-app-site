@@ -5,7 +5,11 @@ import { genOTP } from "$lib/utils.js";
 import type { SBZdb } from "$lib/types/index.js";
 import type { TicketRowLean } from "$lib/types/index.js";
 
-import { DB_URL, DB_ANON } from "$env/static/private";
+import { DB_URL, DB_ANON, SERVER_BASE_URL } from "$env/static/private";
+
+const wakeOdyn = async () => {
+	await fetch(`${SERVER_BASE_URL}/health`);
+};
 
 export const load = async ({ cookies, params }) => {
 	const cookie = cookies.get("sbz-nootp");
@@ -38,6 +42,7 @@ export const load = async ({ cookies, params }) => {
 
 	const _ticket = await dbs.sbz.getOneTicket(params.ticket);
 
+	/*
 	if (_ticket.platform === "") {
 		return {
 			otp: false,
@@ -72,10 +77,12 @@ export const load = async ({ cookies, params }) => {
 			error: false,
 		};
 	}
+	*/
 
 	const [assignee, _messages] = await Promise.all([
 		dbs.sbz.getAdmin(_ticket.assigned),
 		dbs.sbz.getAllChatMessages(params.ticket),
+		wakeOdyn(),
 	]);
 
 	return {

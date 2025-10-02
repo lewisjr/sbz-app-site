@@ -129,7 +129,7 @@ interface SBZutils {
 	getAllTickets: () => Promise<TicketRowLean[]>;
 	closeTicket: (obj: CloseTicketObjInternal) => Promise<GenericResponseWData<CloseTicketReturnObj>>;
 	getOneTicket: (ticketId: string) => Promise<TicketRowLean>;
-	reassignWebTicket: (obj: ReassignByEmailObj) => Promise<GenericResponse>;
+	reassignWebTicket: (obj: ReassignByEmailObj, aiMode?: boolean) => Promise<GenericResponse>;
 	uploadKyc: (files: FileData[]) => Promise<void>;
 
 	isAdminCorrect: (username: string) => Promise<boolean>;
@@ -151,6 +151,8 @@ interface SBZutils {
 
 	// chat stuff
 	sendChat: (obj: ChatInsert, notifCongif?: NotifConfigObj) => Promise<boolean>;
+	/**AI only */
+	sendChats: (obj: ChatInsert[]) => Promise<boolean>;
 	/**Move chat from AI to human */
 	humanifyChatWeb: (ticket: TicketRowLean) => Promise<GenericResponse>;
 	getAllChatMessages: (ticketId: string) => Promise<ChatRow[]>;
@@ -626,7 +628,10 @@ const sbz = (): SBZutils => {
 		}
 	};
 
-	const _reassignWebTicket = async (obj: ReassignByEmailObj): Promise<GenericResponse> => {
+	const _reassignWebTicket = async (
+		obj: ReassignByEmailObj,
+		aiMode?: boolean,
+	): Promise<GenericResponse> => {
 		const { ticketId, new: neew, old, sender, clientEmail, clientName, queryType, message } = obj;
 
 		/**First day of the current month */
@@ -674,7 +679,7 @@ const sbz = (): SBZutils => {
 			if (ticketAdminsRes.error) {
 				await _log({ message: ticketAdminsRes.error.message, title: "Reassign Ticket Error - 3" });
 				return {
-					message: "Failed to proceed past third operation. Please refresh your browser.",
+					message: "Error during operation. Please refresh your browser.",
 					success: false,
 				};
 			}
@@ -682,23 +687,40 @@ const sbz = (): SBZutils => {
 			if (adminsRes.error) {
 				await _log({ message: adminsRes.error.message, title: "Reassign Ticket Error - 4" });
 				return {
-					message: "Failed to proceed past fourth operation. Please refresh your browser.",
+					message: "Failed to finish operation. Please refresh your browser.",
 					success: false,
 				};
 			}
 
-			const agents: TicketCandidateObjExt[] = ticketAdminsRes.data.map((r) => {
+			const agents: TicketCandidateObjExt[] = [];
+
+			ticketAdminsRes.data.forEach((r) => {
 				const _d = new Date(r.created_at);
 				const _m = _d.getMonth();
-				return {
-					_id: r.id,
-					email: "",
-					name: "",
-					phone: "",
-					agentId: r.key.replace(".tickets", ""),
-					volume: Number(r.value),
-					month: _m,
-				};
+
+				const agentId = r.key.replace(".tickets", "");
+
+				if (agentId === neew)
+					agents.push({
+						_id: r.id,
+						email: "",
+						name: "",
+						phone: "",
+						agentId,
+						volume: Number(r.value),
+						month: _m,
+					});
+
+				if (agentId === old && !aiMode)
+					agents.push({
+						_id: r.id,
+						email: "",
+						name: "",
+						phone: "",
+						agentId,
+						volume: Number(r.value),
+						month: _m,
+					});
 			});
 
 			const updatedAgentObects: TicketCandidateObjExt[] = [];
@@ -759,7 +781,7 @@ const sbz = (): SBZutils => {
 				clientEmail,
 			);
 
-			const [] = await Promise.all([
+			await Promise.all([
 				...updatedAgentObects.map((agent) =>
 					_updateTicketCandidate(agent, agent.agentId === old ? true : undefined),
 				),
@@ -1361,6 +1383,37 @@ const sbz = (): SBZutils => {
 		}
 	};
 
+	// ai specifically
+	const _sendChats = async (obj: ChatInsert[]): Promise<boolean> => {
+		const objs = obj.map((chat) => {
+			const oldBody = chat.body;
+			chat.body = tokenise.encode(oldBody);
+			return chat;
+		});
+
+		try {
+			const { error } = await sbzdb.from("odyn-chats").insert(objs);
+
+			if (error) {
+				_log({ message: error.message, title: "Send Chat Error" });
+				return false;
+			}
+
+			return true;
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Send Chat Exception" });
+
+			return false;
+		}
+	};
+
 	/**Move chat from AI to human */
 	const _humanifyChatWeb = async (ticket: TicketRowLean): Promise<GenericResponse> => {
 		try {
@@ -1495,6 +1548,7 @@ const sbz = (): SBZutils => {
 		getAllChatMessages: _getAllChatMessages,
 		humanifyChatWeb: _humanifyChatWeb,
 		sendChat: _sendChat,
+		sendChats: _sendChats,
 	};
 };
 

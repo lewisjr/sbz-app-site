@@ -21,15 +21,7 @@
 	import type { Types, GenericResponseWData, GenericResponse } from "$lib/types";
 
 	//icons
-	import {
-		Facebook,
-		Linkedin,
-		Youtube,
-		MessageCircle,
-		LogIn,
-		ArrowRight,
-		Upload,
-	} from "@lucide/svelte";
+	import { MessageCircle, LogIn, ArrowRight, Upload } from "@lucide/svelte";
 	import { toast } from "svelte-sonner";
 
 	let isMobile = $derived($screenWidthStore < 768);
@@ -37,7 +29,7 @@
 
 	let loading = $state<boolean>(false);
 
-	type Position = "1" | "2" | "3" | "4" | "5";
+	type Position = "1" | "2" | "3" | "4" | "5" | "6";
 
 	let contentPosition = $state<Position>("1");
 	const changePosition = () => {
@@ -201,7 +193,9 @@
 			}
 
 			toast.success(res.message);
-			goto(res.data);
+
+			if (res.data.startsWith("/")) goto(res.data);
+			else contentPosition = "6";
 		} catch (ex: any) {
 			loading = false;
 			const message =
@@ -328,6 +322,10 @@
 
 			{#if contentPosition === "5"}
 				Thank You!
+			{/if}
+
+			{#if contentPosition === "6"}
+				Ticket Opened!
 			{/if}
 		</h3>
 		<section class="inputs">
@@ -506,6 +504,13 @@
 						>open an account</a
 					>
 					or <a href="/sign-in">sign in</a> and take control of your investments!
+				</p>
+			{/if}
+
+			{#if contentPosition === "6"}
+				<p class="w-[400px] max-w-[100%] text-justify">
+					An email has been sent to you with your ticket details, a broker should be in touch within
+					24 hours.
 				</p>
 			{/if}
 		</section>
