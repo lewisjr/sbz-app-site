@@ -484,16 +484,15 @@
 								disabled={loading}
 								maxlength={200}
 								class="h-[150px] w-[400px] max-w-[100%]"
+								onkeypress={(e) => {
+									if (e.key === "Enter") e.preventDefault();
+								}}
 							/>
 						</div>
 					</div>
 
 					<Button class="mt-5" disabled={nextDisabled} onclick={processQuery}
-						>{endButtonText}{#if endButtonText === "Submit"}
-							<Upload />
-						{:else}
-							<MessageCircle />
-						{/if}</Button
+						>Submit<Upload /></Button
 					>
 				{/if}
 			{/if}

@@ -618,7 +618,7 @@
 							<p class="text">
 								{#each msg.body.split("||") as txt}
 									{#if txt === "newline"}
-										<br />
+										<br /><br />
 									{:else}
 										<span>{txt}</span>
 									{/if}
