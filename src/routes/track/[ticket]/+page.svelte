@@ -16,7 +16,7 @@
 	import Textarea from "$lib/components/ui/textarea/textarea.svelte";
 
 	//icons
-	import { Frown, Upload, Loader2Icon } from "@lucide/svelte";
+	import { Frown, Upload, Loader2Icon, MessageCircle } from "@lucide/svelte";
 
 	//types
 	import type { PageProps } from "./$types";
@@ -489,7 +489,7 @@
 	let checkForOnlineInterval = $state<ReturnType<typeof setInterval> | undefined>(undefined);
 
 	onMount(() => {
-		if (!data.error && !data.otp) {
+		if (!data.error && !data.otp && !data.diffPlatform) {
 			listener = createClient<SBZdb>(data.dbUrl, data.dbAuth);
 
 			scrollToBottom();
@@ -569,6 +569,14 @@
 		<h1 class="my-4">Error!</h1>
 		<p class="w-[89%] text-center">
 			Failed to fetch your chat room! Please try again after 5 minutes.
+		</p>
+	</div>
+{:else if data.diffPlatform}
+	<div class="mid-div">
+		<MessageCircle class="h-16 w-16" />
+		<h1 class="my-4">Redirect!</h1>
+		<p class="w-[89%] text-center">
+			This ticket was opened on <i>{data.ticket.platform}</i>, please continue to interact on there.
 		</p>
 	</div>
 {:else if data.otp}

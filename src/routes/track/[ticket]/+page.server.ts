@@ -42,6 +42,20 @@ export const load = async ({ cookies, params }) => {
 
 	const _ticket = await dbs.sbz.getOneTicket(params.ticket);
 
+	if (!["Web", "Email"].includes(_ticket.platform)) {
+		return {
+			otp: false,
+			ticketId: params.ticket,
+			ticket: _ticket,
+			assigneeEmail: "",
+			messages,
+			dbUrl: "",
+			dbAuth: "",
+			error: false,
+			diffPlatform: true,
+		};
+	}
+
 	if (_ticket.platform === "") {
 		return {
 			otp: false,
@@ -52,6 +66,7 @@ export const load = async ({ cookies, params }) => {
 			dbUrl: DB_URL,
 			dbAuth: DB_ANON,
 			error: true,
+			diffPlatform: false,
 		};
 	}
 
@@ -74,6 +89,7 @@ export const load = async ({ cookies, params }) => {
 			dbUrl: DB_URL,
 			dbAuth: DB_ANON,
 			error: false,
+			diffPlatform: false,
 		};
 	}
 
@@ -92,5 +108,6 @@ export const load = async ({ cookies, params }) => {
 		dbUrl: DB_URL,
 		dbAuth: DB_ANON,
 		error: false,
+		diffPlatform: false,
 	};
 };

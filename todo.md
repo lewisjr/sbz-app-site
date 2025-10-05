@@ -1,0 +1,39 @@
+# TO DO
+
+## ticket stuff 5 Oct 2025 @ 22:42
+
+- [] create messenger chat ui
+- [] add settlement and cn generation
+- [] make chat ui only work for web tickets
+- [] finish account opening!
+- [] add analytics
+
+## ADD IP TRACKER
+
+```ts
+// src/routes/+layout.server.ts
+import type { LayoutServerLoad } from "./$types";
+import UAParser from "ua-parser-js";
+
+export const load: LayoutServerLoad = async (event) => {
+	// IP (depends on adapter & proxy setup)
+	const ip = event.getClientAddress();
+
+	// User agent
+	const uaString = event.request.headers.get("user-agent") ?? "";
+	const ua = new UAParser(uaString).getResult();
+
+	// Geo lookup (example with a third-party service)
+	const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
+	const geo = await geoRes.json();
+
+	return {
+		ip,
+		city: geo.city,
+		country: geo.country_name,
+		device: ua.device,
+		browser: ua.browser,
+		os: ua.os,
+	};
+};
+```
