@@ -4,7 +4,7 @@
 
 - [] create messenger chat ui
 - [] add settlement and cn generation
-- [] make chat ui only work for web tickets
+- [x] make chat ui only work for web and email tickets
 - [] finish account opening!
 - [] add analytics
 
