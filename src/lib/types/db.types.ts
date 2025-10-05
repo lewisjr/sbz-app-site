@@ -228,6 +228,24 @@ export type Database = {
 				};
 				Relationships: [];
 			};
+			"odyn-cache": {
+				Row: {
+					position: string;
+					udf: string;
+					uid: string;
+				};
+				Insert: {
+					position: string;
+					udf: string;
+					uid: string;
+				};
+				Update: {
+					position?: string;
+					udf?: string;
+					uid?: string;
+				};
+				Relationships: [];
+			};
 			"odyn-chats": {
 				Row: {
 					body: string;

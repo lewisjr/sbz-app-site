@@ -113,6 +113,10 @@ interface CloseTicketObjInternal extends CloseTicketObj {
 
 type ChatRow = SBZdb["public"]["Tables"]["odyn-chats"]["Row"];
 
+interface AppendEmailVarsObj {
+	subject: string;
+	msgId: string;
+}
 interface SBZutils {
 	log: (obj: LogObj) => Promise<void>;
 	setOtp: (obj: OTPObj) => Promise<GenericResponse>;
@@ -130,6 +134,7 @@ interface SBZutils {
 	closeTicket: (obj: CloseTicketObjInternal) => Promise<GenericResponseWData<CloseTicketReturnObj>>;
 	getOneTicket: (ticketId: string) => Promise<TicketRowLean>;
 	reassignWebTicket: (obj: ReassignByEmailObj, aiMode?: boolean) => Promise<GenericResponse>;
+	appendClientEmailVars: (obj: AppendEmailVarsObj) => Promise<boolean>;
 	uploadKyc: (files: FileData[]) => Promise<void>;
 
 	isAdminCorrect: (username: string) => Promise<boolean>;
@@ -806,6 +811,31 @@ const sbz = (): SBZutils => {
 				success: false,
 				message: "Server error, please wait 10 minutes and try again.",
 			};
+		}
+	};
+
+	const _appendClientEmailVars = async (obj: AppendEmailVarsObj): Promise<boolean> => {
+		try {
+			const { error } = await sbzdb
+				.from("odyn-tickets")
+				.update({ email_vars: `${obj.msgId},,${obj.subject}` });
+
+			if (error) {
+				await _log({ message: error.message, title: "Append Client Email Vars Error" });
+				return false;
+			}
+
+			return true;
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Append Client Email Vars Exception" });
+			return false;
 		}
 	};
 
@@ -1539,6 +1569,7 @@ const sbz = (): SBZutils => {
 		isClientCorrect: _isClientCorrect,
 		getAgents: _getAgents,
 		reassignWebTicket: _reassignWebTicket,
+		appendClientEmailVars: _appendClientEmailVars,
 		auditTicket: _auditTicket,
 		appendHistory: _appendHistory,
 		getAllLogs: _getAllLogs,

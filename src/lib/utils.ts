@@ -101,4 +101,4 @@ export const queryTypesArray = [
 	"QT:Other",
 ] as const;
 
-export const platformsArray = ["P:Web", "P:Messenger", "P:Whatsapp"] as const;
+export const platformsArray = ["P:Web", "P:Messenger", "P:Whatsapp", "P:Email"] as const;

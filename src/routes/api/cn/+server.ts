@@ -1,6 +1,7 @@
 import dbs from "$lib/server/db";
 import { json } from "@sveltejs/kit";
 import { toTitleCase } from "@cerebrusinc/fstring";
+import notif from "$lib/server/email";
 
 import type { SBZdb } from "$lib/types";
 
@@ -46,7 +47,25 @@ export const POST = async ({ request, cookies }) => {
 			ticketId: ticketResOther.data,
 		});
 
-		await Promise.all([updateAgentReq, historyReq]);
+		const subject = `${data.query_type} #${ticketResOther.data} | Stockbrokers Zambia`;
+
+		const emailUidReq = notif.email.sendNested(
+			{
+				subject,
+				title: `Ticket Opened!`,
+				body: `Hi ${data.names.split(" ")[0]},<br /><br /><b>${toTitleCase(agent.data.agentId)}</b> has been assigned to look into your open ticket numbered <b>${ticketResOther.data}</b>. We usually respond within 24 hours and you will be notified.`,
+				link: `https://app.sbz.com.zm/track/${ticketResOther.data}`,
+				linkText: "Open Chat",
+				extra: "Click the above button to track your query.",
+			},
+			data.email,
+		);
+
+		const [_, __, emailUid] = await Promise.all([updateAgentReq, historyReq, emailUidReq]);
+
+		if (emailUid) {
+			await dbs.sbz.appendClientEmailVars({ msgId: emailUid, subject });
+		}
 
 		return json(ticketResOther, { status: ticketResOther.success ? 201 : 400 });
 	}

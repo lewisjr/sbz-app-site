@@ -24,3 +24,7 @@ export const load: LayoutServerLoad = async (event) => {
     os: ua.os
   };
 };
+
+=== ticket stuff
+- create messenger chat ui
+- add settlement and cn generation
