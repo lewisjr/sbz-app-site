@@ -2,7 +2,8 @@
 
 ## ticket stuff 5 Oct 2025 @ 22:42
 
-- [] create messenger chat ui
+- [x] create messenger chat ui
+- [x] connect chat messenger to api
 - [] add settlement and cn generation
 - [x] make chat ui only work for web and email tickets
 - [] finish account opening!

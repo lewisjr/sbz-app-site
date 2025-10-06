@@ -25,6 +25,7 @@
 	import AnySheet from "$lib/components/AnySheet.svelte";
 	import TicketActions from "./TicketActions.svelte";
 	import ChatUI from "./ChatUI.svelte";
+	import ChatUIMessenger from "./ChatUIMessenger.svelte";
 
 	//components - shadcn
 	import Input from "$lib/components/ui/input/input.svelte";
@@ -601,6 +602,16 @@
 		closeSheet();
 	};
 
+	let url = $derived.by(() => {
+		let base = "/api/admin/tickets";
+
+		if (activeRow.platform === "Messenger") {
+			base = "/api/admin/tickets/chat/fb";
+		}
+
+		return base;
+	});
+
 	const reassignTicket = async () => {
 		const fail = !udp1.length || udf1.length < 10;
 
@@ -613,20 +624,34 @@
 		toast.info("Reassigning ticket...");
 
 		try {
-			const req = await fetch("/api/admin/tickets", {
+			const req = await fetch(url, {
 				method: "POST",
-				body: JSON.stringify({
-					action: sheetConfig,
-					obj: {
-						old: activeRow.assigned,
-						new: udp1,
-						ticketId: activeRow.id,
-						clientEmail: activeRow.email,
-						clientName: activeRow.names.split(" ")[0],
-						queryType: activeRow.query_type,
-						message: udf1,
-					},
-				}),
+				body: JSON.stringify(
+					activeRow.platform === "Messenger"
+						? {
+								clientUid: activeRow.uid,
+								data: {
+									old: activeRow.assigned,
+									new: udp1,
+									ticketId: activeRow.id,
+									queryType: activeRow.query_type,
+									message: udf1,
+								},
+								config: "reassign",
+							}
+						: {
+								action: sheetConfig,
+								obj: {
+									old: activeRow.assigned,
+									new: udp1,
+									ticketId: activeRow.id,
+									clientEmail: activeRow.email,
+									clientName: activeRow.names.split(" ")[0],
+									queryType: activeRow.query_type,
+									message: udf1,
+								},
+							},
+				),
 			});
 
 			const res: { success: boolean; message: string } = await req.json();
@@ -666,19 +691,32 @@
 		toast.info("Closing ticket...");
 
 		try {
-			const req = await fetch("/api/admin/tickets", {
+			const req = await fetch(url, {
 				method: "POST",
-				body: JSON.stringify({
-					action: sheetConfig,
-					obj: {
-						clientEmail: activeRow.email,
-						ticketId: activeRow.id,
-						reason: udf1.trim(),
-						assigneeVars: activeRow.assignee_email_vars,
-						clientVars: activeRow.email_vars,
-						names: activeRow.names,
-					},
-				}),
+				body: JSON.stringify(
+					activeRow.platform === "Messenger"
+						? {
+								clientUid: activeRow.uid,
+								data: {
+									adminEmail: "",
+									assigneeVars: activeRow.assignee_email_vars,
+									reason: udf1.trim(),
+									ticketId: activeRow.id,
+								},
+								config: "close",
+							}
+						: {
+								action: sheetConfig,
+								obj: {
+									clientEmail: activeRow.email,
+									ticketId: activeRow.id,
+									reason: udf1.trim(),
+									assigneeVars: activeRow.assignee_email_vars,
+									clientVars: activeRow.email_vars,
+									names: activeRow.names,
+								},
+							},
+				),
 			});
 
 			const res: GenericResponseWData<CloseTicketReturnObj> = await req.json();
@@ -1174,15 +1212,27 @@
 			{/if}
 
 			{#if sheetConfig === "chat"}
-				<ChatUI
-					data={{
-						ticket: activeRow,
-						ticketId: activeRow.id,
-						dbAuth: data.dbAuth,
-						dbUrl: data.dbUrl,
-						admin: data.admin,
-					}}
-				/>
+				{#if activeRow.platform === "Messenger"}
+					<ChatUIMessenger
+						data={{
+							ticket: activeRow,
+							ticketId: activeRow.id,
+							dbAuth: data.dbAuth,
+							dbUrl: data.dbUrl,
+							admin: data.admin,
+						}}
+					/>
+				{:else}
+					<ChatUI
+						data={{
+							ticket: activeRow,
+							ticketId: activeRow.id,
+							dbAuth: data.dbAuth,
+							dbUrl: data.dbUrl,
+							admin: data.admin,
+						}}
+					/>
+				{/if}
 			{/if}
 
 			{#if sheetConfig === "close"}
@@ -1211,7 +1261,7 @@
 
 		{#snippet actionButton()}
 			{#if sheetConfig === "reassign"}
-				<Button disabled={!udp1.length || udf1.length < 10} onclick={reassignTicket}
+				<Button disabled={!udp1.length || udf1.length < 10 || loading} onclick={reassignTicket}
 					>Submit<Upload class="ml-2 h-4 w-4" /></Button
 				>
 			{/if}
