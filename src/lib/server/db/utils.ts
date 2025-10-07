@@ -2,6 +2,7 @@ import notif from "../email";
 import { nfdb, sbzdb } from "./db";
 import { genDbTimestamp, genId } from "$lib/utils";
 import { toTitleCase } from "@cerebrusinc/fstring";
+import manifest from "../../../../package.json";
 
 import Tokenise from "../tokenise";
 
@@ -14,7 +15,7 @@ import type {
 } from "$lib/types";
 import type { StorageError } from "@supabase/storage-js";
 
-import { DEV } from "$env/static/private";
+import { DEV, SERVER_BASE_URL } from "$env/static/private";
 
 const IS_DEV = DEV === "y";
 
@@ -119,6 +120,11 @@ interface AppendEmailVarsObj {
 }
 
 type SocialsRow = SBZdb["public"]["Tables"]["odyn-socials"]["Row"];
+
+interface ApiVersion {
+	success: boolean;
+	version: string;
+}
 interface SBZutils {
 	log: (obj: LogObj) => Promise<void>;
 	setOtp: (obj: OTPObj) => Promise<GenericResponse>;
@@ -166,6 +172,10 @@ interface SBZutils {
 
 	// odyn socials
 	getAllSocials: () => Promise<SocialsRow[]>;
+
+	// utils
+	getAgentStatus: () => Promise<ApiVersion>;
+	getSiteStatus: () => Promise<ApiVersion>;
 }
 
 const sbz = (): SBZutils => {
@@ -1570,6 +1580,28 @@ const sbz = (): SBZutils => {
 		}
 	};
 
+	// utils
+	const _getAgentStatus = async (): Promise<ApiVersion> => {
+		try {
+			const req = await fetch(`${SERVER_BASE_URL}/health`);
+
+			const res = await req.json();
+
+			return res;
+		} catch {
+			return { success: false, version: "-1" };
+		}
+	};
+
+	// check the status of the Site
+	const _getSiteStatus = async (): Promise<ApiVersion> => {
+		try {
+			return { success: true, version: manifest.version };
+		} catch {
+			return { success: false, version: "-1" };
+		}
+	};
+
 	return {
 		log: _log,
 		setOtp: _setOtp,
@@ -1602,6 +1634,8 @@ const sbz = (): SBZutils => {
 		sendChat: _sendChat,
 		sendChats: _sendChats,
 		getAllSocials: _getAllSocials,
+		getAgentStatus: _getAgentStatus,
+		getSiteStatus: _getSiteStatus,
 	};
 };
 

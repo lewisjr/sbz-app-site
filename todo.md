@@ -4,13 +4,14 @@
 
 - [x] create messenger chat ui
 - [x] connect chat messenger to api
-- [] add settlement and cn generation
+- [] add settlement
+- [] add cn generation
 - [x] make chat ui only work for web and email tickets
 - [] finish account opening!
 - [x] add analytics
 - [x] add socials
-- [] add home WoW analysis
-- [] add some reports like the dmr
+- [x] add home WoW analysis
+- [] add some reports like the dmr and sm report (downloadable)
 
 ## ADD IP TRACKER
 

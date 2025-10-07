@@ -102,12 +102,10 @@
 	</a>
 
 	<!-- Actual Links -->
-	<!--
 	<a class={`link${path === "/admin/home" ? " current" : ""}`} href="/admin/home">
 		<Home class="h-8 w-8" />
 		<p>Home</p>
 	</a>
-	-->
 
 	<!-- Odyn -->
 	<div class="titl">
