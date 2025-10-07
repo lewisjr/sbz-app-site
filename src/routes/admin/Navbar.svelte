@@ -170,11 +170,7 @@
 	</a>
 	-->
 
-	<a
-		class={`link${path === "/admin/trades" ? " current" : ""}`}
-		href="https://engine.neos.finance/d/trades"
-		target="_blank"
-	>
+	<a class={`link${path === "/admin/trades" ? " current" : ""}`} href="/admin/trades">
 		<ArrowRightLeft class="h-8 w-8" />
 		<p>Trades</p>
 	</a>

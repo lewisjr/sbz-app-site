@@ -1,5 +1,6 @@
 import util from "util";
 import { customAlphabet } from "nanoid";
+import { numParse, parseDate } from "@cerebrusinc/qol";
 
 /**6 digit otp */
 export const genOTP = (): number => {
@@ -102,3 +103,154 @@ export const queryTypesArray = [
 ] as const;
 
 export const platformsArray = ["P:Web", "P:Messenger", "P:Whatsapp", "P:Email"] as const;
+
+/**Generate today's date in the following format YYYYMMDD in utc */
+export const genDate = (): number => {
+	const d = new Date();
+
+	const y = d.getUTCFullYear();
+	const _m = d.getUTCMonth() + 1;
+	const m = _m > 9 ? _m.toString() : `0${_m}`;
+	const _D = d.getUTCDate();
+	const D = _D > 9 ? _D.toString() : `0${_D}`;
+
+	return Number(`${y}${m}${D}`);
+};
+
+/**Using a date in formation YYYYMMDD do some complicated date mathematics */
+export const getOldDate = (d: number, diff: number) => {
+	const dateStr = d.toString();
+	// Extract year, month, and day from the input string
+	const year = parseInt(dateStr.substring(0, 4), 10);
+	const month = parseInt(dateStr.substring(4, 6), 10) - 1; // Months are 0-based
+	const day = parseInt(dateStr.substring(6, 8), 10);
+
+	// Create a Date object for the given date
+	const date = new Date(year, month, day);
+
+	// Subtract 30 days
+	date.setDate(date.getDate() - diff);
+
+	// Extract the new year, month, and day
+	const newYear = date.getFullYear();
+	const newMonth = String(date.getMonth() + 1).padStart(2, "0"); // Months are 1-based for formatting
+	const newDay = String(date.getDate()).padStart(2, "0");
+
+	// Format the new date as YYYYMMDD
+	return Number(`${newYear}${newMonth}${newDay}`);
+};
+
+/**Minify numbers to include the "k", "M", "B", and "T" */
+export const mrMateNumMinifier = (_value: number, decimals?: boolean): string => {
+	const array: string[] = [];
+	const isNegative = _value < 0 ? true : false;
+	const [value, dec] = isNegative
+		? (_value * -1).toString().split(".")
+		: _value.toString().split(".");
+	//decimal count
+	let x = decimals ? 2 : 0;
+
+	// values between 1,000,000,000,000 and 999,999,999,999,999 | trillions
+	if (value.length > 12) {
+		const tempVal = numParse(value, "comma");
+		const splitTemp = tempVal.split(",");
+		const decVal =
+			splitTemp[1][0] === "0" && splitTemp[1][1] === "0"
+				? ""
+				: `.${splitTemp[1][0]}${Number(splitTemp[1][2]) > 4 ? Number(splitTemp[1][1]) + 1 : Number(splitTemp[1][1])}`;
+		return `${isNegative ? "-" : ""}${splitTemp[0]}${decVal}T`;
+	}
+
+	// values between 1,000,000,000 and 999,999,999,999 | billions
+	if (value.length > 9) {
+		const tempVal = numParse(value, "comma");
+		const splitTemp = tempVal.split(",");
+		const decVal =
+			splitTemp[1][0] === "0" && splitTemp[1][1] === "0"
+				? ""
+				: `.${splitTemp[1][0]}${Number(splitTemp[1][2]) > 4 ? Number(splitTemp[1][1]) + 1 : Number(splitTemp[1][1])}`;
+		return `${isNegative ? "-" : ""}${splitTemp[0]}${decVal}B`;
+	}
+
+	// values between 1,000,000 and 999,999,999 | millions
+	if (value.length > 6) {
+		const tempVal = numParse(value, "comma");
+		const splitTemp = tempVal.split(",");
+		const decVal =
+			splitTemp[1][0] === "0" && splitTemp[1][1] === "0"
+				? ""
+				: `.${splitTemp[1][0]}${Number(splitTemp[1][2]) > 4 ? Number(splitTemp[1][1]) + 1 : Number(splitTemp[1][1])}`;
+		return `${isNegative ? "-" : ""}${splitTemp[0]}${decVal}M`;
+	}
+
+	// in case decimals are allowed but the decimals are zero, make the decimal parameter 0
+	if (Number(_value.toFixed(2).split(".")[1]) === 0) x = 0;
+
+	return numParse(_value.toFixed(x), "comma");
+};
+
+/**Mr Mate requested symbol parity */
+export const mrMateSymbols = (value: string, fullReiz?: boolean): string => {
+	let codex: { [key: string]: string } = {
+		ZCCM: "ZCCM-IH",
+		ZNCO: "ZANACO",
+		ZMFA: "ZAMEFA",
+		ZABR: "ZAMBREW",
+		ZMRE: "ZAMBIA RE",
+		ZMBF: "ZAMBEEF",
+		ZFCO: "ZAFFICO",
+		SHOP: "SHOPRITE",
+		REIZ: "REAL ESTATE",
+		REIZUSD: "REAL ESTATE USD",
+		PMDZ: "PAMODZI",
+		NATB: "NATBREW",
+		MAFS: "MADISON",
+		CHIL: "CHILANGA",
+		CECZ: "CEC",
+	};
+
+	if (!fullReiz)
+		codex = {
+			ZCCM: "ZCCM-IH",
+			ZNCO: "ZANACO",
+			ZMFA: "ZAMEFA",
+			ZABR: "ZAMBREW",
+			ZMRE: "ZAMBIA RE",
+			ZMBF: "ZAMBEEF",
+			ZFCO: "ZAFFICO",
+			SHOP: "SHOPRITE",
+			REIZ: "REAL ESTATE",
+			PMDZ: "PAMODZI",
+			NATB: "NATBREW",
+			MAFS: "MADISON",
+			CHIL: "CHILANGA",
+			CECZ: "CEC",
+		};
+
+	if (codex[value]) return codex[value];
+	else return value;
+};
+
+/**Simple helper to change a negative number from normal to accounting format (e.g -1.036 to (1.04)) */
+export const negativesHandler = (value: number): string => {
+	if (value < 0) return `(${(value * -1).toFixed(2)})`;
+	else return value.toFixed(2);
+};
+
+/**Get a date as YYYYMMDD and change it to DD month YYYY */
+export const prettyDate = (_date: number | string): string => {
+	try {
+		const date = _date.toString();
+		const y = Number(date.substring(0, 4));
+		const m = Number(date.substring(4, 6));
+		const D = Number(date.substring(6, 8));
+
+		const pd = parseDate(D, 0, m - 1, y, "nsl");
+
+		if (typeof pd === "object") return "...";
+
+		return pd;
+	} catch (ex) {
+		return "N/A";
+	}
+};

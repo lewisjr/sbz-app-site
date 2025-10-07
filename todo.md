@@ -4,7 +4,8 @@
 
 - [x] create messenger chat ui
 - [x] connect chat messenger to api
-- [] add settlement
+- [x] add trades
+- [x] add settlement
 - [] add cn generation
 - [x] make chat ui only work for web and email tickets
 - [] finish account opening!

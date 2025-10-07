@@ -55,7 +55,7 @@
 />
 
 <div class="top-tainer mt-2 flex flex-row">
-	<h1>Dashboard</h1>
+	<h1>Home</h1>
 	<div class="flex flex-row">
 		<div class="items flex flex-row items-center">
 			{#if agentStatus}

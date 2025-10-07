@@ -1,6 +1,6 @@
 import notif from "../email";
 import { nfdb, sbzdb } from "./db";
-import { genDbTimestamp, genId } from "$lib/utils";
+import { genDbTimestamp, genId, genDate, getOldDate } from "$lib/utils";
 import { toTitleCase } from "@cerebrusinc/fstring";
 import manifest from "../../../../package.json";
 
@@ -12,6 +12,7 @@ import type {
 	GenericResponse,
 	GenericResponseWData,
 	CloseTicketReturnObj,
+	NFdb,
 } from "$lib/types";
 import type { StorageError } from "@supabase/storage-js";
 
@@ -1640,10 +1641,85 @@ const sbz = (): SBZutils => {
 };
 
 // ? NeuroFlow DB functions
-interface NFutils {}
+
+type MatchedTrade = NFdb["public"]["Tables"]["sbz-matched-trades"]["Row"];
+
+interface GetMatchedResponse {
+	trades: MatchedTrade[];
+}
+
+type OnSCreenOrder = NFdb["public"]["Tables"]["on-screen-orders"]["Row"];
+
+interface GetOnScreenResponse {
+	trades: OnSCreenOrder[];
+}
+
+interface NFutils {
+	/**Get the mathced trades from the db. Needs to be updated to include date filtering */
+	getMatchedTrades: (luseId?: number, diff?: number) => Promise<GetMatchedResponse>;
+	/**Get the on screen orders from the db. Needs to be updated to include date filtering */
+	getOnScreenOrders: (luseId?: number, diff?: number) => Promise<GetOnScreenResponse>;
+}
 
 const nf = (): NFutils => {
-	return {};
+	const _getMatchedTrades = async (
+		luseId?: number,
+		diff: number = 31,
+	): Promise<GetMatchedResponse> => {
+		const oldDate = getOldDate(genDate(), diff);
+
+		try {
+			const { data, error } = luseId
+				? await nfdb
+						.from("sbz-matched-trades")
+						.select()
+						.filter("luse_id", "eq", luseId)
+						.order("trade_date", { ascending: false })
+				: await nfdb
+						.from("sbz-matched-trades")
+						.select()
+						.filter("trade_date", "gte", oldDate)
+						.order("trade_date", { ascending: false });
+
+			if (error) return { trades: [] };
+
+			return { trades: data };
+		} catch (ex: any) {
+			return { trades: [] };
+		}
+	};
+
+	const _getOnScreenOrders = async (
+		luseId?: number,
+		diff: number = 31,
+	): Promise<GetOnScreenResponse> => {
+		const oldDate = getOldDate(genDate(), diff);
+
+		try {
+			const { data, error } = luseId
+				? await nfdb
+						.from("on-screen-orders")
+						.select()
+						.eq("luse_id", luseId)
+						.order("date", { ascending: false })
+				: await nfdb
+						.from("on-screen-orders")
+						.select()
+						.filter("date", "gte", oldDate)
+						.order("date", { ascending: false });
+
+			if (error) return { trades: [] };
+
+			return { trades: data };
+		} catch (ex: any) {
+			return { trades: [] };
+		}
+	};
+
+	return {
+		getMatchedTrades: _getMatchedTrades,
+		getOnScreenOrders: _getOnScreenOrders,
+	};
 };
 
 // end
