@@ -7,7 +7,7 @@
 - [] add settlement and cn generation
 - [x] make chat ui only work for web and email tickets
 - [] finish account opening!
-- [] add analytics
+- [x] add analytics
 - [x] add socials
 - [] add home WoW analysis
 - [] add some reports like the dmr

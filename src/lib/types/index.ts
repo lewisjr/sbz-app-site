@@ -8,6 +8,8 @@ import type {
 	CloseTicketReturnObj,
 } from "./others";
 
+import type { ApexOptions } from "apexcharts";
+
 export type {
 	SBZdb,
 	NFdb,
@@ -16,4 +18,5 @@ export type {
 	GenericResponse,
 	GenericResponseWData,
 	CloseTicketReturnObj,
+	ApexOptions,
 };
