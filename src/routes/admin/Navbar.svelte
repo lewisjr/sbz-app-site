@@ -124,12 +124,13 @@
 		<ChartNoAxesColumn class="h-8 w-8" />
 		<p>Analytics</p>
 	</a>
-
+	-->
+	
 	<a class={`link${path === "/admin/socials" ? " current" : ""}`} href="/admin/socials">
 		<Facebook class="h-8 w-8" />
 		<p>Socials</p>
 	</a>
-	-->
+
 
 	<!-- Market -->
 	<div class="titl">

@@ -4,7 +4,7 @@ export type Database = {
 	// Allows to automatically instantiate createClient with right options
 	// instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
 	__InternalSupabase: {
-		PostgrestVersion: "13.0.4";
+		PostgrestVersion: "13.0.5";
 	};
 	graphql_public: {
 		Tables: {
@@ -294,6 +294,30 @@ export type Database = {
 					id?: number;
 					message?: string;
 					ticket_no?: string;
+				};
+				Relationships: [];
+			};
+			"odyn-socials": {
+				Row: {
+					date: string;
+					id: number;
+					metric: string;
+					platform: string;
+					value: number;
+				};
+				Insert: {
+					date: string;
+					id?: number;
+					metric: string;
+					platform: string;
+					value: number;
+				};
+				Update: {
+					date?: string;
+					id?: number;
+					metric?: string;
+					platform?: string;
+					value?: number;
 				};
 				Relationships: [];
 			};

@@ -117,6 +117,8 @@ interface AppendEmailVarsObj {
 	subject: string;
 	msgId: string;
 }
+
+type SocialsRow = SBZdb["public"]["Tables"]["odyn-socials"]["Row"];
 interface SBZutils {
 	log: (obj: LogObj) => Promise<void>;
 	setOtp: (obj: OTPObj) => Promise<GenericResponse>;
@@ -161,6 +163,9 @@ interface SBZutils {
 	/**Move chat from AI to human */
 	humanifyChatWeb: (ticket: TicketRowLean) => Promise<GenericResponse>;
 	getAllChatMessages: (ticketId: string) => Promise<ChatRow[]>;
+
+	// odyn socials
+	getAllSocials: () => Promise<SocialsRow[]>;
 }
 
 const sbz = (): SBZutils => {
@@ -1549,6 +1554,22 @@ const sbz = (): SBZutils => {
 		}
 	};
 
+	// odyn socials
+	const _getAllSocials = async (): Promise<SocialsRow[]> => {
+		try {
+			const { data, error } = await sbzdb
+				.from("odyn-socials")
+				.select()
+				.order("date", { ascending: false });
+
+			if (error) return [];
+
+			return data;
+		} catch {
+			return [];
+		}
+	};
+
 	return {
 		log: _log,
 		setOtp: _setOtp,
@@ -1580,6 +1601,7 @@ const sbz = (): SBZutils => {
 		humanifyChatWeb: _humanifyChatWeb,
 		sendChat: _sendChat,
 		sendChats: _sendChats,
+		getAllSocials: _getAllSocials,
 	};
 };
 
