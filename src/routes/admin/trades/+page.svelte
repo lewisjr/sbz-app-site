@@ -982,34 +982,34 @@
 
 				<div class="mt-2 flex items-center justify-between space-x-4">
 					<div class="flex items-center justify-between">
-						<p class="text-sm opacity-70">
+						<p class="loading text-sm opacity-70">
 							<strong>Buy (K):</strong> <span class="num">999,999</span>
 						</p>
 						<span class="mx-2 opacity-40">•</span>
-						<p class="text-sm opacity-70">
+						<p class="loading text-sm opacity-70">
 							<strong>Sell (K):</strong> <span class="num">999,999</span>
 						</p>
 						<span class="mx-2 opacity-40">•</span>
-						<p class="text-sm opacity-70">
+						<p class="loading text-sm opacity-70">
 							<strong>Buy ($):</strong>
 							<span class="num">999,999</span>
 						</p>
 						<span class="mx-2 opacity-40">•</span>
-						<p class="text-sm opacity-70">
+						<p class="loading text-sm opacity-70">
 							<strong>Sell ($):</strong>
 							<span class="num">999,999</span>
 						</p>
 						<span class="mx-2 opacity-40">•</span>
-						<p class="text-sm opacity-70">
+						<p class="loading text-sm opacity-70">
 							<strong>Clients:</strong> <span class="num">999</span>
 						</p>
 						<span class="mx-2 opacity-40">•</span>
-						<p class="text-sm opacity-70">
+						<p class="loading text-sm opacity-70">
 							<strong>Trades:</strong>
 							<span class="num">999,999</span>
 						</p>
 						<span class="mx-2 opacity-40">•</span>
-						<p class="text-sm opacity-70">
+						<p class="loading text-sm opacity-70">
 							<strong>Popular:</strong> XXXXXX
 						</p>
 					</div>
@@ -1588,34 +1588,34 @@
 
 				<div class="mt-2 flex items-center justify-between space-x-4">
 					<div class="flex items-center justify-between">
-						<p class="text-sm opacity-70">
+						<p class="loading text-sm opacity-70">
 							<strong>Buy (K):</strong> <span class="num">999,999</span>
 						</p>
 						<span class="mx-2 opacity-40">•</span>
-						<p class="text-sm opacity-70">
+						<p class="loading text-sm opacity-70">
 							<strong>Sell (K):</strong> <span class="num">999,999</span>
 						</p>
 						<span class="mx-2 opacity-40">•</span>
-						<p class="text-sm opacity-70">
+						<p class="loading text-sm opacity-70">
 							<strong>Buy ($):</strong>
 							<span class="num">999,999</span>
 						</p>
 						<span class="mx-2 opacity-40">•</span>
-						<p class="text-sm opacity-70">
+						<p class="loading text-sm opacity-70">
 							<strong>Sell ($):</strong>
 							<span class="num">999,999</span>
 						</p>
 						<span class="mx-2 opacity-40">•</span>
-						<p class="text-sm opacity-70">
+						<p class="loading text-sm opacity-70">
 							<strong>Clients:</strong> <span class="num">999</span>
 						</p>
 						<span class="mx-2 opacity-40">•</span>
-						<p class="text-sm opacity-70">
+						<p class="loading text-sm opacity-70">
 							<strong>Orders:</strong>
 							<span class="num">999,999</span>
 						</p>
 						<span class="mx-2 opacity-40">•</span>
-						<p class="text-sm opacity-70">
+						<p class="loading text-sm opacity-70">
 							<strong>Popular:</strong> XXXXXX
 						</p>
 					</div>

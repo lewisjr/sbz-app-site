@@ -7,8 +7,9 @@
 - [x] add trades
 - [x] add matched reports
 - [x] add screen reports
-- [] add settlement
-- [] add cn generation
+- [] add settlement upload
+- [] add settlement page
+- [] add cn report
 - [x] make chat ui only work for web and email tickets
 - [] finish account opening!
 - [x] add analytics

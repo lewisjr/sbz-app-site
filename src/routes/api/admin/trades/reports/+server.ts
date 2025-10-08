@@ -1,6 +1,12 @@
 import { DEV } from "$env/static/private";
+import kratos from "$lib/server/kratos";
 
-export const POST = async ({ request }) => {
+export const POST = async (event) => {
+	const sender = await kratos.admin(event);
+	if (sender instanceof Response) return sender;
+
+	const { request } = event;
+
 	const isProd = DEV !== "y";
 
 	const { html }: { html: string } = await request.json();

@@ -150,12 +150,10 @@
 		<p>News</p>
 	</a>
 
-	<!--
 	<a class={`link${path === "/admin/upload" ? " current" : ""}`} href="/admin/upload">
 		<Upload class="h-8 w-8" />
 		<p>Upload</p>
 	</a>
-	-->
 
 	<!-- SBZ Specific -->
 	<div class="titl">
