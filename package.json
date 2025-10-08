@@ -12,7 +12,8 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
 		"lint": "prettier --check .",
-		"bd": "yarn napi build --manifest-path ./rust/Cargo.toml --release && move rust\\index.node src\\lib\\server\\rust\\ && move rust\\index.d.ts src\\lib\\server\\rust\\",
+		"bd": "yarn napi build --manifest-path ./rust/Cargo.toml --release",
+		"postbd": "copy /Y rust\\index.node src\\lib\\server\\rust\\ && copy /Y rust\\index.d.ts src\\lib\\server\\rust\\",
 		"bdg": "yarn napi build --manifest-path ./rust/Cargo.toml"
 	},
 	"devDependencies": {

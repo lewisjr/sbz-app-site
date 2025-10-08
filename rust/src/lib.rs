@@ -96,7 +96,7 @@ pub fn settle_v1(raw_str: String) -> SettledInfo {
         total_buy_clients: total_buy_clients,
         total_sell_clients: total_sell_clients,
         total_sell: total_sells,
-        net_val: total_buys - total_sells,
+        net_val: total_sells - total_buys,
         date,
     }
 }
