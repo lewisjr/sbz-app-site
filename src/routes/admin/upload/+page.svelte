@@ -12,14 +12,37 @@
 	import * as Table from "$lib/components/ui/table/index";
 	import Label from "$lib/components/ui/label/label.svelte";
 
+	//icons
+	import { GitCompareArrows } from "@lucide/svelte";
+
 	//types
 	import type { PageProps } from "./$types";
-	import { prettyDate } from "$lib/utils";
+	import type { GenericResponseWData, SettleTradeUploadResponse } from "$lib/types";
+	import { numParse } from "@cerebrusinc/qol";
+	import { percentageHandler, prettyDate } from "$lib/utils";
 
 	let { data }: PageProps = $props();
 
 	type DataType = "ZMW Settlement" | "USD Settlement";
 	let dataType = $state<DataType>("ZMW Settlement");
+
+	let dataTypeUdf = $derived.by(() => {
+		let val: string = "";
+
+		switch (dataType) {
+			case "ZMW Settlement":
+				val = "zmw";
+				break;
+			case "USD Settlement":
+				val = "usd";
+				break;
+			default:
+				val = "null";
+				break;
+		}
+
+		return val;
+	});
 
 	let textHelper = $derived.by(() => {
 		let title: string = "";
@@ -46,6 +69,8 @@
 
 	let loading = $state<boolean>(false);
 
+	let tradeApiResponse = $state<SettleTradeUploadResponse | undefined>(undefined);
+
 	const handleFileUpload = async (e: any) => {
 		const doc: File = e.target.files[0];
 
@@ -71,17 +96,14 @@
 		try {
 			const formData = new FormData();
 			formData.append("settle", doc);
+			formData.append("udf1", dataTypeUdf);
 
 			const req = await fetch("/api/admin/upload", {
 				method: "PUT",
 				body: formData,
 			});
 
-			const res: {
-				success: boolean;
-				message: string;
-				data: string;
-			} = await req.json();
+			const res: GenericResponseWData<SettleTradeUploadResponse | undefined> = await req.json();
 
 			// console.log(res);
 
@@ -92,12 +114,16 @@
 				return;
 			}
 
-			console.log({ res });
+			//console.log({ res });
 
 			const tf = Date.now();
 
 			const processTime = (tf - ti) / 1000;
-			toast.success(`Processed in '${processTime.toFixed(2)}' seconds!`);
+
+			if (dataType.includes("Settlement"))
+				toast.success(`Pre-settlement ran in '${processTime.toFixed(2)}' seconds!`);
+
+			tradeApiResponse = res.data;
 		} catch (ex: any) {
 			toast.error(ex.toString());
 		}
@@ -127,7 +153,6 @@
 
 <div class="main-tainer">
 	<h3>{textHelper.title}</h3>
-
 	<div class="my-5 grid w-full max-w-sm items-center gap-1.5">
 		<!-- <Label>Upload</Label> -->
 		<Input
@@ -138,8 +163,33 @@
 			onchange={handleFileUpload}
 		/>
 	</div>
-
 	<p>{textHelper.desc}</p>
+
+	{#if tradeApiResponse}
+		<div class="spacer"></div>
+
+		<h3>{prettyDate(tradeApiResponse.date)} Settlement Summary</h3>
+
+		<p class="my-5">
+			A total of <span class="num">{numParse(tradeApiResponse.trades.length)}</span> trades are set
+			to settle today comprised of
+			<span class="num"
+				>{numParse(tradeApiResponse.totalBuyClients)} ({percentageHandler(
+					tradeApiResponse.totalBuyClients / tradeApiResponse.trades.length,
+				)})</span
+			> <i>buy</i> trades and
+			<span class="num"
+				>{numParse(tradeApiResponse.totalSellClients)} ({percentageHandler(
+					tradeApiResponse.totalSellClients / tradeApiResponse.trades.length,
+				)})</span
+			> <i>sell</i> trades.<br /><br /><b>Total Purchases</b> = {dataTypeUdf}
+			<span class="num">{tradeApiResponse.totalBuy}</span><br /><b>Total Sales</b> = {dataTypeUdf}
+			<span class="num">{tradeApiResponse.totalSell}</span><br /><b>Net Purchases</b> = {dataTypeUdf}
+			<span class="num">{tradeApiResponse.netVal}</span>
+		</p>
+
+		<Button>Settle<GitCompareArrows class="h-4 w-4" /></Button>
+	{/if}
 </div>
 
 <style lang="scss">
@@ -157,6 +207,13 @@
 		p {
 			width: 63%;
 			text-align: center;
+		}
+
+		.spacer {
+			width: 73%;
+			height: 1px;
+			margin: 15px 0px;
+			background-color: var(--foreground);
 		}
 	}
 </style>

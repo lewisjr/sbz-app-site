@@ -1,6 +1,6 @@
 import notif from "../email";
 import { nfdb, sbzdb } from "./db";
-import { genDbTimestamp, genId, genDate, getOldDate } from "$lib/utils";
+import { genDbTimestamp, genId, genDate, getOldDate, prettyDate } from "$lib/utils";
 import { toTitleCase } from "@cerebrusinc/fstring";
 import manifest from "../../../../package.json";
 
@@ -13,6 +13,7 @@ import type {
 	GenericResponseWData,
 	CloseTicketReturnObj,
 	NFdb,
+	SettledTradeInsert,
 } from "$lib/types";
 import type { StorageError } from "@supabase/storage-js";
 
@@ -122,6 +123,9 @@ interface AppendEmailVarsObj {
 
 type SocialsRow = SBZdb["public"]["Tables"]["odyn-socials"]["Row"];
 
+type SettledTradeRow = SBZdb["public"]["Tables"]["settled_trades"]["Row"];
+type TempClientName = SBZdb["public"]["Tables"]["csd-clients-temp"]["Row"];
+
 interface ApiVersion {
 	success: boolean;
 	version: string;
@@ -174,9 +178,17 @@ interface SBZutils {
 	// odyn socials
 	getAllSocials: () => Promise<SocialsRow[]>;
 
+	// settlement
+	/**get settled trades / portfolio based on 1 luse id */
+	getFilteredSettledTrades: (luseId: number) => Promise<SettledTradeRow[]>;
+	/**get settled trades / portfolio based on a historical diff from today */
+	getDatedSettledTrades: (diff?: number) => Promise<SettledTradeRow[]>;
+	settleTrades: (obj: SettledTradeInsert[], currency?: "zmw" | "usd") => Promise<GenericResponse>;
+
 	// utils
 	getAgentStatus: () => Promise<ApiVersion>;
 	getSiteStatus: () => Promise<ApiVersion>;
+	getClientNameById: (luseIds: number[]) => Promise<TempClientName[]>;
 }
 
 const sbz = (): SBZutils => {
@@ -1386,7 +1398,7 @@ const sbz = (): SBZutils => {
 		}
 	};
 
-	// chat stuff
+	// * chat stuff
 	const _sendChat = async (obj: ChatInsert, notifCongif?: NotifConfigObj): Promise<boolean> => {
 		const oldBody = obj.body;
 		obj.body = tokenise.encode(oldBody);
@@ -1565,7 +1577,7 @@ const sbz = (): SBZutils => {
 		}
 	};
 
-	// odyn socials
+	// * odyn socials
 	const _getAllSocials = async (): Promise<SocialsRow[]> => {
 		try {
 			const { data, error } = await sbzdb
@@ -1581,7 +1593,120 @@ const sbz = (): SBZutils => {
 		}
 	};
 
-	// utils
+	// * settlement
+
+	// get settled trades / portfolio based on 1 luse id
+	const _getFilteredSettledTrades = async (luseId: number): Promise<SettledTradeRow[]> => {
+		try {
+			const { data, error } = await sbzdb
+				.from("settled_trades")
+				.select()
+				.eq("luse_id", luseId)
+				.order("date", { ascending: false });
+
+			if (error) {
+				await _log({ message: error.message, title: "Get Filtered Settled Error" });
+				return [];
+			}
+
+			return data;
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Get Filtered Settled Exception" });
+			return [];
+		}
+	};
+
+	// get settled trades / portfolio based on a historical diff from today
+	const _getDatedSettledTrades = async (diff: number = 31): Promise<SettledTradeRow[]> => {
+		const oldDate = getOldDate(genDate(), diff);
+
+		try {
+			const { data, error } = await sbzdb
+				.from("settled_trades")
+				.select()
+				.filter("date", "gte", oldDate)
+				.order("date", { ascending: false });
+
+			if (error) {
+				await _log({ message: error.message, title: "Get Settled Error" });
+				return [];
+			}
+
+			return data;
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Get Settled Exception" });
+			return [];
+		}
+	};
+
+	const _settleTrades = async (
+		obj: SettledTradeInsert[],
+		currency: "zmw" | "usd" = "zmw",
+	): Promise<GenericResponse> => {
+		try {
+			const { data, error } = await sbzdb
+				.from("settled_trades")
+				.select("date")
+				.eq("date", obj[0].date)
+				.eq("currency", currency);
+
+			if (error) {
+				await _log({ message: error.message, title: `Settle ${currency.toUpperCase()} Error - 1` });
+				return {
+					success: false,
+					message: error.message,
+				};
+			}
+
+			if (data.length) {
+				return {
+					success: false,
+					message: `The ${currency.toUpperCase()} settlement has already been done for ${prettyDate(obj[0].date)}!`,
+				};
+			}
+
+			const { error: e2 } = await sbzdb.from("settled_trades").insert(obj);
+
+			if (e2) {
+				await _log({ message: e2.message, title: `Settle ${currency.toUpperCase()} Error - 2` });
+				return {
+					message: e2.message,
+					success: false,
+				};
+			}
+
+			return {
+				message: `${currency.toUpperCase()} settlement for ${prettyDate(obj[0].date)} completed in`,
+				success: true,
+			};
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: `Settle ${currency.toUpperCase()} Exception` });
+			return { success: false, message: "Server error, please wait 10 minutes and try again." };
+		}
+	};
+
+	// * utils
 	const _getAgentStatus = async (): Promise<ApiVersion> => {
 		try {
 			const req = await fetch(`${SERVER_BASE_URL}/health`);
@@ -1600,6 +1725,18 @@ const sbz = (): SBZutils => {
 			return { success: true, version: manifest.version };
 		} catch {
 			return { success: false, version: "-1" };
+		}
+	};
+
+	const _getClientNameById = async (luseIds: number[]): Promise<TempClientName[]> => {
+		try {
+			const { data, error } = await sbzdb.from("csd-clients-temp").select().in("luse_id", luseIds);
+
+			if (error) return [];
+
+			return data;
+		} catch {
+			return [];
 		}
 	};
 
@@ -1637,6 +1774,10 @@ const sbz = (): SBZutils => {
 		getAllSocials: _getAllSocials,
 		getAgentStatus: _getAgentStatus,
 		getSiteStatus: _getSiteStatus,
+		getClientNameById: _getClientNameById,
+		getDatedSettledTrades: _getDatedSettledTrades,
+		getFilteredSettledTrades: _getFilteredSettledTrades,
+		settleTrades: _settleTrades,
 	};
 };
 

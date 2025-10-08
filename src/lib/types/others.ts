@@ -59,3 +59,14 @@ export interface CloseTicketReturnObj {
 	closed_by: string;
 	is_closed: boolean;
 }
+
+export type SettledTradeInsert = SBZdb["public"]["Tables"]["settled_trades"]["Insert"];
+export interface SettleTradeUploadResponse {
+	trades: SettledTradeInsert[];
+	date: number;
+	netVal: number;
+	totalBuy: number;
+	totalBuyClients: number;
+	totalSell: number;
+	totalSellClients: number;
+}

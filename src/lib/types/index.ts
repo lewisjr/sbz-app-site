@@ -6,6 +6,8 @@ import type {
 	GenericResponse,
 	GenericResponseWData,
 	CloseTicketReturnObj,
+	SettledTradeInsert,
+	SettleTradeUploadResponse,
 } from "./others";
 
 import type { ApexOptions } from "apexcharts";
@@ -19,4 +21,6 @@ export type {
 	GenericResponseWData,
 	CloseTicketReturnObj,
 	ApexOptions,
+	SettleTradeUploadResponse,
+	SettledTradeInsert,
 };

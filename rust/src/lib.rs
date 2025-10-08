@@ -46,7 +46,7 @@ pub fn settle_v1(raw_str: String) -> SettledInfo {
     let mut total_sells: f64 = 0.0;
     let mut total_sell_clients: i64 = 0;
 
-    for (i, data) in split_one.iter().enumerate() {
+    for (_, data) in split_one.iter().enumerate() {
         let mut split_two: Vec<&str> = data.split(" FIRM").collect();
         split_two.remove(0);
 
@@ -69,23 +69,21 @@ pub fn settle_v1(raw_str: String) -> SettledInfo {
                         _ => setting = Setting::BUYS,
                     }
                 } else {
-                    if i == 0 {
-                        let shareholder = SettledTrade::new(row, date, setting);
-                        // println!("\n{:#?}\n", &shareholder);
+                    let shareholder = SettledTrade::new(row, date, setting);
+                    // println!("\n{:#?}\n", &shareholder);
 
-                        match setting == Setting::BUYS {
-                            true => {
-                                total_buys = total_buys + shareholder.value;
-                                total_buy_clients = total_buy_clients + 1;
-                            }
-                            _ => {
-                                total_sells = total_sells + shareholder.value;
-                                total_sell_clients = total_sell_clients + 1;
-                            }
+                    match setting == Setting::BUYS {
+                        true => {
+                            total_buys = total_buys + shareholder.value;
+                            total_buy_clients = total_buy_clients + 1;
                         }
-
-                        trades.push(shareholder);
+                        _ => {
+                            total_sells = total_sells + shareholder.value;
+                            total_sell_clients = total_sell_clients + 1;
+                        }
                     }
+
+                    trades.push(shareholder);
                 }
                 //}
             }

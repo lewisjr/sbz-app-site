@@ -207,6 +207,24 @@ export type Database = {
 				};
 				Relationships: [];
 			};
+			"csd-clients-temp": {
+				Row: {
+					created_at: string;
+					luse_id: number;
+					names: string;
+				};
+				Insert: {
+					created_at?: string;
+					luse_id: number;
+					names: string;
+				};
+				Update: {
+					created_at?: string;
+					luse_id?: number;
+					names?: string;
+				};
+				Relationships: [];
+			};
 			logs: {
 				Row: {
 					created_at: string;
@@ -408,6 +426,57 @@ export type Database = {
 					id?: string;
 					otp?: number;
 					updated_at?: string;
+				};
+				Relationships: [];
+			};
+			settled_trades: {
+				Row: {
+					broker_ref: string;
+					counter_firm: string;
+					created_at: string;
+					csd_ref: string;
+					currency: string;
+					date: number;
+					id: number;
+					luse_id: number;
+					names: string;
+					price: number;
+					qty: number;
+					side: string;
+					symbol: string;
+					value: number;
+				};
+				Insert: {
+					broker_ref: string;
+					counter_firm: string;
+					created_at?: string;
+					csd_ref: string;
+					currency?: string;
+					date: number;
+					id?: number;
+					luse_id: number;
+					names: string;
+					price: number;
+					qty: number;
+					side: string;
+					symbol: string;
+					value: number;
+				};
+				Update: {
+					broker_ref?: string;
+					counter_firm?: string;
+					created_at?: string;
+					csd_ref?: string;
+					currency?: string;
+					date?: number;
+					id?: number;
+					luse_id?: number;
+					names?: string;
+					price?: number;
+					qty?: number;
+					side?: string;
+					symbol?: string;
+					value?: number;
 				};
 				Relationships: [];
 			};
