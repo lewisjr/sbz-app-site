@@ -1,11 +1,13 @@
-/// <reference path="./index.d.ts" />
 import { createRequire } from "module";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 
-const requir = createRequire(import.meta.url);
-const rust = requir("./index.node");
+/// <reference path="./index.d.ts" />
 
-/*
-/// <reference types="$lib/server/rust/index" />
-*/
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const require = createRequire(import.meta.url);
+const rust = require(join(__dirname, "index.node"));
 
 export default rust;
