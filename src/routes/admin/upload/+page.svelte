@@ -9,8 +9,6 @@
 	import Input from "$lib/components/ui/input/input.svelte";
 	import Button from "$lib/components/ui/button/button.svelte";
 	import * as Tabs from "$lib/components/ui/tabs/index.js";
-	import * as Table from "$lib/components/ui/table/index";
-	import Label from "$lib/components/ui/label/label.svelte";
 
 	//icons
 	import { GitCompareArrows } from "@lucide/svelte";
@@ -128,6 +126,40 @@
 			toast.error(ex.toString());
 		}
 	};
+
+	const settleTrades = async () => {
+		if (tradeApiResponse) {
+			toast.info(
+				`Settling ${dataTypeUdf.toUpperCase()} ${prettyDate(tradeApiResponse.trades[0].date || "")}...`,
+			);
+
+			loading = true;
+
+			try {
+				const req = await fetch("/api/admin/upload", {
+					method: "POST",
+					body: JSON.stringify({ obj: tradeApiResponse.trades, udf1: dataTypeUdf }),
+				});
+
+				const res = await req.json();
+
+				loading = false;
+
+				if (!res.success) {
+					toast.error(res.message);
+				}
+
+				toast.success(res.message);
+
+				tradeApiResponse = undefined;
+			} catch (ex: any) {
+				loading = false;
+				toast.error(ex.toString());
+			}
+		} else {
+			toast.error("Lost settled trades data, please referesh and try again.");
+		}
+	};
 </script>
 
 <Head
@@ -182,13 +214,21 @@
 				>{numParse(tradeApiResponse.totalSellClients)} ({percentageHandler(
 					tradeApiResponse.totalSellClients / tradeApiResponse.trades.length,
 				)})</span
-			> <i>sell</i> trades.<br /><br /><b>Total Purchases</b> = {dataTypeUdf}
-			<span class="num">{tradeApiResponse.totalBuy}</span><br /><b>Total Sales</b> = {dataTypeUdf}
-			<span class="num">{tradeApiResponse.totalSell}</span><br /><b>Net Purchases</b> = {dataTypeUdf}
-			<span class="num">{tradeApiResponse.netVal}</span>
+			> <i>sell</i> trades.<br /><br /><b>Total Purchases</b> = {dataTypeUdf.toUpperCase()}
+			<span class="num">{numParse(tradeApiResponse.totalBuy.toFixed(2))}</span><br /><b
+				>Total Sales</b
+			>
+			= {dataTypeUdf.toUpperCase()}
+			<span class="num">{numParse(tradeApiResponse.totalSell.toFixed(2))}</span><br /><b
+				>Net Purchases</b
+			>
+			= {dataTypeUdf.toUpperCase()}
+			<span class="num">{numParse(tradeApiResponse.netVal.toFixed(2))}</span>
 		</p>
 
-		<Button>Settle<GitCompareArrows class="h-4 w-4" /></Button>
+		<Button disabled={loading} onclick={settleTrades}
+			>Settle<GitCompareArrows class="h-4 w-4" /></Button
+		>
 	{/if}
 </div>
 

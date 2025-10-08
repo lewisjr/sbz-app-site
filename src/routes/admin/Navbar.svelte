@@ -23,6 +23,7 @@
 		ArrowRightLeft,
 		FileChartPie,
 		LogOut,
+		GitCompareArrows,
 	} from "@lucide/svelte";
 
 	//types
@@ -150,6 +151,16 @@
 		<p>News</p>
 	</a>
 
+	<a class={`link${path === "/admin/trades" ? " current" : ""}`} href="/admin/trades">
+		<ArrowRightLeft class="h-8 w-8" />
+		<p>Trades</p>
+	</a>
+
+	<a class={`link${path === "/admin/settle" ? " current" : ""}`} href="/admin/settle">
+		<GitCompareArrows class="h-8 w-8" />
+		<p>Settle</p>
+	</a>
+
 	<a class={`link${path === "/admin/upload" ? " current" : ""}`} href="/admin/upload">
 		<Upload class="h-8 w-8" />
 		<p>Upload</p>
@@ -167,11 +178,6 @@
 		<!-- view file, portfolio plus export 
 	</a>
 	-->
-
-	<a class={`link${path === "/admin/trades" ? " current" : ""}`} href="/admin/trades">
-		<ArrowRightLeft class="h-8 w-8" />
-		<p>Trades</p>
-	</a>
 
 	<!--
 	<a class={`link${path === "/admin/reports" ? " current" : ""}`} href="/admin/reports">

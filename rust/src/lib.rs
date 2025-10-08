@@ -18,7 +18,9 @@ pub fn fibonacci(n: u32) -> u32 {
 /// handle the settlement report; based on *7 Oct 2025* settlement report
 #[napi]
 pub fn settle_v1(raw_str: String) -> SettledInfo {
-    let mut split_one: Vec<&str> = raw_str.split("REFERENCEBROKER").collect();
+    let raw_str_clean = raw_str.replace("-FC", "-LI");
+
+    let mut split_one: Vec<&str> = raw_str_clean.split("REFERENCEBROKER").collect();
     let date_1 = split_one.remove(0);
 
     // println!("\n=== date_1 = {}\n", date_1);
@@ -60,30 +62,32 @@ pub fn settle_v1(raw_str: String) -> SettledInfo {
             let rows: Vec<&str> = table.split("/B").collect();
 
             //if i == 0 {
-            // println!("\n=== rows\n{:#?}\n===\n\n", rows);
+            println!("\n=== rows\n{:#?}\n===\n\n", rows);
 
             for row in rows {
-                if row.contains("Total ") {
-                    match row.contains("Purchases") {
-                        true => setting = Setting::SELLS,
-                        _ => setting = Setting::BUYS,
-                    }
-                } else {
-                    let shareholder = SettledTrade::new(row, date, setting);
-                    // println!("\n{:#?}\n", &shareholder);
-
-                    match setting == Setting::BUYS {
-                        true => {
-                            total_buys = total_buys + shareholder.value;
-                            total_buy_clients = total_buy_clients + 1;
+                if row.len() > 5 {
+                    if row.contains("Total ") {
+                        if row.contains("Purchases") {
+                            setting = Setting::SELLS
                         }
-                        _ => {
-                            total_sells = total_sells + shareholder.value;
-                            total_sell_clients = total_sell_clients + 1;
-                        }
-                    }
+                    } else {
+                        // println!("\n{:#?}\n", row);
+                        let shareholder = SettledTrade::new(row, date, setting);
+                        // println!("\n{:#?}\n", &shareholder);
 
-                    trades.push(shareholder);
+                        match setting == Setting::BUYS {
+                            true => {
+                                total_buys = total_buys + shareholder.value;
+                                total_buy_clients = total_buy_clients + 1;
+                            }
+                            _ => {
+                                total_sells = total_sells + shareholder.value;
+                                total_sell_clients = total_sell_clients + 1;
+                            }
+                        }
+
+                        trades.push(shareholder);
+                    }
                 }
                 //}
             }

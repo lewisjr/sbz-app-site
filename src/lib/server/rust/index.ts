@@ -1,11 +1,11 @@
+/// <reference path="./index.d.ts" />
 import { createRequire } from "module";
 
 const requir = createRequire(import.meta.url);
-const rustAddon = requir("./index.node");
-
-export default rustAddon;
+const rust = requir("./index.node");
 
 /*
-Copy the below to the RUST index.d.ts
 /// <reference types="$lib/server/rust/index" />
 */
+
+export default rust;

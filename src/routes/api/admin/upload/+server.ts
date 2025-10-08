@@ -2,7 +2,7 @@ import { json } from "@sveltejs/kit";
 import kratos from "$lib/server/kratos";
 import { PdfReader } from "pdfreader";
 import dbs from "$lib/server/db";
-import { settleV1 } from "$lib/server/rust";
+import rust from "$lib/server/rust";
 
 import type { SettledTradeInsert } from "$lib/types";
 
@@ -56,7 +56,7 @@ export const PUT = async (event) => {
 			});
 
 		const { data, date, netVal, totalBuy, totalBuyClients, totalSell, totalSellClients } =
-			settleV1(text);
+			rust.settleV1(text);
 
 		if (!data.length)
 			return json({
@@ -67,7 +67,7 @@ export const PUT = async (event) => {
 
 		const luseIds: number[] = [];
 
-		data.forEach((row) => {
+		data.forEach((row: any) => {
 			if (!luseIds.includes(row.luseId)) luseIds.push(row.luseId);
 		});
 
@@ -75,7 +75,7 @@ export const PUT = async (event) => {
 
 		const trades: SettledTradeInsert[] = [];
 
-		data.forEach((row) => {
+		data.forEach((row: any) => {
 			const name = names.filter((item) => item.luse_id === row.luseId);
 
 			const { brokerRef, counterFirm, csdRef, date, luseId, price, qty, side, symbol, value } = row;
@@ -105,4 +105,17 @@ export const PUT = async (event) => {
 		console.log(ex);
 		return json({ success: false, message: ex.toString() }, { status: 500 });
 	}
+};
+
+export const POST = async (event) => {
+	const sender = await kratos.admin(event);
+	if (sender instanceof Response) return sender;
+
+	const { request } = event;
+
+	const { obj, udf1 }: { obj: SettledTradeInsert[]; udf1: string } = await request.json();
+
+	const settleRes = await dbs.sbz.settleTrades(obj, udf1 as any);
+
+	return json({ success: settleRes.success, message: settleRes.message });
 };

@@ -34,7 +34,8 @@ alter table "public"."odyn-socials" enable row level security;
     "qty" bigint not null,
     "value" double precision not null,
     "counter_firm" text not null,
-    "side" text not null
+    "side" text not null,
+    "currency" text not null default 'zmw'::text
       );
 
 

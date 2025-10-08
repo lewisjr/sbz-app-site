@@ -7,7 +7,7 @@
 - [x] add trades
 - [x] add matched reports
 - [x] add screen reports
-- [] add settlement upload
+- [x] add settlement upload
 - [] add settlement page
 - [] add cn report
 - [x] make chat ui only work for web and email tickets

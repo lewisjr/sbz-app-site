@@ -1690,7 +1690,7 @@ const sbz = (): SBZutils => {
 			}
 
 			return {
-				message: `${currency.toUpperCase()} settlement for ${prettyDate(obj[0].date)} completed in`,
+				message: `${currency.toUpperCase()} settlement for ${prettyDate(obj[0].date)} completed!`,
 				success: true,
 			};
 		} catch (ex: any) {
