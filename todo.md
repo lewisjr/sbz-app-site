@@ -15,6 +15,7 @@
 - [x] add socials
 - [x] add home WoW analysis
 - [] add some reports like the dmr and sm report (downloadable)
+- [] fix b-engine recording names incorrectly
 
 ## ADD IP TRACKER
 
