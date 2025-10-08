@@ -17,13 +17,16 @@
 		title: string;
 		description?: string;
 
+		/**Should it go beeg? */
+		big?: boolean;
+
 		// snippet or old slots
 		main: Snippet<[]>;
 		/**E.g submit*/
 		actionButton: Snippet<[]>;
 	}
 
-	const {
+	let {
 		openTrigger,
 		forceClose,
 		title,
@@ -31,6 +34,7 @@
 		main,
 		actionButton,
 		width = 400,
+		big,
 	}: Props = $props();
 
 	let open = $state<boolean>(false);
@@ -53,29 +57,79 @@
 
 <Sheet.Root bind:open>
 	<!-- <Sheet.Trigger>Open</Sheet.Trigger> -->
-	<Sheet.Content class={width ? `w-[${width}px]` : "w-3/4"}>
-		<Sheet.Header>
-			<Sheet.Title>{title}</Sheet.Title>
-			{#if description}
-				<Sheet.Description>
-					{description}
-				</Sheet.Description>
-			{/if}
-		</Sheet.Header>
+	{#if big}
+		<Sheet.Content class="w-11/12">
+			<Sheet.Header>
+				<Sheet.Title>{title}</Sheet.Title>
+				{#if description}
+					<Sheet.Description>
+						{description}
+					</Sheet.Description>
+				{/if}
+			</Sheet.Header>
 
-		<div class="main">
-			{@render main?.()}
-		</div>
-
-		<Sheet.Footer>
-			<div class="flex flex-row justify-end">
-				<Sheet.Close class="mr-4"
-					><Button variant="outline">Close<X class="ml-1 h-4 w-4" /></Button></Sheet.Close
-				>
-				{@render actionButton?.()}
+			<div class="main">
+				{@render main?.()}
 			</div>
-		</Sheet.Footer>
-	</Sheet.Content>
+
+			<Sheet.Footer>
+				<div class="flex flex-row justify-end">
+					<Sheet.Close class="mr-4"
+						><Button variant="outline">Close<X class="ml-1 h-4 w-4" /></Button></Sheet.Close
+					>
+					{@render actionButton?.()}
+				</div>
+			</Sheet.Footer>
+		</Sheet.Content>
+	{:else if width}
+		<Sheet.Content class={width ? `w-[${width}px]` : "w-3/4"}>
+			<Sheet.Header>
+				<Sheet.Title>{title}</Sheet.Title>
+				{#if description}
+					<Sheet.Description>
+						{description}
+					</Sheet.Description>
+				{/if}
+			</Sheet.Header>
+
+			<div class="main">
+				{@render main?.()}
+			</div>
+
+			<Sheet.Footer>
+				<div class="flex flex-row justify-end">
+					<Sheet.Close class="mr-4"
+						><Button variant="outline">Close<X class="ml-1 h-4 w-4" /></Button></Sheet.Close
+					>
+					{@render actionButton?.()}
+				</div>
+			</Sheet.Footer>
+		</Sheet.Content>
+	{:else}
+		<Sheet.Content class={"w-3/4"}>
+			<Sheet.Header>
+				<Sheet.Title>{title}</Sheet.Title>
+				{#if description}
+					<Sheet.Description>
+						{description}
+					</Sheet.Description>
+				{/if}
+			</Sheet.Header>
+
+			<div class="main">
+				{@render main?.()}
+			</div>
+
+			<Sheet.Footer>
+				<div class="flex flex-row justify-end">
+					<Sheet.Close class="mr-4"
+						><Button variant="outline">Close<X class="ml-1 h-4 w-4" /></Button></Sheet.Close
+					>
+					{@render actionButton?.()}
+				</div>
+			</Sheet.Footer>
+		</Sheet.Content>
+	{/if}
 </Sheet.Root>
 
 <style lang="scss">

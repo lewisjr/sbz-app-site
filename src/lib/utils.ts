@@ -254,3 +254,10 @@ export const prettyDate = (_date: number | string): string => {
 		return "N/A";
 	}
 };
+
+export const logos = {
+	sbz: "https://gufnvlwdovkffgmwutgr.supabase.co/storage/v1/object/public/engine-constants/sbz/no%20alpha%20sbz%20logo.png",
+	neos: "https://gufnvlwdovkffgmwutgr.supabase.co/storage/v1/object/public/engine-constants/neos/logo_full.png",
+	vantum:
+		"https://gufnvlwdovkffgmwutgr.supabase.co/storage/v1/object/public/engine-constants/vantum/vantum%20logo%20no%20alpha.png",
+};
