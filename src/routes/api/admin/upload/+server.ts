@@ -2,7 +2,7 @@ import { json } from "@sveltejs/kit";
 import kratos from "$lib/server/kratos";
 import { PdfReader } from "pdfreader";
 import dbs from "$lib/server/db";
-import rust from "$lib/server/rust";
+import loadWasm from "$lib/wasm/load";
 
 import type { SettledTradeInsert } from "$lib/types";
 
@@ -34,6 +34,17 @@ export const PUT = async (event) => {
 
 	const { request } = event;
 
+	const wasm = await loadWasm();
+
+	if (!wasm)
+		return json(
+			{
+				success: false,
+				message: "Failed to load smart engines. Please wait a moment and try again.",
+			},
+			{ status: 400 },
+		);
+
 	const formData = await request.formData();
 
 	const file = formData.get("settle");
@@ -48,6 +59,9 @@ export const PUT = async (event) => {
 
 		const text = await readSettle(fileBuffer);
 
+		//console.log({ udf1 });
+		//console.log(`\n"${text}"\n`);
+
 		if (!text)
 			return json({
 				success: false,
@@ -55,8 +69,8 @@ export const PUT = async (event) => {
 				data: undefined,
 			});
 
-		const { data, date, netVal, totalBuy, totalBuyClients, totalSell, totalSellClients } =
-			rust.settleV1(text);
+		const { data, date, net_val, total_buy, total_buy_clients, total_sell, total_sell_clients } =
+			wasm.settle_v1(text, udf1);
 
 		if (!data.length)
 			return json({
@@ -99,10 +113,18 @@ export const PUT = async (event) => {
 		return json({
 			success: true,
 			message: "",
-			data: { trades, date, netVal, totalBuy, totalBuyClients, totalSell, totalSellClients },
+			data: {
+				trades: data,
+				date,
+				netVal: net_val,
+				totalBuy: total_buy,
+				totalBuyClients: total_buy_clients,
+				totalSell: total_sell,
+				totalSellClients: total_sell_clients,
+			},
 		});
 	} catch (ex: any) {
-		console.log(ex);
+		console.log("\n\nserver ex", ex, "\n\n");
 		return json({ success: false, message: ex.toString() }, { status: 500 });
 	}
 };

@@ -121,9 +121,30 @@
 			if (dataType.includes("Settlement"))
 				toast.success(`Pre-settlement ran in '${processTime.toFixed(2)}' seconds!`);
 
+			// console.log(res.data);
+
 			tradeApiResponse = res.data;
 		} catch (ex: any) {
-			toast.error(ex.toString());
+			loading = false;
+
+			let msg: string;
+
+			if (ex instanceof Error) {
+				// Standard JS Error
+				msg = ex.message;
+			} else if (ex && typeof ex === "object" && "message" in ex) {
+				// Some libraries throw plain objects with a message property
+				msg = (ex as any).message;
+			} else {
+				// Fallback: stringify
+				try {
+					msg = JSON.stringify(ex);
+				} catch {
+					msg = String(ex);
+				}
+			}
+
+			toast.error(msg);
 		}
 	};
 
@@ -154,7 +175,25 @@
 				tradeApiResponse = undefined;
 			} catch (ex: any) {
 				loading = false;
-				toast.error(ex.toString());
+
+				let msg: string;
+
+				if (ex instanceof Error) {
+					// Standard JS Error
+					msg = ex.message;
+				} else if (ex && typeof ex === "object" && "message" in ex) {
+					// Some libraries throw plain objects with a message property
+					msg = (ex as any).message;
+				} else {
+					// Fallback: stringify
+					try {
+						msg = JSON.stringify(ex);
+					} catch {
+						msg = String(ex);
+					}
+				}
+
+				toast.error(msg);
 			}
 		} else {
 			toast.error("Lost settled trades data, please referesh and try again.");
@@ -220,7 +259,7 @@
 			>
 			= {dataTypeUdf.toUpperCase()}
 			<span class="num">{numParse(tradeApiResponse.totalSell.toFixed(2))}</span><br /><b
-				>Net Purchases</b
+				>Net Obligations</b
 			>
 			= {dataTypeUdf.toUpperCase()}
 			<span class="num">{numParse(tradeApiResponse.netVal.toFixed(2))}</span>

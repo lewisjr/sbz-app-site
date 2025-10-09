@@ -1,9 +1,0 @@
-{
-	"builds": [
-		{
-			"config": {
-				"includeFiles": ["src/index.node"]
-			}
-		}
-	]
-}
