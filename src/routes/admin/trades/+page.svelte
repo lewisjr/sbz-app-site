@@ -4,7 +4,7 @@
 	import { createSvelteTable, FlexRender } from "$lib/components/ui/data-table/index";
 	import { getCoreRowModel, getPaginationRowModel } from "@tanstack/table-core";
 	import { numParse } from "@cerebrusinc/qol";
-	import { mrMateSymbols, prettyDate, logos } from "$lib/utils";
+	import { mrMateSymbols, prettyDate, logos, contactDetails } from "$lib/utils";
 	import { createRawSnippet } from "svelte";
 	import { renderSnippet, renderComponent } from "$lib/components/ui/data-table/index";
 	import { toTitleCase } from "@cerebrusinc/fstring";
@@ -36,6 +36,9 @@
 		Download,
 		Shrink,
 		Expand,
+		MapPin,
+		Phone,
+		Mail,
 	} from "@lucide/svelte";
 
 	//types
@@ -1410,6 +1413,15 @@
 								<span>Prepared by {toTitleCase(data.admin)}</span>
 								<span>1</span>
 							</p>
+
+							<p class="contact-btm">
+								<MapPin style="height: 20px; width: 20px;" />
+								<span style="margin-right: 10px;">{contactDetails.address}</span>
+								<Phone style="height: 20px; width: 20px;" />
+								<span style="margin-right: 10px;">{contactDetails.tel}</span>
+								<Mail style="height: 20px; width: 20px;" />
+								<span style="margin-right: 10px;">{contactDetails.email}</span>
+							</p>
 						</section>
 
 						{#each reportSummaryMatched.tradesZmw.slice(1) as trade, i}
@@ -1476,6 +1488,15 @@
 								>
 									<span>Prepared by {toTitleCase(data.admin)}</span>
 									<span>{i + 2}</span>
+								</p>
+
+								<p class="contact-btm">
+									<MapPin style="height: 20px; width: 20px;" />
+									<span style="margin-right: 10px;">{contactDetails.address}</span>
+									<Phone style="height: 20px; width: 20px;" />
+									<span style="margin-right: 10px;">{contactDetails.tel}</span>
+									<Mail style="height: 20px; width: 20px;" />
+									<span style="margin-right: 10px;">{contactDetails.email}</span>
 								</p>
 							</section>
 						{/each}
@@ -1988,6 +2009,15 @@
 								<span>Prepared by {toTitleCase(data.admin)}</span>
 								<span>1</span>
 							</p>
+
+							<p class="contact-btm">
+								<MapPin style="height: 20px; width: 20px;" />
+								<span style="margin-right: 10px;">{contactDetails.address}</span>
+								<Phone style="height: 20px; width: 20px;" />
+								<span style="margin-right: 10px;">{contactDetails.tel}</span>
+								<Mail style="height: 20px; width: 20px;" />
+								<span style="margin-right: 10px;">{contactDetails.email}</span>
+							</p>
 						</section>
 
 						{#each reportSummaryScreen.ordersZmw.slice(1) as trade, i}
@@ -2042,6 +2072,15 @@
 								>
 									<span>Prepared by {toTitleCase(data.admin)}</span>
 									<span>{i + 2}</span>
+								</p>
+
+								<p class="contact-btm">
+									<MapPin style="height: 20px; width: 20px;" />
+									<span style="margin-right: 10px;">{contactDetails.address}</span>
+									<Phone style="height: 20px; width: 20px;" />
+									<span style="margin-right: 10px;">{contactDetails.tel}</span>
+									<Mail style="height: 20px; width: 20px;" />
+									<span style="margin-right: 10px;">{contactDetails.email}</span>
 								</p>
 							</section>
 						{/each}
@@ -2212,6 +2251,24 @@
 		bottom: 60px;
 		font-size: 10pt;
 		left: 0px;
+	}
+
+	.contact-btm {
+		position: absolute;
+		width: 19cm;
+		padding: 5px 0px;
+		text-align: center;
+		bottom: 30px;
+		font-size: 10pt;
+		left: 1cm;
+		display: flex;
+		flex-direction: row;
+		white-space: nowrap;
+		align-items: center;
+		justify-content: center;
+		opacity: 0.7;
+		font-style: italic;
+		border-top: 1px solid black;
 	}
 
 	/**Exclude */

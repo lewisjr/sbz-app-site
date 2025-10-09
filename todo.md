@@ -8,8 +8,9 @@
 - [x] add matched reports
 - [x] add screen reports
 - [x] add settlement upload
-- [] add settlement page
-- [] add cn report
+- [x] add settlement page
+- [x] add cn report
+- [] get special comission list to generate accurate cns
 - [x] make chat ui only work for web and email tickets
 - [] finish account opening!
 - [x] add analytics

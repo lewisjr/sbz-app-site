@@ -261,3 +261,9 @@ export const logos = {
 	vantum:
 		"https://gufnvlwdovkffgmwutgr.supabase.co/storage/v1/object/public/engine-constants/vantum/vantum%20logo%20no%20alpha.png",
 };
+
+export const contactDetails = {
+	address: "36 Mwapona Road, Woodlands, Lusaka, Zambia",
+	tel: "+260 212 225984 / +260 211 232456",
+	email: "info@sbz.com.zm",
+};

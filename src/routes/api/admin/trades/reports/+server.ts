@@ -114,6 +114,24 @@ export const POST = async (event) => {
 		font-size: 10pt;
 		left: 0px;
 	}
+
+	.contact-btm {
+		position: absolute;
+		width: 19cm;
+		padding: 5px 0px;
+		text-align: center;
+		bottom: 25px;
+		font-size: 10pt;
+		left: 1cm;
+		display: flex;
+		flex-direction: row;
+		white-space: nowrap;
+		align-items: center;
+		justify-content: center;
+		opacity: 0.7;
+		font-style: italic;
+		border-top: 1px solid black;
+	}
 			</style>
 		</head>
 		<body>
@@ -122,7 +140,7 @@ export const POST = async (event) => {
 		</html>
 	`;
 
-	console.log(generatedHtml);
+	//console.log(generatedHtml);
 
 	const fullHtml = generatedHtml;
 
