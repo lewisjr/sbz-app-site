@@ -70,3 +70,12 @@ export interface SettleTradeUploadResponse {
 	totalSell: number;
 	totalSellClients: number;
 }
+
+export interface NewsLean {
+	id: number;
+	symbol: string;
+	title: string;
+	date: number;
+	summary: string;
+	analyst: string;
+}

@@ -142,11 +142,7 @@
 		<p>Data</p>
 	</a>
 
-	<a
-		class={`link${path === "/admin/news" ? " current" : ""}`}
-		href="https://engine.neos.finance/d/db/news"
-		target="_blank"
-	>
+	<a class={`link${path === "/admin/news" ? " current" : ""}`} href="/admin/news">
 		<NotebookText class="h-8 w-8" />
 		<p>News</p>
 	</a>

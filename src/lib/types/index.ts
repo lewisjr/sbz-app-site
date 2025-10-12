@@ -8,6 +8,7 @@ import type {
 	CloseTicketReturnObj,
 	SettledTradeInsert,
 	SettleTradeUploadResponse,
+	NewsLean,
 } from "./others";
 
 import type { ApexOptions } from "apexcharts";
@@ -23,4 +24,5 @@ export type {
 	ApexOptions,
 	SettleTradeUploadResponse,
 	SettledTradeInsert,
+	NewsLean,
 };

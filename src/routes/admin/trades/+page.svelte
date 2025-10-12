@@ -160,7 +160,6 @@
 			*/
 		} catch (ex) {
 			toast.error(ex as any);
-			console.error(ex);
 			disabled = false;
 		}
 	};
@@ -581,9 +580,6 @@
 
 		openTriggerScreen = Date.now();
 	};
-
-	let screenDateF = $state<number>(0);
-	const updateScreenDateF = (value: number) => (screenDateF = value);
 
 	let reportSummaryScreen = $derived.by(() => {
 		const { luse_id, date } = activeRowScreen;

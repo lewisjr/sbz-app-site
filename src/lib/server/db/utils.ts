@@ -14,6 +14,7 @@ import type {
 	CloseTicketReturnObj,
 	NFdb,
 	SettledTradeInsert,
+	NewsLean,
 } from "$lib/types";
 import type { StorageError } from "@supabase/storage-js";
 
@@ -1795,11 +1796,19 @@ interface GetOnScreenResponse {
 	trades: OnSCreenOrder[];
 }
 
+interface GetNewsLeanResponse {
+	news: NewsLean[];
+}
+
 interface NFutils {
 	/**Get the mathced trades from the db. Needs to be updated to include date filtering */
 	getMatchedTrades: (luseId?: number, diff?: number) => Promise<GetMatchedResponse>;
 	/**Get the on screen orders from the db. Needs to be updated to include date filtering */
 	getOnScreenOrders: (luseId?: number, diff?: number) => Promise<GetOnScreenResponse>;
+	/**Get the news from the db. Needs to be updated to include date filtering */
+	getNewsLean: (exchange?: string, history?: number) => Promise<GetNewsLeanResponse>;
+	/**Get an article's pdf json to be cached on the client */
+	getArticleJson: (id: number) => Promise<GenericResponseWData<any | undefined>>;
 }
 
 const nf = (): NFutils => {
@@ -1857,9 +1866,64 @@ const nf = (): NFutils => {
 		}
 	};
 
+	const _getNewsLean = async (
+		exchange: string = "LuSE",
+		history: number = 63,
+	): Promise<GetNewsLeanResponse> => {
+		const oldDate = getOldDate(genDate(), history);
+
+		try {
+			const { data, error } = await nfdb
+				.from("news")
+				.select("id,symbol,title,date,summary,analyst")
+				.filter("date", "gte", oldDate)
+				.eq("exchange", exchange)
+				.order("date", { ascending: false });
+
+			if (error) {
+				console.error("\n\n=== Get news lean error\n", error.message, "\n\n");
+				return { news: [] };
+			}
+
+			return { news: data };
+		} catch (ex: any) {
+			console.error("\n\n=== Get news lean EX\n", ex, "\n\n");
+			return { news: [] };
+		}
+	};
+
+	const _getArticleJson = async (id: number): Promise<GenericResponseWData<any | undefined>> => {
+		try {
+			const { data, error } = await nfdb.from("news").select("pdf_json").eq("id", id);
+
+			if (error) {
+				console.error("\n\n=== Get article json error\n", error.message, "\n\n");
+				return { data: undefined, message: error.message, success: false };
+			}
+
+			if (!data.length)
+				return {
+					data: undefined,
+					message: "No document corresponds to this article.",
+					success: false,
+				};
+
+			return { data: data[0].pdf_json, message: "", success: true };
+		} catch (ex: any) {
+			console.error("\n\n=== Get article json EX\n", ex, "\n\n");
+			return {
+				data: undefined,
+				message: "Server error, please wait a few minutes and try again.",
+				success: false,
+			};
+		}
+	};
+
 	return {
 		getMatchedTrades: _getMatchedTrades,
 		getOnScreenOrders: _getOnScreenOrders,
+		getNewsLean: _getNewsLean,
+		getArticleJson: _getArticleJson,
 	};
 };
 
