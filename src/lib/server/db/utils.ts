@@ -1800,6 +1800,12 @@ interface GetNewsLeanResponse {
 	news: NewsLean[];
 }
 
+type StockData = NFdb["public"]["Tables"]["sbz-dmb"]["Row"];
+
+interface GetStocksReturn {
+	market: StockData[];
+}
+
 interface NFutils {
 	/**Get the mathced trades from the db. Needs to be updated to include date filtering */
 	getMatchedTrades: (luseId?: number, diff?: number) => Promise<GetMatchedResponse>;
@@ -1809,6 +1815,8 @@ interface NFutils {
 	getNewsLean: (exchange?: string, history?: number) => Promise<GetNewsLeanResponse>;
 	/**Get an article's pdf json to be cached on the client */
 	getArticleJson: (id: number) => Promise<GenericResponseWData<any | undefined>>;
+	/**Get the DMR from the db */
+	getStocks: (date?: number) => Promise<GetStocksReturn>;
 }
 
 const nf = (): NFutils => {
@@ -1919,11 +1927,36 @@ const nf = (): NFutils => {
 		}
 	};
 
+	/**Get the DMR from the db */
+	const _getStocks = async (date: number = 31): Promise<GetStocksReturn> => {
+		const oldDate = getOldDate(genDate(), date);
+
+		try {
+			const { data, error } = await nfdb
+				.from("sbz-dmb")
+				.select()
+				.filter("date", "gte", oldDate)
+				.eq("source", "luse")
+				.order("date", { ascending: false });
+
+			if (error) {
+				console.error("\n\n=== Get stocks error\n", error.message, "\n\n");
+				return { market: [] };
+			}
+
+			return { market: data };
+		} catch (ex: any) {
+			console.error("\n\n=== Get stocks exception\n", ex, "\n\n");
+			return { market: [] };
+		}
+	};
+
 	return {
 		getMatchedTrades: _getMatchedTrades,
 		getOnScreenOrders: _getOnScreenOrders,
 		getNewsLean: _getNewsLean,
 		getArticleJson: _getArticleJson,
+		getStocks: _getStocks,
 	};
 };
 

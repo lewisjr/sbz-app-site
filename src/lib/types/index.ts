@@ -9,6 +9,7 @@ import type {
 	SettledTradeInsert,
 	SettleTradeUploadResponse,
 	NewsLean,
+	NFHelp,
 } from "./others";
 
 import type { ApexOptions } from "apexcharts";
@@ -25,4 +26,5 @@ export type {
 	SettleTradeUploadResponse,
 	SettledTradeInsert,
 	NewsLean,
+	NFHelp,
 };

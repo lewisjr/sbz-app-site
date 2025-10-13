@@ -20,6 +20,8 @@
 - [] fix b-engine recording names incorrectly
 - [x] finish news
 - [] finish market analysis
+- [] finish making temp clients table that gets data from settlement
+- [] add clients table with portfolio statements
 
 ## ADD IP TRACKER
 

@@ -2,6 +2,8 @@ import util from "util";
 import { customAlphabet } from "nanoid";
 import { numParse, parseDate } from "@cerebrusinc/qol";
 
+import type { DateObject } from "@cerebrusinc/qol";
+
 /**6 digit otp */
 export const genOTP = (): number => {
 	return Math.floor(100000 + Math.random() * 900000);
@@ -266,4 +268,148 @@ export const contactDetails = {
 	address: "36 Mwapona Road, Woodlands, Lusaka, Zambia",
 	tel: "+260 212 225984 / +260 211 232456",
 	email: "info@sbz.com.zm",
+};
+
+// ? Start Week Engines
+
+interface GenericDataWDate {
+	date: number;
+	[key: string]: any;
+}
+
+/**For responsive pickers, get the list of dates so you can mutate the other dates. It removes repeat values, and sorts in descending order. */
+const getPickerDates = (data: GenericDataWDate[]): number[] => {
+	const datesRaw = data.map((item) => item.date);
+
+	const datesClean: number[] = [];
+
+	datesRaw.forEach((date) => {
+		if (!datesClean.includes(date)) {
+			datesClean.push(date);
+		}
+	});
+
+	datesClean.sort((a, b) => (b > a ? 1 : -1));
+
+	return datesClean;
+};
+
+/**
+ * From a list of dates, get the nth week in the past for work days from a provided list of dates from structured data.
+ * @param dateList you can provide your own dates as a `number[]` with format `YYYYMMDD`, but if not provided, it'll use your raw data to convert that on it's own
+ * @param dateF this is the final date that you want the engine to base it's calculation on
+ * @param eow this is `true` by default. It modifies whether you want the same or close date within nth week
+ * @param history the nth week, it defaults to 1
+ * @returns a `number` in the format `YYYYMMDD` for the correct date. **By default** this date will be the end of the last week and not the same day. If you want the same day or the closest day to it last week (e.g if it is a holiday) it will first look backwards within the same week and if not then look ahead in the same week (e.g Wed is a holiday but Thurs and Fri aren't) until it finds a date.
+ */
+const pastWeekEngine = (
+	dateList: GenericDataWDate[] | number[],
+	dateF?: number,
+	eow: boolean = true,
+	history: number = 1,
+): number => {
+	const dates =
+		typeof dateList[0] === "number"
+			? (dateList as number[])
+			: getPickerDates(dateList as GenericDataWDate[]);
+
+	// descending order
+	dates.sort((a, b) => (b > a ? 1 : -1));
+
+	/**Final date */
+	const df = dateF ? dateF : dates[0];
+
+	const dfStr = df.toString();
+	const yf = Number(dfStr.substring(0, 4));
+	const mf = Number(dfStr.substring(4, 6));
+	const Dfin = Number(dfStr.substring(6, 8));
+
+	const jsDf = new Date(`${yf}-${mf}-${Dfin}`);
+
+	// parsed date final
+	const pdF = parseDate(Dfin, jsDf.getDay(), mf - 1, yf) as DateObject;
+
+	const dfEnglish = pdF.day.long;
+
+	// console.log({ pdF, df, dfEnglish });
+
+	/**last week date */
+	let di = -1;
+
+	let weekCount: number = 0;
+	let prevWeekDay: number = pdF.day.weekNumber;
+
+	/**For when there is no preceeding day, keep the days after dn (if any) to provide after day calculations */
+	const forwardsArr: number[] = [];
+
+	dates.forEach((dn, i) => {
+		const dnStr = dn.toString();
+		const yn = Number(dnStr.substring(0, 4));
+		const mn = Number(dnStr.substring(4, 6));
+		const Dnin = Number(dnStr.substring(6, 8));
+
+		const jsDn = new Date(`${yn}-${mn}-${Dnin}`);
+
+		// parsed date final
+		const pdN = parseDate(Dnin, jsDn.getDay(), mn - 1, yn) as DateObject;
+
+		const dnEnglish = pdN.day.long;
+
+		if (i) {
+			if (pdN.day.weekNumber > prevWeekDay) {
+				weekCount++;
+			}
+		}
+
+		// console.log({ pdN, dn, dnEnglish, i, weekCount, prevWeekDay, history });
+
+		prevWeekDay = pdN.day.weekNumber;
+
+		switch (eow) {
+			case true:
+				if (di === -1 && weekCount === history) {
+					di = dn;
+				}
+				break;
+			default:
+				// store the proceeding days and sort in ascending order
+				if (di === -1 && weekCount === history && pdN.day.weekNumber > pdF.day.weekNumber) {
+					forwardsArr.push(dn);
+					forwardsArr.sort((a, b) => (a > b ? 1 : -1));
+				}
+
+				// look backwards first, from the day of to the days prior
+				if (di === -1 && weekCount === history && pdN.day.weekNumber <= pdF.day.weekNumber) {
+					di = dn;
+				}
+
+				// look forwards if there was nothing backwards
+				if (di === -1 && weekCount > 0 && weekCount !== history && forwardsArr.length) {
+					di = forwardsArr[0];
+				}
+				break;
+		}
+	});
+
+	// if no day can be found
+	if (di === -1) {
+		di = df;
+	}
+
+	// console.log({ di, df });
+
+	return di;
+};
+
+/**A suite of software that does human speech calculations for past/future dates. */
+export const workDayEngines = {
+	/**
+	 * From a list of dates, get the nth week in the past for work days from a provided list of dates from structured data.
+	 * @param dateList you can provide your own dates as a `number[]` with format `YYYYMMDD`, but if not provided, it'll use your raw data to convert that on it's own
+	 * @param dateF this is the final date that you want the engine to base it's calculation on
+	 * @param eow this is `true` by default. It modifies whether you want the same or close date within nth week
+	 * @param history the nth week, it defaults to 1
+	 * @returns a `number` in the format `YYYYMMDD` for the correct date. **By default** this date will be the end of the last week and not the same day. If you want the same day or the closest day to it last week (e.g if it is a holiday) it will first look backwards within the same week and if not then look ahead in the same week (e.g Wed is a holiday but Thurs and Fri aren't) until it finds a date.
+	 */
+	pastWeek: pastWeekEngine,
 };

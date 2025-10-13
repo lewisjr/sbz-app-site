@@ -1,5 +1,6 @@
 import { queryTypesArray, referralSourcesArray, platformsArray } from "$lib/utils";
 import type { Database as SBZdb } from "./db.types";
+import type { Database as NFdb } from "./nf.types";
 
 type ReferralSource = (typeof referralSourcesArray)[number];
 
@@ -78,4 +79,10 @@ export interface NewsLean {
 	date: number;
 	summary: string;
 	analyst: string;
+}
+
+export interface NFHelp {
+	StockData: NFdb["public"]["Tables"]["sbz-dmb"]["Row"];
+	FxData: NFdb["public"]["Tables"]["fx"]["Row"];
+	EconData: NFdb["public"]["Tables"]["economic-statistics"]["Row"];
 }

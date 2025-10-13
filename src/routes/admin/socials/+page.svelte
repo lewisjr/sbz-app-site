@@ -249,9 +249,9 @@
 		if (
 			!platformValue.length ||
 			!udf1Val.length ||
-			!udf2Val.length ||
-			!udf3Val.length ||
-			!udf4Val.length ||
+			(platformValue !== "Spotify" && !udf2Val.length) ||
+			(platformValue !== "Spotify" && !udf3Val.length) ||
+			(platformValue !== "Spotify" && !udf4Val.length) ||
 			(platformValue !== "YouTube" && !udf5Val.length) ||
 			!dateValue
 		) {

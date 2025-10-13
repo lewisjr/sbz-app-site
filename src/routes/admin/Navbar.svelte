@@ -133,11 +133,7 @@
 		<p>Market</p>
 	</div>
 
-	<a
-		class={`link${path === "/admin/data" ? " current" : ""}`}
-		href="https://engine.neos.finance/d/analytics"
-		target="_blank"
-	>
+	<a class={`link${path === "/admin/data" ? " current" : ""}`} href="/admin/data">
 		<ChartCandlestick class="h-8 w-8" />
 		<p>Data</p>
 	</a>
