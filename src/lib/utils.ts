@@ -413,3 +413,39 @@ export const workDayEngines = {
 	 */
 	pastWeek: pastWeekEngine,
 };
+
+export const dmbKeysCodex = {
+	ask: "Ask",
+	ask_vol: "Ask Volume",
+	bid: "Bid",
+	bid_vol: "Bid Volume",
+	// date: number,
+	delta: "% Change",
+	delta_abs: "Change",
+	div_yield: "Dividend Yield",
+	issued_shares: "Issued Shares",
+	market_price: "Price",
+	pbv: "Price-to-Book",
+	pe: "Price-to-Earnings",
+	// symbol: string,
+	traded_vol: "Volume",
+	trail_52_high: "52 Week High",
+	trail_52_low: "52 Week Low",
+	turnover: "Turnover",
+	ytd: "Year to Date",
+	market_cap: "Market Cap",
+};
+
+/**Converts the date from DDMMYYYY to YYYY-MM-DD */
+export const dateTimeifier = (_date: number | string): string => {
+	try {
+		const date = _date.toString();
+		const y = Number(date.substring(0, 4));
+		const m = Number(date.substring(4, 6));
+		const D = Number(date.substring(6, 8));
+
+		return `${y}-${m}-${D}`;
+	} catch (ex) {
+		return "N/A";
+	}
+};

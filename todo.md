@@ -19,8 +19,7 @@
 - [] add some reports like the dmr and sm report (downloadable)
 - [] fix b-engine recording names incorrectly
 - [x] finish news
-- [] finish market analysis
-- [] finish making temp clients table that gets data from settlement
+- [x] finish market analysis
 - [] add clients table with portfolio statements
 
 ## ADD IP TRACKER

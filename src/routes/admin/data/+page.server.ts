@@ -5,6 +5,8 @@ export const load = (data) => {
 	scourgeOfClients(data);
 
 	return {
-		//stocks: dbs.nf.getStocks(),
+		stocks: dbs.nf.getStocks(),
+		opinions: dbs.nf.getRecommendations(),
+		fx: dbs.nf.getLastFxData(),
 	};
 };

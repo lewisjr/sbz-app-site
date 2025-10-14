@@ -81,8 +81,104 @@ export interface NewsLean {
 	analyst: string;
 }
 
+export type DmbRowKey =
+	| "delta"
+	| "delta_abs"
+	| "market_price"
+	| "traded_vol"
+	| "turnover"
+	| "market_cap";
+
+export interface ExpandedSymbolReturn {
+	fundamentals: NFdb["public"]["Tables"]["symbol-metrics"]["Row"][];
+	balance: NFdb["public"]["Tables"]["balance-sheets"]["Row"][];
+	income: NFdb["public"]["Tables"]["income-statements"]["Row"][];
+	cashFlow: NFdb["public"]["Tables"]["cash-flow-statements"]["Row"][];
+}
+
 export interface NFHelp {
 	StockData: NFdb["public"]["Tables"]["sbz-dmb"]["Row"];
 	FxData: NFdb["public"]["Tables"]["fx"]["Row"];
 	EconData: NFdb["public"]["Tables"]["economic-statistics"]["Row"];
+	OpinionsData: NFdb["public"]["Tables"]["symbol-recommendations"]["Row"];
+	DmbRowKey: DmbRowKey;
+	ExpandedSymbolReturn: ExpandedSymbolReturn;
+}
+
+export interface ExpandedSymbol {
+	currency: string;
+	mcap: {
+		zmw: number;
+		usd: number;
+	};
+	price: {
+		price: number;
+		change: number;
+		percentageChange: number;
+		ytd: number;
+		trail52H: number;
+		trail52L: number;
+	};
+	bidask: {
+		bid: number;
+		ask: number;
+		bidVol: number;
+		askVol: number;
+	};
+	trades: {
+		vol: number;
+		turn: number;
+		turnUsd: number;
+	};
+	sentiment: {
+		value: string;
+		class: "gren" | "rd" | "orng" | "blu" | undefined;
+	};
+	profitability: {
+		cfps: number;
+		eps: number;
+	};
+	return: {
+		roe: number;
+		roa: number;
+		roi: number;
+	};
+	margins: {
+		gp: number;
+		pbit: number;
+		pbt: number;
+		np: number;
+		tax: number;
+	};
+	liquidity: {
+		quick: number;
+		current: number;
+	};
+	efficiency: {
+		acp: number;
+		app: number;
+		assTurn: number;
+	};
+	intrinsic: {
+		nav: number;
+		pe: number;
+		pb: number;
+		entVal: number;
+	};
+	div: {
+		net: number;
+		yield: number;
+	};
+	capm: {
+		beta: number;
+		alpha: number;
+		er: number;
+		fv: number;
+	};
+	cashFlowYear: number;
+	cashFlowData: (string | number)[][];
+	incomeYear: number;
+	incomeData: (string | number)[][];
+	balanceYear: number;
+	balanceData: (string | number)[][];
 }

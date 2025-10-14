@@ -15,6 +15,7 @@ import type {
 	NFdb,
 	SettledTradeInsert,
 	NewsLean,
+	NFHelp,
 } from "$lib/types";
 import type { StorageError } from "@supabase/storage-js";
 
@@ -1806,6 +1807,18 @@ interface GetStocksReturn {
 	market: StockData[];
 }
 
+type FxData = NFdb["public"]["Tables"]["fx"]["Row"];
+
+interface GetFxReturn {
+	fx: FxData[];
+}
+
+type Recommendation = NFdb["public"]["Tables"]["symbol-recommendations"]["Row"];
+
+interface GetRecommendationsReturn {
+	recommendations: Recommendation[];
+}
+
 interface NFutils {
 	/**Get the mathced trades from the db. Needs to be updated to include date filtering */
 	getMatchedTrades: (luseId?: number, diff?: number) => Promise<GetMatchedResponse>;
@@ -1817,6 +1830,11 @@ interface NFutils {
 	getArticleJson: (id: number) => Promise<GenericResponseWData<any | undefined>>;
 	/**Get the DMR from the db */
 	getStocks: (date?: number) => Promise<GetStocksReturn>;
+	expandStock: (
+		symbol: string,
+	) => Promise<GenericResponseWData<NFHelp["ExpandedSymbolReturn"] | undefined>>;
+	getLastFxData: () => Promise<GetFxReturn>;
+	getRecommendations: () => Promise<GetRecommendationsReturn>;
 }
 
 const nf = (): NFutils => {
@@ -1927,7 +1945,6 @@ const nf = (): NFutils => {
 		}
 	};
 
-	/**Get the DMR from the db */
 	const _getStocks = async (date: number = 31): Promise<GetStocksReturn> => {
 		const oldDate = getOldDate(genDate(), date);
 
@@ -1951,12 +1968,155 @@ const nf = (): NFutils => {
 		}
 	};
 
+	const _expandStock = async (
+		symbol: string,
+	): Promise<GenericResponseWData<NFHelp["ExpandedSymbolReturn"] | undefined>> => {
+		console.log({ symbol });
+		try {
+			const fundamentalsReq = nfdb
+				.from("symbol-metrics")
+				.select()
+				.filter("symbol", "eq", symbol)
+				.eq("exchange", "LuSE")
+				.order("date", { ascending: false })
+				.limit(1);
+
+			const balanceReq = nfdb
+				.from("balance-sheets")
+				.select()
+				.filter("symbol", "eq", symbol)
+				.eq("exchange", "LuSE")
+				.order("date", { ascending: false });
+
+			const incomeReq = nfdb
+				.from("income-statements")
+				.select()
+				.filter("symbol", "eq", symbol)
+				.eq("exchange", "LuSE")
+				.order("date", { ascending: false });
+
+			const cashFlowReq = nfdb
+				.from("cash-flow-statements")
+				.select()
+				.filter("symbol", "eq", symbol)
+				.eq("exchange", "LuSE")
+				.order("date", { ascending: false });
+
+			const [fundamentalsRes, balanceRes, incomeRes, cashFlowRes] = await Promise.all([
+				fundamentalsReq,
+				balanceReq,
+				incomeReq,
+				cashFlowReq,
+				cashFlowReq,
+			]);
+
+			if (fundamentalsRes.error)
+				return {
+					data: undefined,
+					message: fundamentalsRes.error.message,
+					success: false,
+				};
+
+			if (balanceRes.error)
+				return {
+					data: undefined,
+					message: balanceRes.error.message,
+					success: false,
+				};
+
+			if (incomeRes.error)
+				return {
+					data: undefined,
+					message: incomeRes.error.message,
+					success: false,
+				};
+
+			if (cashFlowRes.error)
+				return {
+					data: undefined,
+					message: cashFlowRes.error.message,
+					success: false,
+				};
+
+			console.log();
+
+			return {
+				message: "",
+				success: true,
+				data: {
+					balance: balanceRes.data,
+					cashFlow: cashFlowRes.data,
+					fundamentals: fundamentalsRes.data,
+					income: incomeRes.data,
+				},
+			};
+		} catch (ex: any) {
+			console.error(`\n\n=== Expand stock ${symbol} exception\n`, ex, "\n\n");
+			return {
+				data: undefined,
+				message: String(ex),
+				success: false,
+			};
+		}
+	};
+
+	/**Get the BOZ Fx from the db for a specific period. Needs to be updated to include date filtering */
+	const _getLastFxData = async (): Promise<GetFxReturn> => {
+		const oldDate = getOldDate(genDate(), 10);
+		const currentDate = genDate();
+
+		try {
+			const { data, error } = await nfdb
+				.from("fx")
+				.select()
+				.filter("date", "gte", oldDate)
+				.filter("date", "lt", currentDate)
+				.eq("source", "BOZ")
+				.order("date", { ascending: false });
+
+			if (error) {
+				console.error(`\n\n=== Get last fx error\n`, error, "\n\n");
+				return { fx: [] };
+			}
+
+			return { fx: data };
+		} catch (ex: any) {
+			return { fx: [] };
+		}
+	};
+
+	/**Get the symbol recommendations db */
+	const _getRecommendations = async (): Promise<GetRecommendationsReturn> => {
+		const oldDate = getOldDate(genDate(), 31);
+
+		try {
+			const { data, error } = await nfdb
+				.from("symbol-recommendations")
+				.select()
+				.eq("analyst", "Stockbrokers")
+				.order("date", { ascending: false })
+				.limit(1);
+
+			if (error) {
+				console.error(`\n\n=== Get recommendation error\n`, error, "\n\n");
+				return { recommendations: [] };
+			}
+
+			return { recommendations: data };
+		} catch (ex: any) {
+			return { recommendations: [] };
+		}
+	};
+
 	return {
 		getMatchedTrades: _getMatchedTrades,
 		getOnScreenOrders: _getOnScreenOrders,
 		getNewsLean: _getNewsLean,
 		getArticleJson: _getArticleJson,
 		getStocks: _getStocks,
+		expandStock: _expandStock,
+		getLastFxData: _getLastFxData,
+		getRecommendations: _getRecommendations,
 	};
 };
 

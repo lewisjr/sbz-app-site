@@ -1,5 +1,5 @@
 import { writable } from "svelte/store";
-import type { NFHelp } from "./types";
+import type { NFHelp, ExpandedSymbol } from "./types";
 
 export const screenWidthStore = writable<number>(0);
 
@@ -10,8 +10,10 @@ interface NewsJsonCache {
 
 export const newsJsonCacheStore = writable<NewsJsonCache[]>([]);
 
-type MarketDataCache<DataType> = { [key: string]: DataType[] };
+type DataCache<DataType> = { [key: string]: DataType };
 
-export const stocksCacheStore = writable<MarketDataCache<NFHelp["StockData"][]>>({});
-export const fxCacheStore = writable<MarketDataCache<NFHelp["FxData"][]>>({});
-export const econCacheStore = writable<MarketDataCache<NFHelp["EconData"][]>>({});
+export const stocksCacheStore = writable<DataCache<NFHelp["StockData"][]>>({});
+export const fxCacheStore = writable<DataCache<NFHelp["FxData"][]>>({});
+export const econCacheStore = writable<DataCache<NFHelp["EconData"][]>>({});
+
+export const expandedStockCacheStore = writable<DataCache<ExpandedSymbol>>({});

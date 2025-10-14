@@ -10,6 +10,7 @@ import type {
 	SettleTradeUploadResponse,
 	NewsLean,
 	NFHelp,
+	ExpandedSymbol,
 } from "./others";
 
 import type { ApexOptions } from "apexcharts";
@@ -27,4 +28,5 @@ export type {
 	SettledTradeInsert,
 	NewsLean,
 	NFHelp,
+	ExpandedSymbol,
 };
