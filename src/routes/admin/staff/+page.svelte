@@ -347,7 +347,7 @@
 		}
 
 		loading = true;
-		toast.info("Reassigning ticket...");
+		toast.info("Creating new ticket...");
 
 		try {
 			const req = await fetch("/api/admin/staff", {
