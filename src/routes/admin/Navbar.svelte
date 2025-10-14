@@ -143,6 +143,11 @@
 		<p>News</p>
 	</a>
 
+	<!-- SBZ Specific -->
+	<div class="titl">
+		<p>Company</p>
+	</div>
+
 	<a class={`link${path === "/admin/trades" ? " current" : ""}`} href="/admin/trades">
 		<ArrowRightLeft class="h-8 w-8" />
 		<p>Trades</p>
@@ -157,11 +162,6 @@
 		<Upload class="h-8 w-8" />
 		<p>Upload</p>
 	</a>
-
-	<!-- SBZ Specific -->
-	<div class="titl">
-		<p>Company</p>
-	</div>
 
 	<!--
 	<a class={`link${path === "/admin/clients" ? " current" : ""}`} href="/admin/clients">

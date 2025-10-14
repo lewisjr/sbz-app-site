@@ -212,7 +212,7 @@
 				};
 			});
 
-			const trades = Object.values(tradesObj);
+			const trades = Object.values(tradesObj).sort((a, b) => a.symbol.localeCompare(b.symbol));
 
 			const tradeDates = tradesRaw.map((trade) => {
 				return { label: prettyDate(trade.date), value: trade.date };

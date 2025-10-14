@@ -260,8 +260,12 @@
 			initDate = 0;
 		}
 
-		const tradesZmw = chunkArray<SimpleTrade>(Object.values(tradesObjZmw));
-		const tradesUsd = chunkArray<SimpleTrade>(Object.values(tradesObjUsd));
+		const tradesZmw = chunkArray<SimpleTrade>(
+			Object.values(tradesObjZmw).sort((a, b) => a.symbol.localeCompare(b.symbol)),
+		);
+		const tradesUsd = chunkArray<SimpleTrade>(
+			Object.values(tradesObjUsd).sort((a, b) => a.symbol.localeCompare(b.symbol)),
+		);
 
 		const tradeDates = tradesRaw.map((trade) => {
 			return { label: prettyDate(trade.trade_date), value: trade.trade_date };
@@ -655,8 +659,12 @@
 			});
 		}
 
-		const ordersZmw = chunkArray<SimpleOrder>(Object.values(ordersObjZmw));
-		const ordersUsd = chunkArray<SimpleOrder>(Object.values(ordersObjUsd));
+		const ordersZmw = chunkArray<SimpleOrder>(
+			Object.values(ordersObjZmw).sort((a, b) => a.symbol.localeCompare(b.symbol)),
+		);
+		const ordersUsd = chunkArray<SimpleOrder>(
+			Object.values(ordersObjUsd).sort((a, b) => a.symbol.localeCompare(b.symbol)),
+		);
 
 		const orderDates = ordersRaw.map((trade) => {
 			return { label: prettyDate(trade.date), value: trade.date };

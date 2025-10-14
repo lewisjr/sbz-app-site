@@ -21,6 +21,8 @@
 - [x] finish news
 - [x] finish market analysis
 - [] add clients table with portfolio statements
+- [x] order stocks on trade summary
+- [x] order stocks on cn
 
 ## ADD IP TRACKER
 
