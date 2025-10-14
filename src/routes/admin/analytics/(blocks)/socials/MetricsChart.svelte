@@ -74,8 +74,6 @@
 		}
 	});
 
-	let noData = $state<boolean>(false);
-
 	let options = $derived.by(() => {
 		const platformObj: { [key: string]: { label: string; color: string } } = {
 			facebook: {
@@ -145,8 +143,6 @@
 
 		const seriesData = Object.values(seriesCodex).map((m) => m);
 
-		!seriesData.length ? (noData = true) : (noData = false);
-
 		const obj: ApexOptions = {
 			chart: {
 				height: 600,
@@ -199,16 +195,16 @@
 			},
 		};
 
-		return obj;
+		return { obj, noData: !seriesData.length };
 	});
 </script>
 
-{#if noData}
+{#if options.noData}
 	<div class="no-chart">
 		<h3>No Chart.</h3>
 	</div>
 {:else}
-	<div use:chart={options}></div>
+	<div use:chart={options.obj}></div>
 	<div class={`controller${flipped ? " flipped" : ""}`}>
 		<Label class="mr-2">Select a Metric</Label>
 		<AnyPicker
