@@ -32,7 +32,7 @@ export const POST = async (event) => {
 				approved: true,
 				ticketable: obj.ticketable,
 			};
-			const addStaff = await dbs.sbz.addStaffMember(obj);
+			const addStaff = await dbs.sbz.addStaffMember(nObj);
 
 			return json(
 				{

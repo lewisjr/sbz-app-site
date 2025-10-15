@@ -327,7 +327,7 @@
 				.sort((a, b) => a.diff / a.vi - b.diff / b.vi)
 				.filter((item) => item.diff < 0);
 
-			console.log({ deltaCodex, dOld, df, di }, Date.now());
+			// console.log({ deltaCodex, dOld, df, di }, Date.now());
 
 			const lasiSummary = `The market ${lasiCodex.delta.diff > 0 ? "grew" : lasiCodex.delta.diff < 0 ? "dropped" : "stayed flat"}${lasiCodex.delta.diff !== 0 ? " by ||?" + percentageHandler(Math.abs(lasiCodex.delta.diff / lasiCodex.delta.vi)) + "||" : ""} closing at ||?${numParse(lasiCodex.delta.vf.toFixed(2))}|| points and recording ||?${numParse(lasiCodex.vol.sum)}|| shares traded and ||?${numParse(lasiCodex.turnover.sum.toFixed(2))}|| in turnover. The top contributor to turnover was ${mrMateSymbols(turnoverArr[0].symbol)} at ||?${numParse(turnoverArr[0].sum)} (${percentageHandler(turnoverArr[0].sum / lasiCodex.turnover.sum)})||, and the top contributor to trading volume was ${mrMateSymbols(volArr[0].symbol)} at ||?${numParse(volArr[0].vf)} (${percentageHandler(volArr[0].vf / lasiCodex.turnover.vf)})||.`;
 
@@ -557,7 +557,7 @@
 				break;
 		}
 
-		console.log(fundamentals, Date.now());
+		// console.log(fundamentals, Date.now());
 
 		const sFun = fundamentals[0];
 
@@ -1293,7 +1293,7 @@
 					</table>
 
 					<!-- Price Information -->
-					<table class="loading no-padding table-fixed">
+					<table class="loading no-padding ml-10 table-fixed">
 						<thead>
 							<tr><th colspan="2">Market Cap</th></tr>
 							<tr>
