@@ -562,14 +562,14 @@
 	};
 
 	const openSheet = (cfg: "portfolio" | "file", row: TempClient) => {
-		//clientPortfolio = undefined;
-		//portfolioLoading = true;
+		clientPortfolio = undefined;
+		portfolioLoading = true;
 
 		switch (cfg) {
 			case "portfolio":
 				sheetTitle = `${toTitleCase(row.names)}'s Portfolio`;
 				activeRow = row;
-				//getPortfolio();
+				getPortfolio();
 				break;
 			case "file":
 				toast.info("W.I.P!");
