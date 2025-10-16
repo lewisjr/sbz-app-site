@@ -12,6 +12,12 @@ type ActionConfig = "reassign" | "audit" | "chat" | "close";
 
 type StaffActionConfig = "block" | "unblock" | "edit" | "perms" | "new";
 
+interface Folio {
+	symbol: string;
+	volume: number;
+	value: number;
+}
+
 export interface Types {
 	/**For tickets */
 	ReferralSource: ReferralSource;
@@ -21,6 +27,8 @@ export interface Types {
 	ActionConfig: ActionConfig;
 	/**Fot staff actions */
 	StaffActionConfig: StaffActionConfig;
+	AnyPickerObj: { label: string; value: any };
+	Folio: Folio;
 }
 
 export interface GenericResponse {
@@ -96,6 +104,24 @@ export interface ExpandedSymbolReturn {
 	cashFlow: NFdb["public"]["Tables"]["cash-flow-statements"]["Row"][];
 }
 
+interface SimpleTrade {
+	symbol: string;
+	price: number;
+	qty: number;
+	total: number;
+	side: string;
+	date: string;
+}
+
+interface SimpleOrder {
+	symbol: string;
+	price: number;
+	qty: number;
+	total: number;
+	side: string;
+	date: string;
+}
+
 export interface NFHelp {
 	StockData: NFdb["public"]["Tables"]["sbz-dmb"]["Row"];
 	FxData: NFdb["public"]["Tables"]["fx"]["Row"];
@@ -103,6 +129,10 @@ export interface NFHelp {
 	OpinionsData: NFdb["public"]["Tables"]["symbol-recommendations"]["Row"];
 	DmbRowKey: DmbRowKey;
 	ExpandedSymbolReturn: ExpandedSymbolReturn;
+	SimpleTrade: SimpleTrade;
+	SimpleOrder: SimpleOrder;
+	MatchedTrade: NFdb["public"]["Tables"]["sbz-matched-trades"]["Row"];
+	OnScreenOrder: NFdb["public"]["Tables"]["on-screen-orders"]["Row"];
 }
 
 export interface ExpandedSymbol {
@@ -181,4 +211,12 @@ export interface ExpandedSymbol {
 	incomeData: (string | number)[][];
 	balanceYear: number;
 	balanceData: (string | number)[][];
+}
+
+export interface GetPortfolioData {
+	settled: SBZdb["public"]["Tables"]["settled_trades"]["Row"][];
+	matched: NFdb["public"]["Tables"]["sbz-matched-trades"]["Row"][];
+	onScreen: NFdb["public"]["Tables"]["on-screen-orders"]["Row"][];
+	dmr: NFdb["public"]["Tables"]["sbz-dmb"]["Row"][];
+	fxUsd: NFdb["public"]["Tables"]["fx"]["Row"];
 }

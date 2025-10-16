@@ -449,3 +449,12 @@ export const dateTimeifier = (_date: number | string): string => {
 		return "N/A";
 	}
 };
+
+/**Default size is `20` */
+export const chunkArray = <T>(arr: T[], size: number = 20) => {
+	const result = [];
+	for (let i = 0; i < arr.length; i += size) {
+		result.push(arr.slice(i, i + size));
+	}
+	return result;
+};

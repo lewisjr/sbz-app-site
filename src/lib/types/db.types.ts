@@ -210,18 +210,33 @@ export type Database = {
 			"csd-clients-temp": {
 				Row: {
 					created_at: string;
+					email: string;
 					luse_id: number;
 					names: string;
+					nationality: string;
+					nrc: string;
+					phone: string;
+					type: Database["public"]["Enums"]["account-type"] | null;
 				};
 				Insert: {
 					created_at?: string;
+					email?: string;
 					luse_id: number;
 					names: string;
+					nationality?: string;
+					nrc?: string;
+					phone?: string;
+					type?: Database["public"]["Enums"]["account-type"] | null;
 				};
 				Update: {
 					created_at?: string;
+					email?: string;
 					luse_id?: number;
 					names?: string;
+					nationality?: string;
+					nrc?: string;
+					phone?: string;
+					type?: Database["public"]["Enums"]["account-type"] | null;
 				};
 				Relationships: [];
 			};
@@ -509,6 +524,7 @@ export type Database = {
 			[_ in never]: never;
 		};
 		Enums: {
+			"account-type": "LI" | "LC" | "FI" | "FC";
 			message_type: "text" | "pdf" | "command" | "img";
 		};
 		CompositeTypes: {
@@ -638,6 +654,7 @@ export const Constants = {
 	},
 	public: {
 		Enums: {
+			"account-type": ["LI", "LC", "FI", "FC"],
 			message_type: ["text", "pdf", "command", "img"],
 		},
 	},

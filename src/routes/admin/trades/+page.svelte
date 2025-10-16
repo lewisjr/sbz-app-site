@@ -4,7 +4,7 @@
 	import { createSvelteTable, FlexRender } from "$lib/components/ui/data-table/index";
 	import { getCoreRowModel, getPaginationRowModel } from "@tanstack/table-core";
 	import { numParse } from "@cerebrusinc/qol";
-	import { mrMateSymbols, prettyDate, logos, contactDetails } from "$lib/utils";
+	import { mrMateSymbols, prettyDate, logos, contactDetails, chunkArray } from "$lib/utils";
 	import { createRawSnippet } from "svelte";
 	import { renderSnippet, renderComponent } from "$lib/components/ui/data-table/index";
 	import { toTitleCase } from "@cerebrusinc/fstring";
@@ -43,11 +43,13 @@
 
 	//types
 	import type { PageProps } from "./$types";
-	import type { NFdb } from "$lib/types";
+	import type { NFdb, NFHelp } from "$lib/types";
 	import type { ColumnDef, PaginationState } from "@tanstack/table-core";
 
 	type MatchedTrade = NFdb["public"]["Tables"]["sbz-matched-trades"]["Row"];
 	type OnScreenOrder = NFdb["public"]["Tables"]["on-screen-orders"]["Row"];
+	type SimpleTrade = NFHelp["SimpleTrade"];
+	type SimpleOrder = NFHelp["SimpleOrder"];
 
 	let { data }: PageProps = $props();
 
@@ -118,14 +120,6 @@
 		openTriggerMatched = Date.now();
 	};
 
-	const chunkArray = <T,>(arr: T[], size: number = 20) => {
-		const result = [];
-		for (let i = 0; i < arr.length; i += size) {
-			result.push(arr.slice(i, i + size));
-		}
-		return result;
-	};
-
 	const genPdf = async (id: string) => {
 		toast.info(`Generating ${toTitleCase(activeRowMatched.names)}'s report...`);
 		disabled = true;
@@ -186,15 +180,6 @@
 
 		let zmwTotal: number = 0;
 		let usdTotal: number = 0;
-
-		type SimpleTrade = {
-			symbol: string;
-			price: number;
-			qty: number;
-			total: number;
-			side: string;
-			date: string;
-		};
 
 		const tradesObjZmw: {
 			[key: string]: SimpleTrade;
@@ -588,7 +573,7 @@
 	let reportSummaryScreen = $derived.by(() => {
 		const { luse_id, date } = activeRowScreen;
 
-		let ordersRaw = screenData.filter((item) => item.luse_id === luse_id);
+		const ordersRaw = screenData.filter((item) => item.luse_id === luse_id);
 
 		// console.log({ screenDateI, screenDateF });
 
@@ -596,15 +581,6 @@
 
 		let zmwTotal: number = 0;
 		let usdTotal: number = 0;
-
-		type SimpleOrder = {
-			symbol: string;
-			price: number;
-			qty: number;
-			total: number;
-			side: string;
-			date: string;
-		};
 
 		const ordersObjZmw: {
 			[key: string]: SimpleOrder;

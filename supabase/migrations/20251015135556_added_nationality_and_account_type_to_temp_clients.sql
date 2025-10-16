@@ -1,8 +1,15 @@
+create type "public"."account-type" as enum ('LI', 'LC', 'FI', 'FC');
+
 
   create table "public"."csd-clients-temp" (
     "luse_id" bigint not null,
     "created_at" timestamp with time zone not null default now(),
-    "names" text not null
+    "names" text not null,
+    "email" text not null default ''::text,
+    "phone" text not null default ''::text,
+    "nrc" text not null default ''::text,
+    "nationality" text not null default ''::text,
+    "type" "account-type"
       );
 
 

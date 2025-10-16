@@ -11,6 +11,7 @@ import type {
 	NewsLean,
 	NFHelp,
 	ExpandedSymbol,
+	GetPortfolioData,
 } from "./others";
 
 import type { ApexOptions } from "apexcharts";
@@ -29,4 +30,5 @@ export type {
 	NewsLean,
 	NFHelp,
 	ExpandedSymbol,
+	GetPortfolioData,
 };

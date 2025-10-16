@@ -16,6 +16,7 @@ import type {
 	SettledTradeInsert,
 	NewsLean,
 	NFHelp,
+	GetPortfolioData,
 } from "$lib/types";
 import type { StorageError } from "@supabase/storage-js";
 
@@ -128,6 +129,12 @@ type SocialsRow = SBZdb["public"]["Tables"]["odyn-socials"]["Row"];
 type SettledTradeRow = SBZdb["public"]["Tables"]["settled_trades"]["Row"];
 type TempClientName = SBZdb["public"]["Tables"]["csd-clients-temp"]["Row"];
 
+interface TempClientNameTwo {
+	luse_id: number;
+	created_at: string;
+	names: string;
+}
+
 interface ApiVersion {
 	success: boolean;
 	version: string;
@@ -187,10 +194,14 @@ interface SBZutils {
 	getDatedSettledTrades: (diff?: number) => Promise<SettledTradeRow[]>;
 	settleTrades: (obj: SettledTradeInsert[], currency?: "zmw" | "usd") => Promise<GenericResponse>;
 
+	// portfolio
+	getClients: () => Promise<TempClientName[]>;
+	getPortfolio: (luseId: number) => Promise<GenericResponseWData<GetPortfolioData | undefined>>;
+
 	// utils
 	getAgentStatus: () => Promise<ApiVersion>;
 	getSiteStatus: () => Promise<ApiVersion>;
-	getClientNameById: (luseIds: number[]) => Promise<TempClientName[]>;
+	getClientNameById: (luseIds: number[]) => Promise<TempClientNameTwo[]>;
 }
 
 const sbz = (): SBZutils => {
@@ -1708,6 +1719,150 @@ const sbz = (): SBZutils => {
 		}
 	};
 
+	// * portfolio stuff
+	const _getClients = async (): Promise<TempClientName[]> => {
+		try {
+			const { data, error } = await sbzdb
+				.from("csd-clients-temp")
+				.select()
+				.order("luse_id", { ascending: true });
+
+			if (error) {
+				await _log({ message: error.message, title: `Get Clients Error` });
+				return [];
+			}
+
+			return data;
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: `Get Clients Exception` });
+			return [];
+		}
+	};
+
+	const _getPortfolio = async (
+		luseId: number,
+	): Promise<GenericResponseWData<GetPortfolioData | undefined>> => {
+		const oldDate = getOldDate(genDate(), 5);
+
+		try {
+			const settledReq = sbzdb
+				.from("settled_trades")
+				.select()
+				.filter("luse_id", "eq", luseId)
+				.order("date", { ascending: true });
+			const matchedReq = nfdb
+				.from("sbz-matched-trades")
+				.select()
+				.filter("luse_id", "eq", luseId)
+				.order("trade_date", { ascending: false });
+			const onScreenReq = nfdb
+				.from("on-screen-orders")
+				.select()
+				.filter("luse_id", "eq", luseId)
+				.order("date", { ascending: false });
+			const dmrReq = nfdb
+				.from("sbz-dmb")
+				.select()
+				.filter("date", "gte", oldDate)
+				.filter("source", "eq", "luse")
+				.order("date", { ascending: false });
+			const fxUsdReq = nfdb
+				.from("fx")
+				.select()
+				.filter("date", "gte", oldDate)
+				.filter("source", "eq", "BOZ")
+				.filter("currency", "eq", "USD/ZMW")
+				.order("date", { ascending: false });
+
+			const [settledRes, matchedRes, onScreenRes, dmrRes, fxUsdRes] = await Promise.all([
+				settledReq,
+				matchedReq,
+				onScreenReq,
+				dmrReq,
+				fxUsdReq,
+			]);
+
+			if (settledRes.error) {
+				await _log({ message: settledRes.error.message, title: `Get ${luseId}LI Holdings - E1` });
+				return {
+					data: undefined,
+					message: "Failed to get this portfolio, please try again in a few minutes.",
+					success: false,
+				};
+			}
+
+			if (matchedRes.error) {
+				await _log({ message: matchedRes.error.message, title: `Get ${luseId}LI Holdings - E2` });
+				return {
+					data: undefined,
+					message: "Failed to get trade history, please try again in a few minutes.",
+					success: false,
+				};
+			}
+
+			if (onScreenRes.error) {
+				await _log({ message: onScreenRes.error.message, title: `Get ${luseId}LI Holdings - E3` });
+				return {
+					data: undefined,
+					message: "Failed to get on screen orders, please try again in a few minutes.",
+					success: false,
+				};
+			}
+
+			if (dmrRes.error) {
+				await _log({ message: dmrRes.error.message, title: `Get ${luseId}LI Holdings - E4` });
+				return {
+					data: undefined,
+					message: "Failed to get recent stock prices, please try again in a few minutes.",
+					success: false,
+				};
+			}
+
+			if (fxUsdRes.error) {
+				await _log({ message: fxUsdRes.error.message, title: `Get ${luseId}LI Holdings - E5` });
+				return {
+					data: undefined,
+					message: "Failed to get recent fx rates, please try again in a few minutes.",
+					success: false,
+				};
+			}
+
+			const fxUsd = fxUsdRes.data[0];
+			const _date = dmrRes.data[0].date;
+			const dmr = dmrRes.data.filter((item) => item.date === _date);
+
+			return {
+				data: {
+					dmr,
+					fxUsd,
+					onScreen: onScreenRes.data,
+					matched: matchedRes.data,
+					settled: settledRes.data,
+				},
+				message: "",
+				success: true,
+			};
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+			console.error("\n=== get portfolio ex\n", ex, "\n");
+
+			_log({ message: error, title: `Get Portfolio Exception` });
+			return { data: undefined, message: error, success: false };
+		}
+	};
+
 	// * utils
 	const _getAgentStatus = async (): Promise<ApiVersion> => {
 		try {
@@ -1730,9 +1885,12 @@ const sbz = (): SBZutils => {
 		}
 	};
 
-	const _getClientNameById = async (luseIds: number[]): Promise<TempClientName[]> => {
+	const _getClientNameById = async (luseIds: number[]): Promise<TempClientNameTwo[]> => {
 		try {
-			const { data, error } = await sbzdb.from("csd-clients-temp").select().in("luse_id", luseIds);
+			const { data, error } = await sbzdb
+				.from("csd-clients-temp")
+				.select("luse_id,created_at,names")
+				.in("luse_id", luseIds);
 
 			if (error) return [];
 
@@ -1780,6 +1938,8 @@ const sbz = (): SBZutils => {
 		getDatedSettledTrades: _getDatedSettledTrades,
 		getFilteredSettledTrades: _getFilteredSettledTrades,
 		settleTrades: _settleTrades,
+		getClients: _getClients,
+		getPortfolio: _getPortfolio,
 	};
 };
 
