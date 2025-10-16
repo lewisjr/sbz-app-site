@@ -776,7 +776,6 @@
 			const blob = await response.blob();
 			const blobURL = URL.createObjectURL(blob);
 
-			/*
 			const a = document.createElement("a");
 			a.href = blobURL;
 			a.download = `${toTitleCase(activeRow.names)}'s Portfolio - ${prettyDate(date)}.pdf`; // Optional: set the filename
@@ -790,10 +789,11 @@
 			disabled = false;
 
 			toast.success("Portfolio downloaded!");
-			*/
 
+			/*
 			disabled = false;
 			window.open(blobURL, "_blank");
+			*/
 		} catch (ex) {
 			toast.error(ex as any);
 			console.error(ex);
