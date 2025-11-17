@@ -134,9 +134,15 @@
 			const blob = await response.blob();
 			const blobURL = URL.createObjectURL(blob);
 
+			let docTitle = `SBZ ${toTitleCase(activeRowMatched.names)}'s trade report - ${prettyDate(matchedDateF)}.pdf`;
+
+			if (tradeType === "screen") {
+				docTitle = `SBZ ${toTitleCase(activeRowMatched.names)}'s on-screen report - ${prettyDate(matchedDateF)}.pdf`;
+			}
+
 			const a = document.createElement("a");
 			a.href = blobURL;
-			a.download = `SBZ ${toTitleCase(activeRowMatched.names)}'s trade report - ${prettyDate(matchedDateF)}.pdf`; // Optional: set the filename
+			a.download = docTitle; // Optional: set the filename
 			document.body.appendChild(a);
 			a.click();
 			document.body.removeChild(a);

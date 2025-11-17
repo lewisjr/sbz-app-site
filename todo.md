@@ -27,7 +27,7 @@
 - [x] add kyc docs view
 - [] add client balances report
 - [] add table with balances for easier viewing
-- [] add matched and on screen to portfolio
+- [x] add matched and on screen to portfolio
 
 ## ADD IP TRACKER
 

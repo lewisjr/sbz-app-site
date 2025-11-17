@@ -15,9 +15,12 @@ export const POST = async (event) => {
 	switch (config) {
 		case "portfolio":
 			const resPortfolio = await dbs.sbz.getPortfolio(Number(uid));
+
+			// console.log("\n\n", { resPortfolio }, "\n\n");
+
 			return json(resPortfolio, { status: resPortfolio.success ? 200 : 400 });
 		case "file":
-			const resFiles = await dbs.sbz.getFiles("112233");
+			const resFiles = await dbs.sbz.getFiles(uid);
 
 			return json(resFiles, { status: resFiles.success ? 200 : 400 });
 		default:

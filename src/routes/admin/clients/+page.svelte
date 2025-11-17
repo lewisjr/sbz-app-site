@@ -89,8 +89,9 @@
 	let activeRow = $state<TempClient>(initRow);
 	let config = $state<"portfolio" | "file">("file");
 
-	let portfolioDisplayOption = $state<"port" | "matched" | "screen">("port");
-	const updatePortfolioDisplayOption = (val: any) => (portfolioDisplayOption = val);
+	type PDO = "port" | "matched" | "screen";
+	let portfolioDisplayOption = $state<PDO>("port");
+	const updatePortfolioDisplayOption = (val: PDO) => (portfolioDisplayOption = val);
 
 	let openTrigger = $state<number>(0);
 	let sheetTitle = $state<string>("");
@@ -125,7 +126,11 @@
 
 	interface Matched {
 		zmwTotal: number;
+		zmwTotalBuy: number;
+		zmwTotalSell: number;
 		usdTotal: number;
+		usdTotalBuy: number;
+		usdTotalSell: number;
 		tradesZmw: NFHelp["SimpleTrade"][][];
 		tradesUsd: NFHelp["SimpleTrade"][][];
 		initDate: number;
@@ -136,7 +141,11 @@
 
 	interface Screen {
 		zmwTotal: number;
+		zmwTotalBuy: number;
+		zmwTotalSell: number;
 		usdTotal: number;
+		usdTotalBuy: number;
+		usdTotalSell: number;
 		ordersZmw: NFHelp["SimpleOrder"][][];
 		ordersUsd: NFHelp["SimpleOrder"][][];
 		ordersRaw: NFHelp["OnScreenOrder"][];
@@ -182,7 +191,12 @@
 				);
 
 			let zmwTotal: number = 0;
+			let zmwTotalBuy: number = 0;
+			let zmwTotalSell: number = 0;
+
 			let usdTotal: number = 0;
+			let usdTotalBuy: number = 0;
+			let usdTotalSell: number = 0;
 
 			const tradesObjZmw: {
 				[key: string]: NFHelp["SimpleTrade"];
@@ -200,7 +214,17 @@
 					}
 
 					if (trade.symbol.includes("USD")) {
-						usdTotal = usdTotal + trade.price * trade.qty;
+						const usdConsidertaion = trade.price * trade.qty;
+						usdTotal = usdTotal + usdConsidertaion;
+
+						switch (trade.trade_side) {
+							case "buy":
+								usdTotalBuy += usdConsidertaion;
+								break;
+							case "sell":
+								usdTotalSell += usdConsidertaion;
+								break;
+						}
 
 						if (tradesObjUsd[symbol]) {
 							const nQty = tradesObjUsd[symbol].qty + trade.qty;
@@ -220,7 +244,17 @@
 						// end
 					} else {
 						// begin
-						zmwTotal = zmwTotal + trade.price * trade.qty;
+						const zmwConsideration = trade.price * trade.qty;
+						zmwTotal = zmwTotal + zmwConsideration;
+
+						switch (trade.trade_side) {
+							case "buy":
+								zmwTotalBuy += zmwConsideration;
+								break;
+							case "sell":
+								zmwTotalSell += zmwConsideration;
+								break;
+						}
 
 						if (tradesObjZmw[symbol]) {
 							const nQty = tradesObjZmw[symbol].qty + trade.qty;
@@ -259,7 +293,20 @@
 				return { label: prettyDate(trade.trade_date), value: trade.trade_date };
 			});
 
-			return { zmwTotal, usdTotal, tradesZmw, tradesUsd, initDate, finDate, tradesRaw, tradeDates };
+			return {
+				zmwTotal,
+				usdTotal,
+				tradesZmw,
+				tradesUsd,
+				initDate,
+				finDate,
+				tradesRaw,
+				tradeDates,
+				zmwTotalBuy,
+				zmwTotalSell,
+				usdTotalBuy,
+				usdTotalSell,
+			};
 		};
 
 		const _genScreen = (screenData: GetPortfolioData["onScreen"]) => {
@@ -277,7 +324,12 @@
 			const ordersRawDated = ordersRaw.filter((item) => item.date === currDate);
 
 			let zmwTotal: number = 0;
+			let zmwTotalBuy: number = 0;
+			let zmwTotalSell: number = 0;
+
 			let usdTotal: number = 0;
+			let usdTotalBuy: number = 0;
+			let usdTotalSell: number = 0;
 
 			const ordersObjZmw: {
 				[key: string]: NFHelp["SimpleOrder"];
@@ -291,7 +343,17 @@
 					let symbol = mrMateSymbols(trade.symbol) + trade.price.toString();
 
 					if (trade.symbol.includes("USD")) {
-						usdTotal = usdTotal + trade.price * trade.qty;
+						const usdConsidertaion = trade.price * trade.qty;
+						usdTotal = usdTotal + usdConsidertaion;
+
+						switch (trade.order_side) {
+							case "buy":
+								usdTotalBuy += usdConsidertaion;
+								break;
+							case "sell":
+								usdTotalSell += usdConsidertaion;
+								break;
+						}
 
 						if (ordersObjUsd[symbol]) {
 							const nQty = ordersObjUsd[symbol].qty + trade.qty;
@@ -311,7 +373,17 @@
 						// end
 					} else {
 						// begin
-						zmwTotal = zmwTotal + trade.price * trade.qty;
+						const zmwConsideration = trade.price * trade.qty;
+						zmwTotal = zmwTotal + zmwConsideration;
+
+						switch (trade.order_side) {
+							case "buy":
+								zmwTotalBuy += zmwConsideration;
+								break;
+							case "sell":
+								zmwTotalSell += zmwConsideration;
+								break;
+						}
 
 						if (ordersObjZmw[symbol]) {
 							const nQty = ordersObjZmw[symbol].qty + trade.qty;
@@ -343,7 +415,18 @@
 				return { label: prettyDate(trade.date), value: trade.date };
 			});
 
-			return { zmwTotal, usdTotal, ordersZmw, ordersUsd, ordersRaw, orderDates };
+			return {
+				zmwTotal,
+				usdTotal,
+				ordersZmw,
+				ordersUsd,
+				ordersRaw,
+				orderDates,
+				zmwTotalBuy,
+				zmwTotalSell,
+				usdTotalBuy,
+				usdTotalSell,
+			};
 		};
 
 		const matched = _genMatched(rawData.matched);
@@ -472,10 +555,26 @@
 
 		const analyticsArr = Object.values(analysisCodex);
 
-		const best = analyticsArr.sort((a, b) => b.growth - a.growth)[0];
-		const worst = analyticsArr.sort((a, b) => a.growth - b.growth)[0];
-		const heaviest = analyticsArr.sort((a, b) => b.weight - a.weight)[0];
-		const lightest = analyticsArr.sort((a, b) => a.weight - b.weight)[0];
+		const initBest = {
+			symbol: "",
+			invSum: 0,
+			currentVal: 0,
+			weight: 0,
+			growth: 0,
+		};
+
+		const initHeaviest = {
+			symbol: "",
+			invSum: 0,
+			currentVal: 0,
+			weight: 0,
+			growth: 0,
+		};
+
+		const best = analyticsArr.sort((a, b) => b.growth - a.growth)[0] ?? initBest;
+		const worst = analyticsArr.sort((a, b) => a.growth - b.growth)[0] ?? initBest;
+		const heaviest = analyticsArr.sort((a, b) => b.weight - a.weight)[0] ?? initHeaviest;
+		const lightest = analyticsArr.sort((a, b) => a.weight - b.weight)[0] ?? initHeaviest;
 
 		const chartArr = [
 			...Object.values(portfolioCodexZmw).filter((item) => item.value && item.volume),
@@ -557,7 +656,8 @@
 
 			portfolioLoading = false;
 		} catch (ex) {
-			toast.error(String(ex));
+			toast.error("No portdolio found.");
+			console.error(ex);
 			portfolioLoading = false;
 		}
 	};
@@ -850,9 +950,21 @@
 			const blob = await response.blob();
 			const blobURL = URL.createObjectURL(blob);
 
+			let docTitle = `${toTitleCase(activeRow.names)}'s Portfolio - ${prettyDate(date)}.pdf`;
+
+			switch (portfolioDisplayOption) {
+				case "matched":
+					docTitle = `SBZ ${toTitleCase(activeRow.names)}'s trade report - ${prettyDate(date)}.pdf`;
+					break;
+				case "screen":
+					docTitle = `SBZ ${toTitleCase(activeRow.names)}'s on-screen report - ${prettyDate(date)}.pdf`;
+				default:
+					break;
+			}
+
 			const a = document.createElement("a");
 			a.href = blobURL;
-			a.download = `${toTitleCase(activeRow.names)}'s Portfolio - ${prettyDate(date)}.pdf`; // Optional: set the filename
+			a.download = docTitle; // Optional: set the filename
 			document.body.appendChild(a);
 			a.click();
 			document.body.removeChild(a);
@@ -1409,10 +1521,270 @@
 					{:else if !clientPortfolio}
 						<p>No data.</p>
 					{:else}
-						<section id="portfolio" class="page-holder">
-							{#each clientPortfolio.portfolioZmw as portfolio, i}
-								<section class="page ui-sp">
-									{#if !i}
+						<!-- pages -->
+						{#if portfolioDisplayOption === "port"}
+							<section id="port" class="page-holder">
+								{#if clientPortfolio.analysis.best.symbol !== ""}
+									{#each clientPortfolio.portfolioZmw as portfolio, i}
+										<section class="page ui-sp">
+											{#if !i}
+												<table class="top">
+													<tbody>
+														<tr>
+															<td><img src={logos.sbz} alt="sbz logo" /></td>
+															<td>
+																<p class="title">Portfolio Statement</p>
+																<p class="exchange">
+																	{prettyDate(date)}
+																</p>
+																<p class="date">
+																	{activeRow.luse_id}LI - {toTitleCase(activeRow.names)}
+																</p>
+															</td>
+														</tr>
+													</tbody>
+												</table>
+
+												<p style="margin-top: 10px; margin-bottom: 20px;">
+													Please take a look at your portfolio and it's analysis for the above
+													stated date.
+												</p>
+											{/if}
+
+											<table class="trade-summary">
+												<thead>
+													<tr>
+														<th colspan="4">ZMW Holdings</th>
+													</tr>
+													<tr>
+														<th style="text-align: left;">Symbol</th>
+														<th>Price</th>
+														<th>Volume</th>
+														<th style="text-align: right;">Total</th>
+													</tr>
+												</thead>
+												<tbody>
+													{#each portfolio as row}
+														<tr>
+															<td style="text-align: left;">{mrMateSymbols(row.symbol)}</td>
+															<td style="text-align: center;"
+																><span class="num">{numParse(row.price.toFixed(2))}</span></td
+															>
+															<td style="text-align: center;"
+																><span class="num">{numParse(row.volume)}</span></td
+															>
+															<td style="text-align: right;"
+																><span class="num">{numParse(row.value.toFixed(2))}</span></td
+															>
+														</tr>
+													{/each}
+													{#if i === clientPortfolio.portfolioZmw.length - 1}
+														<tr class="trades-total">
+															<td colspan="4" style="text-align: right;"
+																><strong
+																	>Total: <span class="num"
+																		>{numParse(clientPortfolio.portfolioTotalZmw.toFixed(2))}</span
+																	></strong
+																></td
+															>
+														</tr>
+													{/if}
+												</tbody>
+											</table>
+
+											{#if i === clientPortfolio.portfolioZmw.length - 1}
+												<table class="trade-summary" style="margin-top: 25px;">
+													<thead>
+														<tr>
+															<th colspan="4">USD Holdings</th>
+														</tr>
+														<tr>
+															<th style="text-align: left;">Symbol</th>
+															<th>Price</th>
+															<th>Volume</th>
+															<th style="text-align: right;">Total</th>
+														</tr>
+													</thead>
+													<tbody>
+														{#each clientPortfolio.portfolioUsd[0] as row}
+															<tr>
+																<td style="text-align: left;">{mrMateSymbols(row.symbol)}</td>
+																<td style="text-align: center;"
+																	><span class="num">{numParse(row.price.toFixed(2))}</span></td
+																>
+																<td style="text-align: center;"
+																	><span class="num">{numParse(row.volume)}</span></td
+																>
+																<td style="text-align: right;"
+																	><span class="num">{numParse(row.value.toFixed(2))}</span></td
+																>
+															</tr>
+														{/each}
+														<tr class="trades-total">
+															<td colspan="4" style="text-align: right;"
+																><strong
+																	>Total: <span class="num"
+																		>{numParse(clientPortfolio.portfolioTotalUsd.toFixed(2))}</span
+																	></strong
+																></td
+															>
+														</tr>
+													</tbody>
+												</table>
+											{/if}
+
+											<p
+												class="pnum"
+												style="width: 100%; display: flex; flex-direction: row; justify-content: space-between; padding: 0px 1cm;"
+											>
+												<span>Prepared by {toTitleCase(data.admin)}</span>
+												<span>{i + 1}</span>
+											</p>
+
+											<p class="contact-btm">
+												<MapPin style="height: 20px; width: 20px;" />
+												<span style="margin-right: 10px;">{contactDetails.address}</span>
+												<Phone style="height: 20px; width: 20px;" />
+												<span style="margin-right: 10px;">{contactDetails.tel}</span>
+												<Mail style="height: 20px; width: 20px;" />
+												<span style="margin-right: 10px;">{contactDetails.email}</span>
+											</p>
+										</section>
+									{/each}
+
+									<section class="page ui-sp">
+										<p style="font-size: 2em; font-weight: 700;">Portfolio Highlights</p>
+
+										<table style="width: 100%;">
+											<tbody>
+												<tr>
+													<td style="text-align: center;"
+														><p style="font-weight: 500;">Best Performing Stock</p>
+														<p>
+															{mrMateSymbols(clientPortfolio.analysis.best.symbol)} | {numParse(
+																percentageHandler(clientPortfolio.analysis.best.value).replace(
+																	"%",
+																	"",
+																),
+															)}%
+														</p></td
+													>
+													<td style="text-align: center; border-left: 1px solid black;"
+														><p style="font-weight: 500;">Worst Performing Stock</p>
+														<p>
+															{mrMateSymbols(clientPortfolio.analysis.worst.symbol)} | {numParse(
+																percentageHandler(clientPortfolio.analysis.worst.value).replace(
+																	"%",
+																	"",
+																),
+															)}%
+														</p></td
+													>
+												</tr>
+												<tr>
+													<td style="text-align: center; padding: 0px"
+														><span style="font-weight: 500;">Most Exposure</span>
+														<span class="num">
+															{mrMateSymbols(clientPortfolio.analysis.heaviest.symbol)} | {numParse(
+																percentageHandler(clientPortfolio.analysis.heaviest.value).replace(
+																	"%",
+																	"",
+																),
+															)}%
+														</span></td
+													>
+													<td style="text-align: center; border-left: 1px solid black;"
+														><span style="font-weight: 500;">Least Exposure</span>
+														<span class="num">
+															{mrMateSymbols(clientPortfolio.analysis.lightest.symbol)} | {numParse(
+																percentageHandler(clientPortfolio.analysis.lightest.value).replace(
+																	"%",
+																	"",
+																),
+															)}%
+														</span></td
+													>
+												</tr>
+											</tbody>
+										</table>
+
+										<table style="width: 100%; margin-top: 20px; border-top: 1px solid black;">
+											<tbody>
+												<tr>
+													<td style="text-align: center;"
+														><p>
+															<b>ZMW Investment:</b>{" "}<span class="num"
+																>{numParse(
+																	clientPortfolio.analysis.totalInvestmentZmw.toFixed(2),
+																)}</span
+															>
+														</p>
+														<p>
+															<b>Growth:</b>{" "}<span class="num"
+																>{numParse(
+																	percentageHandler(
+																		clientPortfolio.analysis.totalGrowthZmw,
+																	).replace("%", ""),
+																)}%</span
+															>
+														</p></td
+													>
+
+													<td style="text-align: center;"
+														><p>
+															<b>USD Investment:</b>{" "}<span class="num"
+																>{numParse(
+																	clientPortfolio.analysis.totalInvestmentUsd.toFixed(2),
+																)}</span
+															>
+														</p>
+														<p>
+															<b>Growth:</b>{" "}<span class="num"
+																>{numParse(
+																	percentageHandler(
+																		clientPortfolio.analysis.totalGrowthUsd,
+																	).replace("%", ""),
+																)}%</span
+															>
+														</p></td
+													>
+												</tr>
+											</tbody>
+										</table>
+
+										<table style="width: 100%; position: absolute;">
+											<tbody>
+												<tr>
+													<td
+														><PortfolioComposition
+															pfolio={clientPortfolio.analysis.chart.pfolio}
+															symbols={clientPortfolio.analysis.chart.symbols}
+															turnovers={clientPortfolio.analysis.chart.turnovers}
+														/></td
+													>
+												</tr>
+											</tbody>
+										</table>
+
+										<p
+											class="pnum"
+											style="width: 100%; display: flex; flex-direction: row; justify-content: space-between; padding: 0px 1cm;"
+										>
+											<span>Prepared by {toTitleCase(data.admin)}</span>
+											<span>{clientPortfolio.portfolioZmw.length + 1}</span>
+										</p>
+
+										<p class="contact-btm">
+											<MapPin style="height: 20px; width: 20px;" />
+											<span style="margin-right: 10px;">{contactDetails.address}</span>
+											<Phone style="height: 20px; width: 20px;" />
+											<span style="margin-right: 10px;">{contactDetails.tel}</span>
+											<Mail style="height: 20px; width: 20px;" />
+											<span style="margin-right: 10px;">{contactDetails.email}</span>
+										</p>
+									</section>
+								{:else}
+									<section class="page ui-sp">
 										<table class="top">
 											<tbody>
 												<tr>
@@ -1431,250 +1803,597 @@
 										</table>
 
 										<p style="margin-top: 10px; margin-bottom: 20px;">
-											Please take a look at your portfolio and it's analysis for the above stated
-											date.
+											This client has no holdings in their portfolio... yet!
 										</p>
-									{/if}
 
-									<table class="trade-summary">
-										<thead>
-											<tr>
-												<th colspan="4">ZMW Holdings</th>
-											</tr>
-											<tr>
-												<th style="text-align: left;">Symbol</th>
-												<th>Price</th>
-												<th>Volume</th>
-												<th style="text-align: right;">Total</th>
-											</tr>
-										</thead>
-										<tbody>
-											{#each portfolio as row}
-												<tr>
-													<td style="text-align: left;">{mrMateSymbols(row.symbol)}</td>
-													<td style="text-align: center;"
-														><span class="num">{numParse(row.price.toFixed(2))}</span></td
-													>
-													<td style="text-align: center;"
-														><span class="num">{numParse(row.volume)}</span></td
-													>
-													<td style="text-align: right;"
-														><span class="num">{numParse(row.value.toFixed(2))}</span></td
-													>
-												</tr>
-											{/each}
-											{#if i === clientPortfolio.portfolioZmw.length - 1}
-												<tr class="trades-total">
-													<td colspan="4" style="text-align: right;"
-														><strong
-															>Total: <span class="num"
-																>{numParse(clientPortfolio.portfolioTotalZmw.toFixed(2))}</span
-															></strong
-														></td
-													>
-												</tr>
-											{/if}
-										</tbody>
-									</table>
+										<p
+											class="pnum"
+											style="width: 100%; display: flex; flex-direction: row; justify-content: space-between; padding: 0px 1cm;"
+										>
+											<span>Prepared by {toTitleCase(data.admin)}</span>
+											<span>{1}</span>
+										</p>
 
-									{#if i === clientPortfolio.portfolioZmw.length - 1}
-										<table class="trade-summary" style="margin-top: 25px;">
-											<thead>
-												<tr>
-													<th colspan="4">USD Holdings</th>
-												</tr>
-												<tr>
-													<th style="text-align: left;">Symbol</th>
-													<th>Price</th>
-													<th>Volume</th>
-													<th style="text-align: right;">Total</th>
-												</tr>
-											</thead>
+										<p class="contact-btm">
+											<MapPin style="height: 20px; width: 20px;" />
+											<span style="margin-right: 10px;">{contactDetails.address}</span>
+											<Phone style="height: 20px; width: 20px;" />
+											<span style="margin-right: 10px;">{contactDetails.tel}</span>
+											<Mail style="height: 20px; width: 20px;" />
+											<span style="margin-right: 10px;">{contactDetails.email}</span>
+										</p>
+									</section>
+								{/if}
+							</section>
+						{:else if portfolioDisplayOption === "matched"}
+							<section id="matched" class="page-holder">
+								{#if clientPortfolio.matched}
+									<section class="page">
+										<table class="top">
 											<tbody>
-												{#each clientPortfolio.portfolioUsd[0] as row}
-													<tr>
-														<td style="text-align: left;">{mrMateSymbols(row.symbol)}</td>
-														<td style="text-align: center;"
-															><span class="num">{numParse(row.price.toFixed(2))}</span></td
-														>
-														<td style="text-align: center;"
-															><span class="num">{numParse(row.volume)}</span></td
-														>
-														<td style="text-align: right;"
-															><span class="num">{numParse(row.value.toFixed(2))}</span></td
-														>
-													</tr>
-												{/each}
-												<tr class="trades-total">
-													<td colspan="4" style="text-align: right;"
-														><strong
-															>Total: <span class="num"
-																>{numParse(clientPortfolio.portfolioTotalUsd.toFixed(2))}</span
-															></strong
-														></td
-													>
+												<tr>
+													<td><img src={logos.sbz} alt="sbz logo" /></td>
+													<td>
+														<p class="title">Trade Report</p>
+														<p class="exchange">
+															{prettyDate(date)}
+														</p>
+														<p class="date">
+															{activeRow.luse_id}LI - {toTitleCase(activeRow.names)}
+														</p>
+													</td>
 												</tr>
 											</tbody>
 										</table>
-									{/if}
 
-									<p
-										class="pnum"
-										style="width: 100%; display: flex; flex-direction: row; justify-content: space-between; padding: 0px 1cm;"
-									>
-										<span>Prepared by {toTitleCase(data.admin)}</span>
-										<span>{i + 1}</span>
-									</p>
+										<p style="margin-top: 10px; margin-bottom: 20px;">
+											Please take a look at your matched trades over the above stated period in the
+											table below.
+										</p>
 
-									<p class="contact-btm">
-										<MapPin style="height: 20px; width: 20px;" />
-										<span style="margin-right: 10px;">{contactDetails.address}</span>
-										<Phone style="height: 20px; width: 20px;" />
-										<span style="margin-right: 10px;">{contactDetails.tel}</span>
-										<Mail style="height: 20px; width: 20px;" />
-										<span style="margin-right: 10px;">{contactDetails.email}</span>
-									</p>
-								</section>
-							{/each}
+										{#if clientPortfolio.matched.tradesZmw.length}
+											<table class="trade-summary">
+												<thead>
+													<tr>
+														{#if expandDate}
+															<th colspan="6">ZMW Trades</th>
+														{:else}
+															<th colspan="5">ZMW Trades</th>
+														{/if}
+													</tr>
+													<tr>
+														{#if expandDate}
+															<th style="text-align: left;">Date</th>
+															<th>Side</th>
+														{:else}
+															<th style="text-align: left;">Side</th>
+														{/if}
+														<th>Symbol</th>
+														<th>Price</th>
+														<th>Quantity</th>
+														<th style="text-align: right;">Total</th>
+													</tr>
+												</thead>
+												<tbody>
+													{#each clientPortfolio.matched.tradesZmw[0] as trade}
+														<tr>
+															{#if expandDate}
+																<td style="text-align: left;">{trade.date}</td>
+																<td style="text-align: center;">{trade.side}</td>
+															{:else}
+																<td style="text-align: left;">{trade.side}</td>
+															{/if}
+															<td style="text-align: center;">{trade.symbol}</td>
+															<td style="text-align: center;"
+																><span class="num">{numParse(trade.price.toFixed(2))}</span></td
+															>
+															<td style="text-align: center;"
+																><span class="num">{numParse(trade.qty)}</span></td
+															>
+															<td style="text-align: right;"
+																><span class="num">{numParse(trade.total.toFixed(2))}</span></td
+															>
+														</tr>
+													{/each}
 
-							<section class="page ui-sp">
-								<p style="font-size: 2em; font-weight: 700;">Portfolio Highlights</p>
+													<tr class="trades-total">
+														<td colspan={expandDate ? 6 : 5} style="text-align: right;"
+															><strong
+																>Total Buys: <span class="num"
+																	>{numParse(clientPortfolio.matched.zmwTotalBuy.toFixed(2))}</span
+																></strong
+															>{" • "}<strong
+																>Total Sell: <span class="num"
+																	>{numParse(clientPortfolio.matched.zmwTotalSell.toFixed(2))}</span
+																></strong
+															>
+														</td>
+													</tr>
+												</tbody>
+											</table>
+										{/if}
 
-								<table style="width: 100%;">
-									<tbody>
-										<tr>
-											<td style="text-align: center;"
-												><p style="font-weight: 500;">Best Performing Stock</p>
-												<p>
-													{mrMateSymbols(clientPortfolio.analysis.best.symbol)} | {numParse(
-														percentageHandler(clientPortfolio.analysis.best.value).replace("%", ""),
-													)}%
-												</p></td
+										{#if clientPortfolio.matched.tradesUsd.length}
+											<table class="trade-summary" style="margin-top: 20px;">
+												<thead>
+													<tr>
+														{#if expandDate}
+															<th colspan="6">USD Trades</th>
+														{:else}
+															<th colspan="5">USD Trades</th>
+														{/if}
+													</tr>
+													<tr>
+														{#if expandDate}
+															<th style="text-align: left;">Date</th>
+															<th>Side</th>
+														{:else}
+															<th style="text-align: left;">Side</th>
+														{/if}
+														<th>Symbol</th>
+														<th>Price</th>
+														<th>Quantity</th>
+														<th style="text-align: right;">Total</th>
+													</tr>
+												</thead>
+												<tbody>
+													{#each clientPortfolio.matched.tradesUsd[0] as trade}
+														<tr>
+															{#if expandDate}
+																<td style="text-align: left;">{trade.date}</td>
+																<td style="text-align: center;">{trade.side}</td>
+															{:else}
+																<td style="text-align: left;">{trade.side}</td>
+															{/if}
+															<td style="text-align: center;">{trade.symbol}</td>
+															<td style="text-align: center;"
+																><span class="num">{numParse(trade.price.toFixed(2))}</span></td
+															>
+															<td style="text-align: center;"
+																><span class="num">{numParse(trade.qty)}</span></td
+															>
+															<td style="text-align: right;"
+																><span class="num">{numParse(trade.total.toFixed(2))}</span></td
+															>
+														</tr>
+													{/each}
+													<tr class="trades-total">
+														<td colspan={expandDate ? 6 : 5} style="text-align: right;"
+															><strong
+																>Total Buys: <span class="num"
+																	>{numParse(clientPortfolio.matched.usdTotalBuy.toFixed(2))}</span
+																></strong
+															>{" • "}<strong
+																>Total Sell: <span class="num"
+																	>{numParse(clientPortfolio.matched.usdTotalSell.toFixed(2))}</span
+																></strong
+															>
+														</td>
+													</tr>
+												</tbody>
+											</table>
+										{/if}
+
+										<p
+											class="pnum"
+											style="width: 100%; display: flex; flex-direction: row; justify-content: space-between; padding: 0px 1cm;"
+										>
+											<span>Prepared by {toTitleCase(data.admin)}</span>
+											<span>1</span>
+										</p>
+
+										<p class="contact-btm">
+											<MapPin style="height: 20px; width: 20px;" />
+											<span style="margin-right: 10px;">{contactDetails.address}</span>
+											<Phone style="height: 20px; width: 20px;" />
+											<span style="margin-right: 10px;">{contactDetails.tel}</span>
+											<Mail style="height: 20px; width: 20px;" />
+											<span style="margin-right: 10px;">{contactDetails.email}</span>
+										</p>
+									</section>
+
+									{#each clientPortfolio.matched.tradesZmw.slice(1) as trade, i}
+										<section class="page ui-sp">
+											<table class="trade-summary">
+												<thead>
+													<tr>
+														{#if expandDate}
+															<th colspan="6">ZMW Trades</th>
+														{:else}
+															<th colspan="5">ZMW Trades</th>
+														{/if}
+													</tr>
+													<tr>
+														{#if expandDate}
+															<th style="text-align: left;">Date</th>
+															<th>Side</th>
+														{:else}
+															<th style="text-align: left;">Side</th>
+														{/if}
+														<th>Symbol</th>
+														<th>Price</th>
+														<th>Quantity</th>
+														<th style="text-align: right;">Total</th>
+													</tr>
+												</thead>
+												<tbody>
+													{#each trade as row}
+														<tr>
+															{#if expandDate}
+																<td style="text-align: left;">{row.date}</td>
+																<td style="text-align: center;">{row.side}</td>
+															{:else}
+																<td style="text-align: left;">{row.side}</td>
+															{/if}
+															<td style="text-align: center;">{row.symbol}</td>
+															<td style="text-align: center;"
+																><span class="num">{numParse(row.price.toFixed(2))}</span></td
+															>
+															<td style="text-align: center;"
+																><span class="num">{numParse(row.qty)}</span></td
+															>
+															<td style="text-align: right;"
+																><span class="num">{numParse(row.total.toFixed(2))}</span></td
+															>
+														</tr>
+													{/each}
+
+													<tr class="trades-total">
+														<td colspan={expandDate ? 6 : 5} style="text-align: right;"
+															><strong
+																>Total Buys: <span class="num"
+																	>{numParse(clientPortfolio.matched.zmwTotalBuy.toFixed(2))}</span
+																></strong
+															>{" • "}<strong
+																>Total Sell: <span class="num"
+																	>{numParse(clientPortfolio.matched.zmwTotalSell.toFixed(2))}</span
+																></strong
+															>
+														</td>
+													</tr>
+												</tbody>
+											</table>
+
+											<p
+												class="pnum"
+												style="width: 100%; display: flex; flex-direction: row; justify-content: space-between; padding: 0px 1cm;"
 											>
-											<td style="text-align: center; border-left: 1px solid black;"
-												><p style="font-weight: 500;">Worst Performing Stock</p>
-												<p>
-													{mrMateSymbols(clientPortfolio.analysis.worst.symbol)} | {numParse(
-														percentageHandler(clientPortfolio.analysis.worst.value).replace(
-															"%",
-															"",
-														),
-													)}%
-												</p></td
-											>
-										</tr>
-										<tr>
-											<td style="text-align: center; padding: 0px"
-												><span style="font-weight: 500;">Most Exposure</span>
-												<span class="num">
-													{mrMateSymbols(clientPortfolio.analysis.heaviest.symbol)} | {numParse(
-														percentageHandler(clientPortfolio.analysis.heaviest.value).replace(
-															"%",
-															"",
-														),
-													)}%
-												</span></td
-											>
-											<td style="text-align: center; border-left: 1px solid black;"
-												><span style="font-weight: 500;">Least Exposure</span>
-												<span class="num">
-													{mrMateSymbols(clientPortfolio.analysis.lightest.symbol)} | {numParse(
-														percentageHandler(clientPortfolio.analysis.lightest.value).replace(
-															"%",
-															"",
-														),
-													)}%
-												</span></td
-											>
-										</tr>
-									</tbody>
-								</table>
+												<span>Prepared by {toTitleCase(data.admin)}</span>
+												<span>{i + 2}</span>
+											</p>
 
-								<table style="width: 100%; margin-top: 20px; border-top: 1px solid black;">
-									<tbody>
-										<tr>
-											<td style="text-align: center;"
-												><p>
-													<b>ZMW Investment:</b>{" "}<span class="num"
-														>{numParse(
-															clientPortfolio.analysis.totalInvestmentZmw.toFixed(2),
-														)}</span
-													>
-												</p>
-												<p>
-													<b>Growth:</b>{" "}<span class="num"
-														>{numParse(
-															percentageHandler(clientPortfolio.analysis.totalGrowthZmw).replace(
-																"%",
-																"",
-															),
-														)}%</span
-													>
-												</p></td
-											>
+											<p class="contact-btm">
+												<MapPin style="height: 20px; width: 20px;" />
+												<span style="margin-right: 10px;">{contactDetails.address}</span>
+												<Phone style="height: 20px; width: 20px;" />
+												<span style="margin-right: 10px;">{contactDetails.tel}</span>
+												<Mail style="height: 20px; width: 20px;" />
+												<span style="margin-right: 10px;">{contactDetails.email}</span>
+											</p>
+										</section>
+									{/each}
+								{:else}
+									<section class="page ui-sp">
+										<table class="top">
+											<tbody>
+												<tr>
+													<td><img src={logos.sbz} alt="sbz logo" /></td>
+													<td>
+														<p class="title">Trade Report</p>
+														<p class="exchange">
+															{prettyDate(date)}
+														</p>
+														<p class="date">
+															{activeRow.luse_id}LI - {toTitleCase(activeRow.names)}
+														</p>
+													</td>
+												</tr>
+											</tbody>
+										</table>
 
-											<td style="text-align: center;"
-												><p>
-													<b>USD Investment:</b>{" "}<span class="num"
-														>{numParse(
-															clientPortfolio.analysis.totalInvestmentUsd.toFixed(2),
-														)}</span
-													>
-												</p>
-												<p>
-													<b>Growth:</b>{" "}<span class="num"
-														>{numParse(
-															percentageHandler(clientPortfolio.analysis.totalGrowthUsd).replace(
-																"%",
-																"",
-															),
-														)}%</span
-													>
-												</p></td
-											>
-										</tr>
-									</tbody>
-								</table>
+										<p style="margin-top: 10px; margin-bottom: 20px;">
+											This client has no trade history... yet!
+										</p>
 
-								<table style="width: 100%; position: absolute;">
-									<tbody>
-										<tr>
-											<td
-												><PortfolioComposition
-													pfolio={clientPortfolio.analysis.chart.pfolio}
-													symbols={clientPortfolio.analysis.chart.symbols}
-													turnovers={clientPortfolio.analysis.chart.turnovers}
-												/></td
-											>
-										</tr>
-									</tbody>
-								</table>
+										<p
+											class="pnum"
+											style="width: 100%; display: flex; flex-direction: row; justify-content: space-between; padding: 0px 1cm;"
+										>
+											<span>Prepared by {toTitleCase(data.admin)}</span>
+											<span>{1}</span>
+										</p>
 
-								<p
-									class="pnum"
-									style="width: 100%; display: flex; flex-direction: row; justify-content: space-between; padding: 0px 1cm;"
-								>
-									<span>Prepared by {toTitleCase(data.admin)}</span>
-									<span>{clientPortfolio.portfolioZmw.length + 1}</span>
-								</p>
-
-								<p class="contact-btm">
-									<MapPin style="height: 20px; width: 20px;" />
-									<span style="margin-right: 10px;">{contactDetails.address}</span>
-									<Phone style="height: 20px; width: 20px;" />
-									<span style="margin-right: 10px;">{contactDetails.tel}</span>
-									<Mail style="height: 20px; width: 20px;" />
-									<span style="margin-right: 10px;">{contactDetails.email}</span>
-								</p>
+										<p class="contact-btm">
+											<MapPin style="height: 20px; width: 20px;" />
+											<span style="margin-right: 10px;">{contactDetails.address}</span>
+											<Phone style="height: 20px; width: 20px;" />
+											<span style="margin-right: 10px;">{contactDetails.tel}</span>
+											<Mail style="height: 20px; width: 20px;" />
+											<span style="margin-right: 10px;">{contactDetails.email}</span>
+										</p>
+									</section>
+								{/if}
 							</section>
-						</section>
+						{:else if portfolioDisplayOption === "screen"}
+							<section id="screen" class="page-holder">
+								{#if clientPortfolio.screen}
+									<section class="page">
+										<table class="top">
+											<tbody>
+												<tr>
+													<td><img src={logos.sbz} alt="sbz logo" /></td>
+													<td>
+														<p class="title">On-Screen Order Report</p>
+														<p class="exchange">
+															{clientPortfolio.screen.orderDates[0].label}
+														</p>
+														<p class="date">
+															{activeRow.luse_id}LI - {activeRow.names}
+														</p>
+													</td>
+												</tr>
+											</tbody>
+										</table>
+
+										<p style="margin-top: 10px; margin-bottom: 20px;">
+											Please take a look at your on-screen orders over the above date in the table
+											below.
+										</p>
+
+										{#if clientPortfolio.screen.ordersZmw.length}
+											<table class="trade-summary">
+												<thead>
+													<tr>
+														<th colspan="5">ZMW Orders</th>
+													</tr>
+													<tr>
+														<th style="text-align: left;">Side</th>
+														<th>Symbol</th>
+														<th>Price</th>
+														<th>Quantity</th>
+														<th style="text-align: right;">Total</th>
+													</tr>
+												</thead>
+												<tbody>
+													{#each clientPortfolio.screen.ordersZmw[0] as trade}
+														<tr>
+															<td style="text-align: left;">{trade.side}</td>
+
+															<td style="text-align: center;">{trade.symbol}</td>
+															<td style="text-align: center;"
+																><span class="num">{numParse(trade.price.toFixed(2))}</span></td
+															>
+															<td style="text-align: center;"
+																><span class="num">{numParse(trade.qty)}</span></td
+															>
+															<td style="text-align: right;"
+																><span class="num">{numParse(trade.total.toFixed(2))}</span></td
+															>
+														</tr>
+													{/each}
+
+													<tr class="trades-total">
+														<td colspan="5" style="text-align: right;"
+															><strong
+																>Total Buys: <span class="num"
+																	>{numParse(clientPortfolio.screen.zmwTotalBuy.toFixed(2))}</span
+																></strong
+															>{" • "}<strong
+																>Total Sells: <span class="num"
+																	>{numParse(clientPortfolio.screen.zmwTotalSell.toFixed(2))}</span
+																></strong
+															></td
+														>
+													</tr>
+												</tbody>
+											</table>
+										{/if}
+
+										{#if clientPortfolio.screen.ordersUsd.length}
+											<table class="trade-summary" style="margin-top: 20px;">
+												<thead>
+													<tr>
+														<th colspan="5">USD Trades</th>
+													</tr>
+													<tr>
+														<th style="text-align: left;">Side</th>
+
+														<th>Symbol</th>
+														<th>Price</th>
+														<th>Quantity</th>
+														<th style="text-align: right;">Total</th>
+													</tr>
+												</thead>
+												<tbody>
+													{#each clientPortfolio.screen.ordersUsd[0] as trade}
+														<tr>
+															<td style="text-align: left;">{trade.side}</td>
+
+															<td style="text-align: center;">{trade.symbol}</td>
+															<td style="text-align: center;"
+																><span class="num">{numParse(trade.price.toFixed(2))}</span></td
+															>
+															<td style="text-align: center;"
+																><span class="num">{numParse(trade.qty)}</span></td
+															>
+															<td style="text-align: right;"
+																><span class="num">{numParse(trade.total.toFixed(2))}</span></td
+															>
+														</tr>
+													{/each}
+													<tr class="trades-total">
+														<td colspan="5" style="text-align: right;"
+															><strong
+																>Total Buys: <span class="num"
+																	>{numParse(clientPortfolio.screen.usdTotalBuy.toFixed(2))}</span
+																></strong
+															>{" • "}<strong
+																>Total Sells: <span class="num"
+																	>{numParse(clientPortfolio.screen.usdTotalSell.toFixed(2))}</span
+																></strong
+															></td
+														>
+													</tr>
+												</tbody>
+											</table>
+										{/if}
+
+										<p
+											class="pnum"
+											style="width: 100%; display: flex; flex-direction: row; justify-content: space-between; padding: 0px 1cm;"
+										>
+											<span>Prepared by {toTitleCase(data.admin)}</span>
+											<span>1</span>
+										</p>
+
+										<p class="contact-btm">
+											<MapPin style="height: 20px; width: 20px;" />
+											<span style="margin-right: 10px;">{contactDetails.address}</span>
+											<Phone style="height: 20px; width: 20px;" />
+											<span style="margin-right: 10px;">{contactDetails.tel}</span>
+											<Mail style="height: 20px; width: 20px;" />
+											<span style="margin-right: 10px;">{contactDetails.email}</span>
+										</p>
+									</section>
+
+									{#each clientPortfolio.screen.ordersZmw.slice(1) as trade, i}
+										<section class="page ui-sp">
+											<table class="trade-summary">
+												<thead>
+													<tr>
+														<th colspan="5">ZMW Orders</th>
+													</tr>
+													<tr>
+														<th style="text-align: left;">Side</th>
+
+														<th>Symbol</th>
+														<th>Price</th>
+														<th>Quantity</th>
+														<th style="text-align: right;">Total</th>
+													</tr>
+												</thead>
+												<tbody>
+													{#each trade as row}
+														<tr>
+															<td style="text-align: left;">{row.side}</td>
+
+															<td style="text-align: center;">{row.symbol}</td>
+															<td style="text-align: center;"
+																><span class="num">{numParse(row.price.toFixed(2))}</span></td
+															>
+															<td style="text-align: center;"
+																><span class="num">{numParse(row.qty)}</span></td
+															>
+															<td style="text-align: right;"
+																><span class="num">{numParse(row.total.toFixed(2))}</span></td
+															>
+														</tr>
+													{/each}
+
+													<tr class="trades-total">
+														<td colspan="5" style="text-align: right;"
+															><strong
+																>Total Buys: <span class="num"
+																	>{numParse(clientPortfolio.screen.zmwTotalBuy.toFixed(2))}</span
+																></strong
+															>{" • "}<strong
+																>Total Sells: <span class="num"
+																	>{numParse(clientPortfolio.screen.zmwTotalSell.toFixed(2))}</span
+																></strong
+															></td
+														>
+													</tr>
+												</tbody>
+											</table>
+
+											<p
+												class="pnum"
+												style="width: 100%; display: flex; flex-direction: row; justify-content: space-between; padding: 0px 1cm;"
+											>
+												<span>Prepared by {toTitleCase(data.admin)}</span>
+												<span>{i + 2}</span>
+											</p>
+
+											<p class="contact-btm">
+												<MapPin style="height: 20px; width: 20px;" />
+												<span style="margin-right: 10px;">{contactDetails.address}</span>
+												<Phone style="height: 20px; width: 20px;" />
+												<span style="margin-right: 10px;">{contactDetails.tel}</span>
+												<Mail style="height: 20px; width: 20px;" />
+												<span style="margin-right: 10px;">{contactDetails.email}</span>
+											</p>
+										</section>
+									{/each}
+								{:else}
+									<section class="page ui-sp">
+										<table class="top">
+											<tbody>
+												<tr>
+													<td><img src={logos.sbz} alt="sbz logo" /></td>
+													<td>
+														<p class="title">On-Screen Order Report</p>
+														<p class="exchange">
+															{prettyDate(date)}
+														</p>
+														<p class="date">
+															{activeRow.luse_id}LI - {toTitleCase(activeRow.names)}
+														</p>
+													</td>
+												</tr>
+											</tbody>
+										</table>
+
+										<p style="margin-top: 10px; margin-bottom: 20px;">
+											This client has no on-screen orders!
+										</p>
+
+										<p
+											class="pnum"
+											style="width: 100%; display: flex; flex-direction: row; justify-content: space-between; padding: 0px 1cm;"
+										>
+											<span>Prepared by {toTitleCase(data.admin)}</span>
+											<span>{1}</span>
+										</p>
+
+										<p class="contact-btm">
+											<MapPin style="height: 20px; width: 20px;" />
+											<span style="margin-right: 10px;">{contactDetails.address}</span>
+											<Phone style="height: 20px; width: 20px;" />
+											<span style="margin-right: 10px;">{contactDetails.tel}</span>
+											<Mail style="height: 20px; width: 20px;" />
+											<span style="margin-right: 10px;">{contactDetails.email}</span>
+										</p>
+									</section>
+								{/if}
+							</section>
+						{/if}
+						<!-- end pages -->
 					{/if}
 
 					<div class="controls">
 						{#if !clientPortfolio}
 							<span></span>
 						{:else}
-							<Button class="mt-5" {disabled} onclick={() => genPdf("portfolio")}
+							<AnyCombobox
+								handler={updatePortfolioDisplayOption}
+								data={{
+									grouped: [
+										{
+											title: "Reports",
+											group: [
+												{ label: "Portfolio", value: "port" },
+												{ label: "Matched", value: "matched" },
+												{ label: "Screen", value: "screen" },
+											],
+										},
+									],
+									ungrouped: [],
+								}}
+								dataTitle="Report"
+								forceValue={"port"}
+							/>
+
+							<Button class="mt-5" {disabled} onclick={() => genPdf(portfolioDisplayOption)}
 								>Download<Download class="ml-2 h-4 w-4" /></Button
 							>
 						{/if}
