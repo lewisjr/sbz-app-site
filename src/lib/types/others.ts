@@ -18,6 +18,11 @@ interface Folio {
 	value: number;
 }
 
+interface ClientKyc {
+	title: string;
+	url: string;
+}
+
 export interface Types {
 	/**For tickets */
 	ReferralSource: ReferralSource;
@@ -29,6 +34,7 @@ export interface Types {
 	StaffActionConfig: StaffActionConfig;
 	AnyPickerObj: { label: string; value: any };
 	Folio: Folio;
+	ClientKyc: ClientKyc;
 }
 
 export interface GenericResponse {

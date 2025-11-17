@@ -10,12 +10,16 @@ export const POST = async (event) => {
 
 	const { uid, config }: { uid: string; config: "portfolio" | "file" } = await request.json();
 
+	// console.log({ uid, config });
+
 	switch (config) {
 		case "portfolio":
 			const resPortfolio = await dbs.sbz.getPortfolio(Number(uid));
 			return json(resPortfolio, { status: resPortfolio.success ? 200 : 400 });
 		case "file":
-			return json({ success: true, message: "W.I.P" }, { status: 400 });
+			const resFiles = await dbs.sbz.getFiles("112233");
+
+			return json(resFiles, { status: resFiles.success ? 200 : 400 });
 		default:
 			await dbs.sbz.log({
 				message: `/api/admin/clients => { uid: ${uid}, config: ${config} }`,

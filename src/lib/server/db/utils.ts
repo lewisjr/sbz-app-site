@@ -17,6 +17,7 @@ import type {
 	NewsLean,
 	NFHelp,
 	GetPortfolioData,
+	Types,
 } from "$lib/types";
 import type { StorageError } from "@supabase/storage-js";
 
@@ -197,6 +198,9 @@ interface SBZutils {
 	// portfolio
 	getClients: () => Promise<TempClientName[]>;
 	getPortfolio: (luseId: number) => Promise<GenericResponseWData<GetPortfolioData | undefined>>;
+
+	// files
+	getFiles: (id: string) => Promise<GenericResponseWData<Types["ClientKyc"][]>>;
 
 	// utils
 	getAgentStatus: () => Promise<ApiVersion>;
@@ -1863,6 +1867,70 @@ const sbz = (): SBZutils => {
 		}
 	};
 
+	// * file stuff
+	const _getFiles = async (id: string): Promise<GenericResponseWData<Types["ClientKyc"][]>> => {
+		try {
+			const { data: fileNames, error: e1 } = await sbzdb.storage.from("kyc").list(id);
+
+			if (e1) {
+				await _log({ message: e1.message, title: `Get Files ${id} - E1` });
+				return {
+					data: [],
+					message: e1.message,
+					success: false,
+				};
+			}
+
+			const fileUrls = await Promise.all(
+				fileNames.map((n) => sbzdb.storage.from("kyc").createSignedUrl(`${id}/${n.name}`, 3600)),
+			);
+
+			const _titleIfier = (url: string): string => {
+				const urlSegments = url.split("/");
+				const name = urlSegments[urlSegments.length - 1];
+				const tag = name.substring(0, 3);
+
+				switch (tag) {
+					case "aco":
+						return "Account Opening Form";
+					case "poa":
+						return "Proof of Address";
+					case "poi":
+						return "Proof of Identity";
+					default:
+						return "Unkown";
+				}
+			};
+
+			const clientFiles: Types["ClientKyc"][] = [];
+			const clientFileErrors: string[] = [];
+
+			fileUrls.forEach((f) => {
+				if (f.data) {
+					const title = _titleIfier(f.data.signedUrl);
+					clientFiles.push({ title, url: f.data.signedUrl });
+				}
+
+				if (f.error) {
+					clientFileErrors.push(f.error.message);
+				}
+			});
+
+			return { data: clientFiles, message: "", success: true };
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+			console.error("\n=== get files ex\n", ex, "\n");
+
+			_log({ message: error, title: `Get Files Exception` });
+			return { data: [], message: error, success: false };
+		}
+	};
+
 	// * utils
 	const _getAgentStatus = async (): Promise<ApiVersion> => {
 		try {
@@ -1940,6 +2008,7 @@ const sbz = (): SBZutils => {
 		settleTrades: _settleTrades,
 		getClients: _getClients,
 		getPortfolio: _getPortfolio,
+		getFiles: _getFiles,
 	};
 };
 

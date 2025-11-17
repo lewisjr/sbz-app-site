@@ -42,7 +42,7 @@
 	let value = $state<T>();
 	let triggerRef = $state<HTMLButtonElement>(null!);
 
-	if (forceValue) value = forceValue;
+	if (typeof forceValue !== "undefined") value = forceValue;
 
 	let _data = [...data.grouped.flatMap((d) => d.group), ...data.ungrouped];
 

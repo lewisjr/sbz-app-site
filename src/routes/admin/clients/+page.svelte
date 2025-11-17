@@ -1,5 +1,6 @@
 <script lang="ts">
 	//functions
+	import { tick } from "svelte";
 	import { toast } from "svelte-sonner";
 	import { createSvelteTable, FlexRender } from "$lib/components/ui/data-table/index";
 	import { getCoreRowModel, getPaginationRowModel } from "@tanstack/table-core";
@@ -31,7 +32,7 @@
 	import * as Table from "$lib/components/ui/table/index";
 
 	//stores
-	import { screenWidthStore } from "$lib/stores";
+	import { screenWidthStore, filesCacheStore } from "$lib/stores";
 
 	//icons
 	import {
@@ -86,7 +87,7 @@
 	};
 
 	let activeRow = $state<TempClient>(initRow);
-	let config = $state<"portfolio" | "file">("portfolio");
+	let config = $state<"portfolio" | "file">("file");
 
 	let portfolioDisplayOption = $state<"port" | "matched" | "screen">("port");
 	const updatePortfolioDisplayOption = (val: any) => (portfolioDisplayOption = val);
@@ -561,9 +562,53 @@
 		}
 	};
 
+	const idSanitiser = (idNum: string): string => {
+		return idNum.replace(/[^a-zA-Z0-9]/g, "");
+	};
+
+	let filesLoading = $state<boolean>(false);
+
+	const getFile = async () => {
+		toast.info("Getting files...");
+
+		const uid = idSanitiser(activeRow.nrc);
+
+		try {
+			const req = await fetch("/api/admin/clients", {
+				method: "POST",
+				body: JSON.stringify({ uid, config }),
+			});
+
+			const res: GenericResponseWData<Types["ClientKyc"][]> = await req.json();
+
+			if (res.success) {
+				const temp = JSON.parse(JSON.stringify($filesCacheStore));
+				temp[uid] = res.data;
+
+				// console.log({ res: res.data });
+
+				filesCacheStore.set(temp);
+
+				await tick();
+			} else {
+				toast.error(res.message);
+			}
+
+			filesLoading = false;
+		} catch (ex) {
+			toast.error(String(ex));
+
+			filesLoading = false;
+		}
+	};
+
 	const openSheet = (cfg: "portfolio" | "file", row: TempClient) => {
 		clientPortfolio = undefined;
 		portfolioLoading = true;
+
+		filesLoading = true;
+
+		config = cfg;
 
 		switch (cfg) {
 			case "portfolio":
@@ -572,8 +617,14 @@
 				getPortfolio();
 				break;
 			case "file":
-				toast.info("W.I.P!");
-				return;
+				sheetTitle = `${toTitleCase(row.names)}'s File`;
+				activeRow = row;
+
+				if (!Object.keys($filesCacheStore).includes(idSanitiser(row.nrc))) {
+					getFile();
+				}
+
+				break;
 			default:
 				return;
 		}
@@ -762,6 +813,29 @@
 		getPaginationRowModel: getPaginationRowModel(),
 	});
 
+	let selectedIndex = $state<number>(0);
+	const handleSelectedIndex = (val: number) => (selectedIndex = val);
+
+	let iFrameHelper = $derived.by(() => {
+		let src: string | undefined = undefined;
+		let title: string | undefined = undefined;
+		const options: string[] = [];
+
+		if (
+			$filesCacheStore[idSanitiser(activeRow.nrc)] &&
+			$filesCacheStore[idSanitiser(activeRow.nrc)].length
+		) {
+			const { url, title: tit } = $filesCacheStore[idSanitiser(activeRow.nrc)][selectedIndex];
+
+			src = url;
+			title = tit;
+
+			options.push(...$filesCacheStore[idSanitiser(activeRow.nrc)].map((v) => v.title));
+		}
+
+		return { src, title, options };
+	});
+
 	const genPdf = async (id: string) => {
 		toast.info(`Generating ${toTitleCase(activeRow.names)}'s portfolio...`);
 		disabled = true;
@@ -803,6 +877,7 @@
 
 	/*
 	onMount(() => {
+		
 		clientPortfolio = {
 			matched: {
 				zmwTotal: 295494,
@@ -1099,6 +1174,7 @@
 			phone: "260776552592",
 			type: "LI",
 		});
+		
 	});
 	*/
 </script>
@@ -1605,6 +1681,51 @@
 					</div>
 				</div>
 			{/if}
+
+			{#if config === "file"}
+				<div class="holder">
+					{#if filesLoading}
+						<div class="kyc-doc loading no-padding"></div>
+
+						<div class="controls">
+							<AnyCombobox
+								handler={(v) => null}
+								data={{
+									grouped: [],
+									ungrouped: [],
+								}}
+								dataTitle="Document"
+								classes="loading"
+							/>
+						</div>
+					{:else if $filesCacheStore[idSanitiser(activeRow.nrc)] && $filesCacheStore[idSanitiser(activeRow.nrc)].length}
+						<div>
+							<iframe src={iFrameHelper.src} class="kyc-doc" title="kyc document"></iframe>
+						</div>
+
+						<div class="controls">
+							<AnyCombobox
+								handler={handleSelectedIndex}
+								data={{
+									grouped: [
+										{
+											title: "Documents",
+											group: iFrameHelper.options.map((v, i) => {
+												return { label: v, value: i };
+											}),
+										},
+									],
+									ungrouped: [],
+								}}
+								dataTitle="Document"
+								forceValue={0}
+							/>
+						</div>
+					{:else}
+						No documents found.
+					{/if}
+				</div>
+			{/if}
 		{/snippet}
 
 		{#snippet actionButton()}
@@ -1640,6 +1761,12 @@
 		&::-webkit-scrollbar-thumb {
 			border-radius: 100px !important;
 		}
+	}
+
+	.kyc-doc {
+		// border: 1px solid red;
+		width: 800px;
+		height: 78vh;
 	}
 
 	/** doc */

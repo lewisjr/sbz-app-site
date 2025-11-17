@@ -17,12 +17,17 @@
 - [x] add socials
 - [x] add home WoW analysis
 - [] add some reports like the dmr and sm report (downloadable)
-- [] fix b-engine recording names incorrectly
+- [] fix b-engine recording names incorrectly on matched trades
 - [x] finish news
 - [x] finish market analysis
 - [] add clients table with portfolio statements
 - [x] order stocks on trade summary
 - [x] order stocks on cn
+- [] make client search work with websockets instead
+- [x] add kyc docs view
+- [] add client balances report
+- [] add table with balances for easier viewing
+- [] add matched and on screen to portfolio
 
 ## ADD IP TRACKER
 

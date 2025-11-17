@@ -1,5 +1,5 @@
 import { writable } from "svelte/store";
-import type { NFHelp, ExpandedSymbol } from "./types";
+import type { NFHelp, ExpandedSymbol, Types } from "./types";
 
 export const screenWidthStore = writable<number>(0);
 
@@ -17,3 +17,5 @@ export const fxCacheStore = writable<DataCache<NFHelp["FxData"][]>>({});
 export const econCacheStore = writable<DataCache<NFHelp["EconData"][]>>({});
 
 export const expandedStockCacheStore = writable<DataCache<ExpandedSymbol>>({});
+
+export const filesCacheStore = writable<DataCache<Types["ClientKyc"][]>>({});
