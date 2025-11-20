@@ -28,6 +28,7 @@
 - [] add client balances report
 - [] add table with balances for easier viewing
 - [x] add matched and on screen to portfolio
+- [] fix "chat notification plays when you send your own message"
 
 ## ADD IP TRACKER
 
