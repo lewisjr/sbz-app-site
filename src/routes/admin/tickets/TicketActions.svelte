@@ -57,22 +57,22 @@
 			{/if}
 			-->
 
-			{#if !data.is_closed && data.assigned !== "odyn" && (data.assigned === adminUsername || permissions.includes("close"))}
+			{#if !data.is_closed && data.assigned !== "odyn" && (data.assigned === adminUsername || permissions.includes("close-ticket"))}
 				<DropdownMenu.Item onclick={() => openSheet("close", data)}>Close</DropdownMenu.Item>
 			{/if}
 		</DropdownMenu.Group>
 
-		{#if permissions.includes("reassign") || permissions.includes("audit")}
+		{#if permissions.includes("reassign-ticket") || permissions.includes("audit-ticket")}
 			<DropdownMenu.Separator />
 
 			<DropdownMenu.Group>
 				<DropdownMenu.Label>Admin</DropdownMenu.Label>
-				{#if !data.is_closed && data.assigned !== "odyn" && permissions.includes("reassign")}
+				{#if !data.is_closed && data.assigned !== "odyn" && permissions.includes("reassign-ticket")}
 					<DropdownMenu.Item onclick={() => openSheet("reassign", data)}
 						>Reassign Ticket</DropdownMenu.Item
 					>
 				{/if}
-				{#if permissions.includes("audit")}
+				{#if permissions.includes("audit-ticket")}
 					<DropdownMenu.Item onclick={() => openSheet("audit", data)}>Audit</DropdownMenu.Item>
 				{/if}
 			</DropdownMenu.Group>

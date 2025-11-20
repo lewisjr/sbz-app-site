@@ -23,7 +23,7 @@ export const POST = async (event) => {
 
 	switch (action) {
 		case "reassign":
-			if (!sender.permissions.split(",,").includes("reassign"))
+			if (!sender.permissions.split(",,").includes("reassign-ticket"))
 				return json(
 					{
 						success: false,
@@ -41,7 +41,7 @@ export const POST = async (event) => {
 				{ status: reassignReq.success ? 200 : 400 },
 			);
 		case "audit":
-			if (!sender.permissions.split(",,").includes("audit"))
+			if (!sender.permissions.split(",,").includes("audit-ticket"))
 				return json(
 					{
 						success: false,
@@ -62,7 +62,7 @@ export const POST = async (event) => {
 		case "close":
 			const _obj: CloseTicketObj = obj;
 
-			if (!sender.permissions.split(",,").includes("close") || sender.username !== admin)
+			if (!sender.permissions.split(",,").includes("close-ticket") || sender.username !== admin)
 				return json(
 					{
 						success: false,

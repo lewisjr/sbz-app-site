@@ -33,16 +33,16 @@
 	<DropdownMenu.Content>
 		<DropdownMenu.Group>
 			<DropdownMenu.Label>Actions</DropdownMenu.Label>
-			{#if permissions.includes("edit")}
+			{#if permissions.includes("edit-staff")}
 				<DropdownMenu.Item onclick={() => openSheet("edit", data)}>Edit</DropdownMenu.Item>
 			{/if}
 			<DropdownMenu.Item disabled onclick={() => openSheet("perms", data)}
 				>Permissions (W.I.P)</DropdownMenu.Item
 			>
-			{#if data.approved && permissions.includes("block")}
+			{#if data.approved && permissions.includes("block-staff")}
 				<DropdownMenu.Item onclick={() => openSheet("block", data)}>Block</DropdownMenu.Item>
 			{/if}
-			{#if !data.approved && permissions.includes("block")}
+			{#if !data.approved && permissions.includes("block-staff")}
 				<DropdownMenu.Item onclick={() => openSheet("unblock", data)}>Unblock</DropdownMenu.Item>
 			{/if}
 		</DropdownMenu.Group>

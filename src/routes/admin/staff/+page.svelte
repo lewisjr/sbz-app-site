@@ -432,9 +432,11 @@
 					loader
 					disabled
 				/>
-				<Button variant="outline" class="loading no-padding ml-4"
-					>Add Member<PlusCircle class="ml-2 h-4 w-4" /></Button
-				>
+				{#if data.perimissions.includes("add-staff")}
+					<Button variant="outline" class="loading no-padding ml-4"
+						>Add Member<PlusCircle class="ml-2 h-4 w-4" /></Button
+					>
+				{/if}
 			</div>
 		</div>
 
@@ -489,13 +491,15 @@
 					classes="ml-4"
 					icon="filter"
 				/>
-				<Button
-					variant="outline"
-					class="ml-4"
-					disabled={loading}
-					onclick={() => openSheet("new", initStaff)}
-					>Add Member<PlusCircle class="ml-2 h-4 w-4" /></Button
-				>
+				{#if data.perimissions.includes("add-staff")}
+					<Button
+						variant="outline"
+						class="ml-4"
+						disabled={loading}
+						onclick={() => openSheet("new", initStaff)}
+						>Add Member<PlusCircle class="ml-2 h-4 w-4" /></Button
+					>
+				{/if}
 			</div>
 		</div>
 		<div class="main-tainer">
@@ -555,13 +559,15 @@
 				classes="ml-4"
 				icon="filter"
 			/>
-			<Button
-				variant="outline"
-				class="ml-4"
-				disabled={loading}
-				onclick={() => openSheet("new", initStaff)}
-				>Add Member<PlusCircle class="ml-2 h-4 w-4" /></Button
-			>
+			{#if data.perimissions.includes("add-staff")}
+				<Button
+					variant="outline"
+					class="ml-4"
+					disabled={loading}
+					onclick={() => openSheet("new", initStaff)}
+					>Add Member<PlusCircle class="ml-2 h-4 w-4" /></Button
+				>
+			{/if}
 		</div>
 	</div>
 

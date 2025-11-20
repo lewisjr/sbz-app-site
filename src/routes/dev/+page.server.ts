@@ -10,7 +10,7 @@ const adminObj = {
 	full_names: "Lewis Mosho",
 	phone: "260776552592",
 	email: "lewiscerebrus@gmail.com",
-	permissions: "reassign,,audit,,edit,,block,,close",
+	permissions: "reassign-ticket,,audit-ticket,,edit-staff,,block-staff,,close-ticket,,add-staff",
 	department: "IT",
 	ticketable: true,
 };
