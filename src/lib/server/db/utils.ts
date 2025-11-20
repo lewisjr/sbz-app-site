@@ -176,6 +176,8 @@ interface SBZutils {
 	getAllOtps: () => Promise<OTPRow[]>;
 	getAllStaff: () => Promise<StaffRow[]>;
 	addStaffMember: (obj: StaffInsertRow) => Promise<GenericResponseWData<StaffRow | undefined>>;
+	blockStaffMember: (username: string, sender: string) => Promise<GenericResponse>;
+	unblockStaffMember: (username: string, sender: string) => Promise<GenericResponse>;
 
 	// chat stuff
 	sendChat: (obj: ChatInsert, notifCongif?: NotifConfigObj) => Promise<boolean>;
@@ -1125,6 +1127,8 @@ const sbz = (): SBZutils => {
 				return [];
 			}
 
+			if (data && data[0] && !data[0].approved) return [];
+
 			if (data && data.length) return data;
 
 			return [];
@@ -1412,6 +1416,77 @@ const sbz = (): SBZutils => {
 
 			_log({ message: error, title: "Create Staff Exception" });
 			return { data: undefined, message: error, success: false };
+		}
+	};
+
+	const _blockStaffMember = async (username: string, sender: string): Promise<GenericResponse> => {
+		try {
+			const { error } = await sbzdb
+				.from("admins")
+				.update({ approved: false })
+				.filter("username", "eq", username);
+
+			if (error) {
+				_log({ message: error.message, title: "Block Staff Error" });
+				return { message: error.message, success: false };
+			}
+
+			await _log({
+				title: "Account Blocked",
+				message: `${toTitleCase(sender)} blocked ${toTitleCase(username)}'s account.`,
+			});
+
+			return {
+				message: `${toTitleCase(username)}'s system access has been revoked.`,
+				success: true,
+			};
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Block Staff Exception" });
+			return { message: error, success: false };
+		}
+	};
+
+	const _unblockStaffMember = async (
+		username: string,
+		sender: string,
+	): Promise<GenericResponse> => {
+		try {
+			const { error } = await sbzdb
+				.from("admins")
+				.update({ approved: true })
+				.filter("username", "eq", username);
+
+			if (error) {
+				_log({ message: error.message, title: "Unblock Staff Error" });
+				return { message: error.message, success: false };
+			}
+
+			await _log({
+				title: "Account Unblocked",
+				message: `${toTitleCase(sender)} unblocked ${toTitleCase(username)}'s account.`,
+			});
+
+			return {
+				message: `${toTitleCase(username)}'s system access has been reinstated.`,
+				success: true,
+			};
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Unblock Staff Exception" });
+			return { message: error, success: false };
 		}
 	};
 
@@ -2009,6 +2084,8 @@ const sbz = (): SBZutils => {
 		getClients: _getClients,
 		getPortfolio: _getPortfolio,
 		getFiles: _getFiles,
+		blockStaffMember: _blockStaffMember,
+		unblockStaffMember: _unblockStaffMember,
 	};
 };
 

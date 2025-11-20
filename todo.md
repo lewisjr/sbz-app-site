@@ -30,6 +30,7 @@
 - [x] add matched and on screen to portfolio
 - [] fix "chat notification plays when you send your own message"
 - [] add permissions
+- [] add admin block/unblock
 
 ## ADD IP TRACKER
 

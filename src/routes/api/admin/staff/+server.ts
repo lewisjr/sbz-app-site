@@ -21,6 +21,15 @@ export const POST = async (event) => {
 
 	switch (action) {
 		case "new":
+			if (!sender.permissions.includes("add-staff"))
+				return json(
+					{
+						success: false,
+						message: "Access denied.",
+					},
+					{ status: 400 },
+				);
+
 			const nObj: StaffInsertRow = {
 				created_by: sender.username,
 				department: obj.department,
@@ -41,6 +50,50 @@ export const POST = async (event) => {
 					data: addStaff.data,
 				},
 				{ status: addStaff.success ? 200 : 400 },
+			);
+		case "block":
+			if (!sender.permissions.includes("block-staff"))
+				return json(
+					{
+						success: false,
+						message: "Access denied.",
+					},
+					{ status: 400 },
+				);
+
+			const blockStaff = await dbs.sbz.blockStaffMember(obj.username, sender.username);
+
+			obj.approved = false;
+
+			return json(
+				{
+					success: blockStaff.success,
+					message: blockStaff.message,
+					data: blockStaff.success ? obj : undefined,
+				},
+				{ status: blockStaff.success ? 200 : 400 },
+			);
+		case "unblock":
+			if (!sender.permissions.includes("block-staff"))
+				return json(
+					{
+						success: false,
+						message: "Access denied.",
+					},
+					{ status: 400 },
+				);
+
+			const unblockStaff = await dbs.sbz.unblockStaffMember(obj.username, sender.username);
+
+			obj.approved = true;
+
+			return json(
+				{
+					success: unblockStaff.success,
+					message: unblockStaff.message,
+					data: unblockStaff.success ? obj : undefined,
+				},
+				{ status: unblockStaff.success ? 200 : 400 },
 			);
 		default:
 			return json(

@@ -17,13 +17,15 @@ export const PUT = async ({ request }) => {
 		case "Admin Username":
 			const isApprovedAdmin = await dbs.sbz.getAdmin(id);
 
+			// console.log({ isApprovedAdmin });
+
 			if (!isApprovedAdmin.length)
 				return json(
 					{ success: false, message: "Please double check your username and try again." },
 					{ status: 400 },
 				);
 
-			emails.push(isApprovedAdmin[0].email);
+			// emails.push(isApprovedAdmin[0].email);
 			break;
 		case "LuSE ID":
 			const isApprovedClient = await dbs.sbz.getClient(Number(id));

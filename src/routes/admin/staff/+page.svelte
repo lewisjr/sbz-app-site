@@ -6,7 +6,7 @@
 	import { toTitleCase } from "@cerebrusinc/fstring";
 	import { numParse } from "@cerebrusinc/qol";
 	import { formatDbTime } from "$lib/utils";
-	import { createRawSnippet } from "svelte";
+	import { createRawSnippet, tick } from "svelte";
 	import { renderSnippet, renderComponent } from "$lib/components/ui/data-table/index";
 
 	//stores
@@ -32,6 +32,8 @@
 		ChevronRight,
 		Upload,
 		PlusCircle,
+		Lock,
+		LockOpen,
 	} from "@lucide/svelte";
 
 	//types
@@ -329,7 +331,7 @@
 		closeSheet();
 	};
 
-	const updateMember = (member: StaffRow) => {
+	const updateMember = async (member: StaffRow) => {
 		const temp: StaffRow[] = JSON.parse(JSON.stringify(staffData));
 
 		const index = temp.findIndex((item) => (item.username = member.username));
@@ -337,6 +339,8 @@
 		temp[index] = member;
 
 		staffData = temp;
+
+		await tick();
 
 		closeSheet();
 	};
@@ -380,6 +384,48 @@
 
 			if (res.data) {
 				appendMember(res.data);
+			}
+		} catch (ex: any) {
+			loading = false;
+			const message =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex?.message || JSON.stringify(ex);
+
+			toast.error(message);
+		}
+	};
+
+	const blockUnblockStaff = async () => {
+		loading = true;
+		toast.info(
+			`${sheetConfig === "block" ? "Revoking" : "Reinstating"} ${toTitleCase(activeRow.username)}'s system access...`,
+		);
+
+		try {
+			const req = await fetch("/api/admin/staff", {
+				method: "POST",
+				body: JSON.stringify({
+					action: sheetConfig,
+					obj: activeRow,
+				}),
+			});
+
+			const res: GenericResponseWData<StaffRow | undefined> = await req.json();
+
+			loading = false;
+
+			if (!res.success) {
+				toast.error(res.message);
+				return;
+			}
+
+			toast.success(res.message);
+
+			if (res.data) {
+				updateMember(res.data);
 			}
 		} catch (ex: any) {
 			loading = false;
@@ -750,9 +796,11 @@
 				</div>
 			{/if}
 
+			<!-- BLOCK STAFF
 			{#if sheetConfig === "block"}
 				<p>W.I.P</p>
 			{/if}
+			-->
 
 			{#if sheetConfig === "edit"}
 				<p>W.I.P</p>
@@ -762,9 +810,11 @@
 				<p>W.I.P</p>
 			{/if}
 
+			<!-- UNBLOCK STAFF
 			{#if sheetConfig === "unblock"}
 				<p>W.I.P</p>
 			{/if}
+			-->
 		{/snippet}
 
 		{#snippet actionButton()}
@@ -772,6 +822,19 @@
 				<Button disabled={newStaffDisabled} onclick={addStaff}
 					>Submit<Upload class="ml-2 h-4 w-4" /></Button
 				>
+			{/if}
+
+			{#if sheetConfig === "block" || sheetConfig === "unblock"}
+				<Button
+					variant={sheetConfig === "block" ? "destructive" : "default"}
+					disabled={loading}
+					onclick={blockUnblockStaff}
+					>{#if sheetConfig === "block"}
+						Block<Lock class="ml-2 h-4 w-4" />
+					{:else if sheetConfig === "unblock"}
+						Unblock<LockOpen class="ml-2 h-4 w-4" />
+					{/if}
+				</Button>
 			{/if}
 		{/snippet}
 	</AnySheet>
