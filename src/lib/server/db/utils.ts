@@ -549,7 +549,7 @@ const sbz = (): SBZutils => {
 					body: `Hi <b>${names.split(" ")[0]}</b>,<br /><br /><b>${toTitleCase(admin)}</b> just closed this ticket with the following reason:`,
 					extra: `<i>${reason}</i>`,
 				},
-				IS_DEV ? "privatodato@gmail.com" : clientEmail,
+				/*IS_DEV ? "privatodato@gmail.com" :*/ clientEmail,
 				clientMsgId.length ? clientMsgId : undefined,
 			);
 
