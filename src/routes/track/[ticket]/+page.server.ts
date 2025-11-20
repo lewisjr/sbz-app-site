@@ -14,6 +14,8 @@ const wakeOdyn = async () => {
 export const load = async ({ cookies, params }) => {
 	const cookie = cookies.get("sbz-nootp");
 
+	// console.log({ cook_server: cookie });
+
 	let ticket: TicketRowLean = {
 		assigned: "",
 		close_date: "",

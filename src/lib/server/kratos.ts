@@ -44,6 +44,10 @@ const chat = async (event: RequestEvent): Promise<Response | true> => {
 	const { cookies } = event;
 
 	const user = cookies.get("sbz-nootp");
+	const cook = cookies.getAll();
+
+	// console.log({ user, cook });
+
 	if (!user) return json({ success: false, message: "Please refresh the page." }, { status: 404 });
 
 	const isValidJwt = checkJwt(user);

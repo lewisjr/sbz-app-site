@@ -5,6 +5,7 @@ import Tokenise from "$lib/server/tokenise";
 
 import type { SBZdb } from "$lib/types/index";
 import type { NotifConfigObj } from "$lib/server/db/utils.js";
+import { genJwt } from "$lib/server/jwt.js";
 
 const tokenise = new Tokenise();
 
@@ -13,8 +14,10 @@ export const POST = async ({ request, cookies }) => {
 
 	const correct = await dbs.sbz.checkOtp({ otp, user });
 
+	// console.log({ correct, user, otp, location: "API Route" });
+
 	if (correct.success) {
-		cookies.set("sbz-nootp", "true", {
+		cookies.set("sbz-nootp", genJwt("true", "4h"), {
 			path: "/",
 			httpOnly: true,
 			maxAge: 60 * 60 * 1,
