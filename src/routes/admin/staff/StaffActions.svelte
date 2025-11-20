@@ -14,9 +14,10 @@
 	interface Props {
 		data: StaffRow;
 		openSheet: (config: Types["StaffActionConfig"], row: StaffRow, width?: number) => void;
+		permissions: string[];
 	}
 
-	let { data, openSheet }: Props = $props();
+	let { data, openSheet, permissions }: Props = $props();
 </script>
 
 <DropdownMenu.Root>
@@ -32,19 +33,17 @@
 	<DropdownMenu.Content>
 		<DropdownMenu.Group>
 			<DropdownMenu.Label>Actions</DropdownMenu.Label>
-			<DropdownMenu.Item disabled onclick={() => openSheet("edit", data)}>Edit</DropdownMenu.Item>
+			{#if permissions.includes("edit")}
+				<DropdownMenu.Item onclick={() => openSheet("edit", data)}>Edit</DropdownMenu.Item>
+			{/if}
 			<DropdownMenu.Item disabled onclick={() => openSheet("perms", data)}
 				>Permissions (W.I.P)</DropdownMenu.Item
 			>
-			{#if data.approved}
-				<DropdownMenu.Item disabled onclick={() => openSheet("block", data)}
-					>Block</DropdownMenu.Item
-				>
+			{#if data.approved && permissions.includes("block")}
+				<DropdownMenu.Item onclick={() => openSheet("block", data)}>Block</DropdownMenu.Item>
 			{/if}
-			{#if !data.approved}
-				<DropdownMenu.Item disabled onclick={() => openSheet("unblock", data)}
-					>Unblock</DropdownMenu.Item
-				>
+			{#if !data.approved && permissions.includes("block")}
+				<DropdownMenu.Item onclick={() => openSheet("unblock", data)}>Unblock</DropdownMenu.Item>
 			{/if}
 		</DropdownMenu.Group>
 

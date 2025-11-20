@@ -359,6 +359,8 @@
 				renderComponent(TicketActions, {
 					data: row.original,
 					openSheet,
+					adminUsername: data.admin,
+					permissions: data.perimissions,
 				}),
 		},
 	];
@@ -704,6 +706,7 @@
 									ticketId: activeRow.id,
 								},
 								config: "close",
+								admin: data.admin,
 							}
 						: {
 								action: sheetConfig,
@@ -715,6 +718,7 @@
 									clientVars: activeRow.email_vars,
 									names: activeRow.names,
 								},
+								admin: data.admin,
 							},
 				),
 			});

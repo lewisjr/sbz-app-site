@@ -243,6 +243,7 @@
 				renderComponent(StaffActions, {
 					data: row.original,
 					openSheet,
+					permissions: data.perimissions,
 				}),
 		},
 	];

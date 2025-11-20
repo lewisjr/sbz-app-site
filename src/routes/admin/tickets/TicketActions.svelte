@@ -12,9 +12,13 @@
 	interface Props {
 		data: TicketRowLean;
 		openSheet: (config: Types["ActionConfig"], row: TicketRowLean, width?: number) => void;
+		adminUsername: string;
+		permissions: string[];
 	}
 
-	let { data, openSheet }: Props = $props();
+	let { data, openSheet, adminUsername, permissions }: Props = $props();
+
+	//$effect(() => console.log({ permissions }));
 </script>
 
 <DropdownMenu.Root>
@@ -39,6 +43,7 @@
 				<DropdownMenu.Item disabled>N/A</DropdownMenu.Item>
 			{/if}
 
+			<!--
 			{#if data.query_type === "Account Opening" && !data.is_closed && data.query.substring(0, 2) === "--"}
 				<DropdownMenu.Item onclick={() => null}>Review KYC</DropdownMenu.Item>
 			{/if}
@@ -50,23 +55,28 @@
 					></DropdownMenu.Item
 				>
 			{/if}
+			-->
 
-			{#if !data.is_closed && data.assigned !== "odyn"}
+			{#if !data.is_closed && data.assigned !== "odyn" && (data.assigned === adminUsername || permissions.includes("close"))}
 				<DropdownMenu.Item onclick={() => openSheet("close", data)}>Close</DropdownMenu.Item>
 			{/if}
 		</DropdownMenu.Group>
 
-		<DropdownMenu.Separator />
+		{#if permissions.includes("reassign") || permissions.includes("audit")}
+			<DropdownMenu.Separator />
 
-		<DropdownMenu.Group>
-			<DropdownMenu.Label>Admin</DropdownMenu.Label>
-			{#if !data.is_closed && data.assigned !== "odyn"}
-				<DropdownMenu.Item onclick={() => openSheet("reassign", data)}
-					>Reassign Ticket</DropdownMenu.Item
-				>
-			{/if}
-			<DropdownMenu.Item onclick={() => openSheet("audit", data)}>Audit</DropdownMenu.Item>
-		</DropdownMenu.Group>
+			<DropdownMenu.Group>
+				<DropdownMenu.Label>Admin</DropdownMenu.Label>
+				{#if !data.is_closed && data.assigned !== "odyn" && permissions.includes("reassign")}
+					<DropdownMenu.Item onclick={() => openSheet("reassign", data)}
+						>Reassign Ticket</DropdownMenu.Item
+					>
+				{/if}
+				{#if permissions.includes("audit")}
+					<DropdownMenu.Item onclick={() => openSheet("audit", data)}>Audit</DropdownMenu.Item>
+				{/if}
+			</DropdownMenu.Group>
+		{/if}
 	</DropdownMenu.Content>
 </DropdownMenu.Root>
 

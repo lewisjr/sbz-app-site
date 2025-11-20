@@ -14,13 +14,24 @@ export const POST = async (event) => {
 	const {
 		action,
 		obj,
+		admin,
 	}: {
 		action: Types["ActionConfig"];
 		obj: any;
+		admin: string | undefined;
 	} = await request.json();
 
 	switch (action) {
 		case "reassign":
+			if (!sender.permissions.split(",,").includes("reassign"))
+				return json(
+					{
+						success: false,
+						message: "Access denied.",
+					},
+					{ status: 400 },
+				);
+
 			const reassignReq = await dbs.sbz.reassignWebTicket({ sender: sender.username, ...obj });
 			return json(
 				{
@@ -30,6 +41,15 @@ export const POST = async (event) => {
 				{ status: reassignReq.success ? 200 : 400 },
 			);
 		case "audit":
+			if (!sender.permissions.split(",,").includes("audit"))
+				return json(
+					{
+						success: false,
+						message: "Access denied.",
+					},
+					{ status: 400 },
+				);
+
 			const auditReq = await dbs.sbz.auditTicket(obj.ticketId);
 			return json(
 				{
@@ -41,6 +61,15 @@ export const POST = async (event) => {
 			);
 		case "close":
 			const _obj: CloseTicketObj = obj;
+
+			if (!sender.permissions.split(",,").includes("close") || sender.username !== admin)
+				return json(
+					{
+						success: false,
+						message: "Access denied.",
+					},
+					{ status: 400 },
+				);
 
 			const closeReq = await dbs.sbz.closeTicket({
 				admin: sender.username,
