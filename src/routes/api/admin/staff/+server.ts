@@ -95,6 +95,51 @@ export const POST = async (event) => {
 				},
 				{ status: unblockStaff.success ? 200 : 400 },
 			);
+		case "on-duty":
+			if (!sender.permissions.includes("block-staff"))
+				return json(
+					{
+						success: false,
+						message: "Access denied.",
+					},
+					{ status: 400 },
+				);
+
+			const pauseOdyn = await dbs.sbz.pauseOdyn(obj.username, sender.username);
+
+			obj.ticketable = false;
+
+			return json(
+				{
+					success: pauseOdyn.success,
+					message: pauseOdyn.message,
+					data: pauseOdyn.success ? obj : undefined,
+				},
+				{ status: pauseOdyn.success ? 200 : 400 },
+			);
+		case "unblock":
+			if (!sender.permissions.includes("block-staff"))
+				return json(
+					{
+						success: false,
+						message: "Access denied.",
+					},
+					{ status: 400 },
+				);
+
+			const unPauseOdyn = await dbs.sbz.unPauseOdyn(obj.username, sender.username);
+
+			obj.ticketable = true;
+
+			return json(
+				{
+					success: unPauseOdyn.success,
+					message: unPauseOdyn.message,
+					data: unPauseOdyn.success ? obj : undefined,
+				},
+				{ status: unPauseOdyn.success ? 200 : 400 },
+			);
+
 		default:
 			return json(
 				{

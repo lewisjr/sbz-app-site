@@ -178,6 +178,8 @@ interface SBZutils {
 	addStaffMember: (obj: StaffInsertRow) => Promise<GenericResponseWData<StaffRow | undefined>>;
 	blockStaffMember: (username: string, sender: string) => Promise<GenericResponse>;
 	unblockStaffMember: (username: string, sender: string) => Promise<GenericResponse>;
+	pauseOdyn: (username: string, sender: string) => Promise<GenericResponse>;
+	unPauseOdyn: (username: string, sender: string) => Promise<GenericResponse>;
 
 	// chat stuff
 	sendChat: (obj: ChatInsert, notifCongif?: NotifConfigObj) => Promise<boolean>;
@@ -1490,6 +1492,74 @@ const sbz = (): SBZutils => {
 		}
 	};
 
+	const _pauseOdyn = async (username: string, sender: string): Promise<GenericResponse> => {
+		try {
+			const { error } = await sbzdb
+				.from("admins")
+				.update({ ticketable: false })
+				.filter("username", "eq", username);
+
+			if (error) {
+				_log({ message: error.message, title: "Pause Odyn Error" });
+				return { message: error.message, success: false };
+			}
+
+			await _log({
+				title: "Odyn Paused",
+				message: `${toTitleCase(sender)} paused Odyn for ${toTitleCase(username)}'s account.`,
+			});
+
+			return {
+				message: `${toTitleCase(username)}'s is now marked as on leave!`,
+				success: true,
+			};
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Pause Odyn Exception" });
+			return { message: error, success: false };
+		}
+	};
+
+	const _unPauseOdyn = async (username: string, sender: string): Promise<GenericResponse> => {
+		try {
+			const { error } = await sbzdb
+				.from("admins")
+				.update({ ticketable: true })
+				.filter("username", "eq", username);
+
+			if (error) {
+				_log({ message: error.message, title: "Unpause Odyn Error" });
+				return { message: error.message, success: false };
+			}
+
+			await _log({
+				title: "Odyn Unpaused",
+				message: `${toTitleCase(sender)} unpaused Odyn for ${toTitleCase(username)}'s account.`,
+			});
+
+			return {
+				message: `${toTitleCase(username)}'s is now marked as on duty!`,
+				success: true,
+			};
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Unpause Odyn Exception" });
+			return { message: error, success: false };
+		}
+	};
+
 	// * chat stuff
 	const _sendChat = async (obj: ChatInsert, notifCongif?: NotifConfigObj): Promise<boolean> => {
 		const oldBody = obj.body;
@@ -2086,6 +2156,8 @@ const sbz = (): SBZutils => {
 		getFiles: _getFiles,
 		blockStaffMember: _blockStaffMember,
 		unblockStaffMember: _unblockStaffMember,
+		pauseOdyn: _pauseOdyn,
+		unPauseOdyn: _unPauseOdyn,
 	};
 };
 

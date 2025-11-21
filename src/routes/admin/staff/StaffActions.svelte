@@ -45,6 +45,16 @@
 			{#if !data.approved && permissions.includes("block-staff")}
 				<DropdownMenu.Item onclick={() => openSheet("unblock", data)}>Unblock</DropdownMenu.Item>
 			{/if}
+
+			{#if data.ticketable && permissions.includes("block-staff") && !data.permissions.includes("block-staff")}
+				<DropdownMenu.Item onclick={() => openSheet("on-leave", data)}>Pause Odyn</DropdownMenu.Item
+				>
+			{/if}
+			{#if !data.ticketable && permissions.includes("block-staff") && !data.permissions.includes("block-staff")}
+				<DropdownMenu.Item onclick={() => openSheet("on-duty", data)}
+					>Unpause Odyn</DropdownMenu.Item
+				>
+			{/if}
 		</DropdownMenu.Group>
 
 		<!-- <DropdownMenu.Separator /> -->

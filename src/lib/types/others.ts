@@ -10,7 +10,7 @@ type Platforms = (typeof platformsArray)[number];
 
 type ActionConfig = "reassign" | "audit" | "chat" | "close";
 
-type StaffActionConfig = "block" | "unblock" | "edit" | "perms" | "new";
+type StaffActionConfig = "block" | "unblock" | "edit" | "perms" | "new" | "on-leave" | "on-duty";
 
 interface Folio {
 	symbol: string;

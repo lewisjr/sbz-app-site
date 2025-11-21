@@ -35,6 +35,8 @@
 		PlusCircle,
 		Lock,
 		LockOpen,
+		Pause,
+		Play,
 	} from "@lucide/svelte";
 
 	//types
@@ -144,6 +146,14 @@
 			case "unblock":
 				sheetTitle = `Reinstate ${toTitleCase(row.username)}'s Access`;
 				sheetDesc = "They will be able to pick up right where they left off.";
+				break;
+			case "on-leave":
+				sheetTitle = `Mark ${toTitleCase(row.username)} as On Leave`;
+				sheetDesc = `This will pause Odyn from assigning tickets to ${toTitleCase(row.username)}.`;
+				break;
+			case "on-duty":
+				sheetTitle = `Mark ${toTitleCase(row.username)} as On Duty`;
+				sheetDesc = `This will enable Odyn to resume assigning tickets to ${toTitleCase(row.username)}.`;
 				break;
 			case "new":
 				sheetTitle = `Add a Staff Member`;
@@ -859,6 +869,19 @@
 						Block<Lock class="ml-2 h-4 w-4" />
 					{:else if sheetConfig === "unblock"}
 						Unblock<LockOpen class="ml-2 h-4 w-4" />
+					{/if}
+				</Button>
+			{/if}
+
+			{#if sheetConfig === "on-duty" || sheetConfig === "on-leave"}
+				<Button
+					variant={sheetConfig === "on-leave" ? "destructive" : "default"}
+					disabled={loading}
+					onclick={blockUnblockStaff}
+					>{#if sheetConfig === "on-leave"}
+						Mark<Pause class="ml-2 h-4 w-4" />
+					{:else if sheetConfig === "on-duty"}
+						Unmark<Play class="ml-2 h-4 w-4" />
 					{/if}
 				</Button>
 			{/if}
