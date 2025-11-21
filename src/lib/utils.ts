@@ -458,3 +458,12 @@ export const chunkArray = <T>(arr: T[], size: number = 20) => {
 	}
 	return result;
 };
+
+export const systemPermissions = [
+	"reassign-ticket",
+	"audit-ticket",
+	"edit-staff",
+	"block-staff",
+	"close-ticket",
+	"add-staff",
+];

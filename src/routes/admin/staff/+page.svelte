@@ -5,7 +5,7 @@
 	import { getCoreRowModel, getPaginationRowModel } from "@tanstack/table-core";
 	import { toTitleCase } from "@cerebrusinc/fstring";
 	import { numParse } from "@cerebrusinc/qol";
-	import { formatDbTime } from "$lib/utils";
+	import { formatDbTime, systemPermissions } from "$lib/utils";
 	import { createRawSnippet, tick } from "svelte";
 	import { renderSnippet, renderComponent } from "$lib/components/ui/data-table/index";
 
@@ -17,6 +17,7 @@
 	import AnyCombobox from "$lib/components/AnyCombobox/AnyCombobox.svelte";
 	import AnySheet from "$lib/components/AnySheet.svelte";
 	import StaffActions from "./StaffActions.svelte";
+	import MultiAnyPicker from "$lib/components/MultiAnyPicker.svelte";
 
 	//components - shadcn
 	import Input from "$lib/components/ui/input/input.svelte";
@@ -344,6 +345,14 @@
 
 		closeSheet();
 	};
+
+	let permisTemp = $state<string>("");
+	let test = $state<string[]>([]);
+	const permisHandler = (val: string) => {
+		permisTemp = val;
+	};
+
+	$effect(() => console.log({ permisTemp, time: Date.now() }));
 
 	const addStaff = async () => {
 		if (newStaffDisabled) {
@@ -778,6 +787,23 @@
 						}}
 					/>
 				</div>
+
+				<!--
+				<div class="mt-6 flex w-full max-w-sm flex-col gap-1.5">
+					<Label>Permissions</Label>
+					<AnyPicker
+						data={systemPermissions.map((p) => {
+							return { value: p, label: toTitleCase(p.replace("-", "")) };
+						})}
+						handler={permisHandler}
+						pickerTitle="Permission"
+						value=""
+					/>
+					<p class="text-justify text-sm text-muted-foreground">
+						These are solely admin privileges with 100% fine contol.
+					</p>
+				</div>
+				-->
 
 				<div class="mt-6 flex w-full max-w-sm flex-col gap-1.5">
 					<Label>Ticketable</Label>

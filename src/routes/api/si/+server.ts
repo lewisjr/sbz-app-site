@@ -25,7 +25,7 @@ export const PUT = async ({ request }) => {
 					{ status: 400 },
 				);
 
-			// emails.push(isApprovedAdmin[0].email);
+			emails.push(isApprovedAdmin[0].email);
 			break;
 		case "LuSE ID":
 			const isApprovedClient = await dbs.sbz.getClient(Number(id));

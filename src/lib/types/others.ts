@@ -23,6 +23,11 @@ interface ClientKyc {
 	url: string;
 }
 
+export interface PickerObj<T> {
+	value: T;
+	label: string;
+}
+
 export interface Types {
 	/**For tickets */
 	ReferralSource: ReferralSource;
