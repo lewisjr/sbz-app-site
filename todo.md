@@ -33,7 +33,7 @@
 - [] add admin block/unblock
 - [x] add chat open files in new window for admins
 - [x] add chat download files for clients
-- [] add admin send files
+- [x] add admin send files
 - [] add client send files
 
 ## ADD IP TRACKER

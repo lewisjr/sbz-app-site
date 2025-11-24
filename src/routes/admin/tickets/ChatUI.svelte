@@ -393,6 +393,58 @@
 		}
 	};
 
+	const sendChat2 = async (body?: string, type?: "text" | "pdf", notify?: boolean) => {
+		loading = true;
+
+		const obj = {
+			body: body ? body : textValue.trim(),
+			sender: data.admin,
+			ticket_no: data.ticketId,
+			type: type ? type : "text",
+		};
+
+		const notifConfig = {
+			email: data.ticket.uid ?? data.ticket.email,
+			msgId: data.ticket.email_vars ?? "",
+			subject: "",
+			name: data.ticket.names.split(" ")[0],
+		};
+
+		try {
+			const req = await fetch("/api/admin/tickets/chat", {
+				method: "PUT",
+				body: JSON.stringify({
+					obj,
+					notifConfig: onlineStatus === "onl" ? undefined : notifConfig,
+					notify,
+				}),
+			});
+
+			const res: GenericResponse = await req.json();
+
+			loading = false;
+
+			if (!res.success) {
+				toast.error(res.message);
+				return;
+			}
+
+			textValue = "";
+		} catch (ex: any) {
+			loading = false;
+
+			const message =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex?.message || JSON.stringify(ex);
+
+			toast.error(message);
+			return;
+		}
+	};
+
 	const openFile = (link: string) => {
 		window.open(link, "pdfWindow", "width=600,height=800,menubar=no,toolbar=no,location=no");
 	};
@@ -403,8 +455,14 @@
 		const extensionArr = link.split(".");
 		const extension = extensionArr[extensionArr.length - 1];
 
-		return `${name.substring(0, 10)}...${extension}`;
+		// console.log({ extension, extensionArr });
+
+		if (link.includes("sbz.com.zm")) return toTitleCase(name.replaceAll("-", " "));
+		else return `${name.substring(0, 10)}...${extension}`;
 	};
+
+	let menuOpen = $state<" sho" | " hid">(" hid");
+	let shortcutClass = $state<" sho" | " hid">(" hid");
 
 	const dldChat = () => {
 		const date = formatDbTime(genDbTimestamp());
@@ -417,10 +475,8 @@
 		const items: string[] = [];
 
 		tmpMsgs.forEach((m) => {
-			const linkArr = m.body.split("/");
-
 			items.push(
-				`${m.sender} @ ${formatDbTime(m.created_at)}: ${m.type === "text" ? m.body.replaceAll("||newline||", " ") : linkArr[linkArr.length - 1]}`,
+				`${toTitleCase(m.sender)} @ ${formatDbTime(m.created_at)}: ${m.type === "text" ? m.body.replaceAll("||newline||", " ") : `File => ${fileNamifier(m.body)}`}`,
 			);
 		});
 
@@ -482,7 +538,97 @@
 		window.open(pdfUrl, "pdfWindow", "width=600,height=800,menubar=yes,toolbar=yes");
 	};
 
-	let menuOpen = $state<" sho" | " hid">(" hid");
+	type Shortcut = "into-acc" | "into-trad" | "acc-ind" | "acc-corp" | "pmt" | "trad" | "cust";
+
+	const handleCustomUpload = async (files: FileList) => {
+		if (!files) {
+			return;
+		}
+
+		let links: string = "";
+
+		const form = new FormData();
+
+		links += `https://ljhfqraezkrlpnefgsst.supabase.co/storage/v1/object/public/tmp/${data.ticketId}/${files[0].name}`;
+		form.append("files", files[0]);
+
+		form.append("id", data.ticketId);
+
+		loading = true;
+		toast.info("Sending your file...");
+		try {
+			const req = await fetch("/api/admin/tickets/chat/file", {
+				method: "POST",
+				body: form,
+			});
+
+			const res: GenericResponse = await req.json();
+
+			if (res.success) {
+				await sendChat2(links, "pdf");
+			} else {
+				toast.error(res.message);
+			}
+
+			loading = false;
+		} catch (ex) {
+			toast.error(String(ex));
+			loading = false;
+		}
+	};
+
+	const shortcuts = async (cfg: Shortcut) => {
+		const links = {
+			"into-acc": {
+				text: "To open an account we need a few details and some kyc documentation. Please see the attached document for full details. Which type of account would you like to open?",
+				links: "https://www.sbz.com.zm/download/broking-crash-course-account-opening",
+			},
+			"into-trad": {
+				text: "To begin trading we would need you to send us an instruction to buy/sell form. Please see the document attached for more details.",
+				links: "https://www.sbz.com.zm/download/broking-crash-course-trading",
+			},
+			"acc-ind": {
+				text: "Please fill in the form attached to and create your brokerage account. You can either respond here or send it to kycprocessing@sbz.com.zm. Note that you are required to attach certified (stamped by the police, church, or comissioner of oaths) copies of both your ID (national ID, voters card, passport, or birth certificarte for minors, as well as a proof of address (tax certificate, utility bill, bank statement (last 3 months), or a tenancy agreement).",
+				links: "https://www.sbz.com.zm/download/retail-account-form",
+			},
+			"acc-corp": {
+				text: "Please fill in the form attached to and create your brokerage account. You can either respond here or send it to kycprocessing@sbz.com.zm. Note that you are required to attach certified kyc documents as well.",
+				links: "https://www.sbz.com.zm/download/corporate-account-form",
+			},
+			pmt: {
+				text: "Please see attached our payment details.",
+				links:
+					"https://www.sbz.com.zm/download/payment-details,,https://www.sbz.com.zm/download/payment-details-usd",
+			},
+			trad: {
+				text: "Please see attached the instruction to trade form.",
+				links: "https://www.sbz.com.zm/download/instruction-to-buy-sell-form",
+			},
+			cust: {
+				text: "",
+				links: "",
+			},
+		};
+
+		try {
+			if (cfg === "cust") {
+				const doc = document.getElementById("f-input-chat");
+
+				if (doc) {
+					doc?.click();
+				}
+			} else {
+				loading = true;
+				toast.info("Sending shortcut...");
+
+				await Promise.all([sendChat2(links[cfg].text, "text"), sendChat2(links[cfg].links, "pdf")]);
+				loading = false;
+			}
+		} catch (ex: any) {
+			toast.error(String(ex));
+			loading = false;
+		}
+	};
 
 	// will only listen for messages if not AI
 	onMount(() => {
@@ -708,6 +854,51 @@
 		</div>
 
 		{#if data.admin === data.ticket.assigned && !data.ticket.is_closed}
+			<div class={`extras${menuOpen}`}>
+				<Button variant="secondary" class="mb-3 rounded-full" onclick={dldChat}><Download /></Button
+				>
+				<Button
+					variant="secondary"
+					class="rounded-full"
+					onclick={() => (shortcutClass = shortcutClass === " hid" ? " sho" : " hid")}
+					><Paperclip /></Button
+				>
+			</div>
+
+			<div class={`shortcut${shortcutClass}`}>
+				<Button variant="secondary" class="mb-3 rounded-full" onclick={() => shortcuts("into-acc")}
+					>Intro - Acc.</Button
+				>
+				<Button variant="secondary" class="mb-3 rounded-full" onclick={() => shortcuts("into-trad")}
+					>Intro - Trading</Button
+				>
+				<Button variant="secondary" class="mb-3 rounded-full" onclick={() => shortcuts("acc-ind")}
+					>Acc Docs - Ind.</Button
+				>
+				<Button variant="secondary" class="mb-3 rounded-full" onclick={() => shortcuts("acc-corp")}
+					>Acc Docs - Corp.</Button
+				>
+				<Button variant="secondary" class="mb-3 rounded-full" onclick={() => shortcuts("pmt")}
+					>Payment Docs</Button
+				>
+				<Button variant="secondary" class="mb-3 rounded-full" onclick={() => shortcuts("trad")}
+					>Trading Docs</Button
+				>
+				<Button variant="secondary" class="rounded-full" onclick={() => shortcuts("cust")}
+					>Custom</Button
+				>
+				<input
+					id="f-input-chat"
+					type="file"
+					accept="application/pdf"
+					onchange={(e) => {
+						//@ts-ignore
+						handleCustomUpload(e.target.files);
+					}}
+					class="hidden"
+				/>
+			</div>
+
 			<div class="btm">
 				<Textarea
 					bind:value={textValue}
@@ -723,7 +914,20 @@
 						}
 					}}
 				/>
-				<Button><Download /></Button>
+				<Button
+					variant="ghost"
+					class="rounded-full"
+					onclick={() => {
+						shortcutClass = " hid";
+						menuOpen = menuOpen === " hid" ? " sho" : " hid";
+					}}
+				>
+					{#if menuOpen === " hid"}
+						<Menu />
+					{:else}
+						<X />
+					{/if}
+				</Button>
 				<Button class="rounded-full" disabled={textValue.length < 10 || loading} onclick={sendChat}>
 					{#if loading}
 						<Loader2Icon class="animate-spin" />
@@ -736,8 +940,8 @@
 			<div class={`extras${menuOpen}`}>
 				<Button variant="secondary" class="mb-3 rounded-full" onclick={dldChat}><Download /></Button
 				>
-				<Button variant="secondary" class="rounded-full"><Paperclip /></Button>
 			</div>
+
 			<div class="btm">
 				<Textarea
 					value="lorem"
@@ -747,7 +951,10 @@
 				<Button
 					variant="ghost"
 					class="rounded-full"
-					onclick={() => (menuOpen = menuOpen === " hid" ? " sho" : " hid")}
+					onclick={() => {
+						shortcutClass = " hid";
+						menuOpen = menuOpen === " hid" ? " sho" : " hid";
+					}}
 				>
 					{#if menuOpen === " hid"}
 						<Menu />
@@ -930,10 +1137,31 @@
 
 		.extras {
 			position: absolute;
-			z-index: 2;
+			z-index: 100;
 			background-color: var(--background);
 			bottom: 140px;
 			right: 55px;
+			display: flex;
+			flex-direction: column;
+			padding: 10px;
+			border-radius: var(--radius);
+			box-shadow: 0px 0px 3px var(--shadow);
+
+			&.hid {
+				display: none;
+			}
+
+			&.sho {
+				display: flex;
+			}
+		}
+
+		.shortcut {
+			position: absolute;
+			z-index: 2;
+			background-color: var(--background);
+			bottom: 140px;
+			right: 120px;
 			flex-direction: column;
 			padding: 10px;
 			border-radius: var(--radius);

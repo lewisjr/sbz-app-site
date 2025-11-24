@@ -49,8 +49,11 @@ export const PUT = async (event) => {
 	const { request } = event;
 
 	type ChatInsert = SBZdb["public"]["Tables"]["odyn-chats"]["Insert"];
-	const { obj, notifConfig }: { obj: ChatInsert; notifConfig?: NotifConfigObj } =
-		await request.json();
+	const {
+		obj,
+		notifConfig,
+		notify,
+	}: { obj: ChatInsert; notifConfig?: NotifConfigObj; notify?: boolean } = await request.json();
 
 	if (notifConfig) {
 		const [msgId, subject] = notifConfig.msgId.split(",,");
@@ -60,7 +63,7 @@ export const PUT = async (event) => {
 	}
 
 	try {
-		const req = await dbs.sbz.sendChat(obj, notifConfig);
+		const req = await dbs.sbz.sendChat(obj, notifConfig, notify);
 
 		return json(
 			{

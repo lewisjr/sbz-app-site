@@ -159,6 +159,7 @@ interface SBZutils {
 	reassignWebTicket: (obj: ReassignByEmailObj, aiMode?: boolean) => Promise<GenericResponse>;
 	appendClientEmailVars: (obj: AppendEmailVarsObj) => Promise<boolean>;
 	uploadKyc: (files: FileData[]) => Promise<void>;
+	uploadFiles: (files: File[], ticketId: string) => Promise<GenericResponse>;
 
 	isAdminCorrect: (username: string) => Promise<boolean>;
 	getAdmin: (username: string) => Promise<AdminRow[]>;
@@ -182,7 +183,11 @@ interface SBZutils {
 	unPauseOdyn: (username: string, sender: string) => Promise<GenericResponse>;
 
 	// chat stuff
-	sendChat: (obj: ChatInsert, notifCongif?: NotifConfigObj) => Promise<boolean>;
+	sendChat: (
+		obj: ChatInsert,
+		notifCongif?: NotifConfigObj,
+		skipNotif?: boolean,
+	) => Promise<boolean>;
 	/**AI only */
 	sendChats: (obj: ChatInsert[]) => Promise<boolean>;
 	/**Move chat from AI to human */
@@ -1082,6 +1087,72 @@ const sbz = (): SBZutils => {
 		}
 	};
 
+	const _uploadFiles = async (files: File[], ticketId: string): Promise<GenericResponse> => {
+		try {
+			const promises: Promise<
+				| {
+						data: {
+							id: string;
+							path: string;
+							fullPath: string;
+						};
+						error: null;
+				  }
+				| {
+						data: null;
+						error: StorageError;
+				  }
+			>[] = [];
+
+			files.forEach((f, i) => {
+				const _f = sbzdb.storage.from("tmp").upload(`${ticketId}/${f.name}`, f, {
+					// 1 year in seconds
+					cacheControl: "31536000",
+					upsert: true,
+					contentType: f.type,
+				});
+
+				promises.push(_f);
+			});
+
+			const res = await Promise.all(promises);
+
+			const anyFails = res.filter((item) => item.error);
+
+			if (anyFails.length) {
+				anyFails.forEach((f) => {
+					_log({
+						message: `${f.error?.message}`,
+						title: "Send File Error",
+					});
+				});
+
+				return {
+					message: "Failed to upload your file, please refresh and try again.",
+					success: false,
+				};
+			}
+
+			return {
+				message: "",
+				success: true,
+			};
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Send File Exception" });
+			return {
+				success: false,
+				message: "Server error, please wait 10 minutes and try again.",
+			};
+		}
+	};
+
 	const _isAdminCorrect = async (username: string): Promise<boolean> => {
 		try {
 			const { data, error } = await sbzdb
@@ -1120,6 +1191,8 @@ const sbz = (): SBZutils => {
 				.from("admins")
 				.select()
 				.filter("username", "eq", username);
+
+			console.log({ data, error });
 
 			if (error) {
 				_log({
@@ -1561,7 +1634,11 @@ const sbz = (): SBZutils => {
 	};
 
 	// * chat stuff
-	const _sendChat = async (obj: ChatInsert, notifCongif?: NotifConfigObj): Promise<boolean> => {
+	const _sendChat = async (
+		obj: ChatInsert,
+		notifCongif?: NotifConfigObj,
+		skipNotif?: boolean,
+	): Promise<boolean> => {
 		const oldBody = obj.body;
 		obj.body = tokenise.encode(oldBody);
 
@@ -1573,7 +1650,7 @@ const sbz = (): SBZutils => {
 				return false;
 			}
 
-			if (notifCongif) {
+			if (notifCongif && !skipNotif) {
 				await notif.email.sendNested(
 					{
 						subject: notifCongif.subject,
@@ -2158,6 +2235,7 @@ const sbz = (): SBZutils => {
 		unblockStaffMember: _unblockStaffMember,
 		pauseOdyn: _pauseOdyn,
 		unPauseOdyn: _unPauseOdyn,
+		uploadFiles: _uploadFiles,
 	};
 };
 
