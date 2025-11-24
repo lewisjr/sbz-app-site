@@ -21,7 +21,7 @@
 	import type { SupabaseClient, RealtimeChannel } from "@supabase/supabase-js";
 
 	//icons
-	import { Upload, Loader2Icon, FileSearch2 } from "@lucide/svelte";
+	import { Upload, Loader2Icon, FileSearch2, Download, Menu, X, Paperclip } from "@lucide/svelte";
 
 	interface Props {
 		data: {
@@ -405,6 +405,8 @@
 		return `${name.substring(0, 10)}...${extension}`;
 	};
 
+	let menuOpen = $state<" sho" | " hid">(" hid");
+
 	// will only listen for messages if not AI
 	onMount(() => {
 		(async () => {
@@ -644,6 +646,7 @@
 						}
 					}}
 				/>
+				<Button><Download /></Button>
 				<Button class="rounded-full" disabled={textValue.length < 10 || loading} onclick={sendChat}>
 					{#if loading}
 						<Loader2Icon class="animate-spin" />
@@ -653,12 +656,27 @@
 				</Button>
 			</div>
 		{:else}
+			<div class={`extras${menuOpen}`}>
+				<Button variant="secondary" class="mb-3 rounded-full"><Download /></Button>
+				<Button variant="secondary" class="rounded-full"><Paperclip /></Button>
+			</div>
 			<div class="btm">
 				<Textarea
 					value="lorem"
 					disabled
 					class="max-h-[4.5em] min-h-[1.5em] w-[80%] resize-none overflow-y-auto leading-[1.5em] text-transparent"
 				/>
+				<Button
+					variant="ghost"
+					class="rounded-full"
+					onclick={() => (menuOpen = menuOpen === " hid" ? " sho" : " hid")}
+				>
+					{#if menuOpen === " hid"}
+						<Menu />
+					{:else}
+						<X />
+					{/if}
+				</Button>
 				<Button class="rounded-full" disabled>
 					<Upload />
 				</Button>
@@ -830,6 +848,26 @@
 			justify-content: space-between;
 			padding: 10px;
 			box-shadow: 0px 0px 3px var(--shadow);
+		}
+
+		.extras {
+			position: absolute;
+			z-index: 2;
+			background-color: var(--background);
+			bottom: 140px;
+			right: 55px;
+			flex-direction: column;
+			padding: 10px;
+			border-radius: var(--radius);
+			box-shadow: 0px 0px 3px var(--shadow);
+
+			&.hid {
+				display: none;
+			}
+
+			&.sho {
+				display: flex;
+			}
 		}
 	}
 </style>
