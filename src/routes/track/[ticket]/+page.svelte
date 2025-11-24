@@ -16,7 +16,7 @@
 	import Textarea from "$lib/components/ui/textarea/textarea.svelte";
 
 	//icons
-	import { Frown, Upload, Loader2Icon, MessageCircle } from "@lucide/svelte";
+	import { Frown, Upload, Loader2Icon, MessageCircle, FileSearch2 } from "@lucide/svelte";
 
 	//types
 	import type { PageProps } from "./$types";
@@ -274,6 +274,15 @@
 
 			if (el) el.play();
 		}
+	};
+
+	const fileNamifier = (link: string): string => {
+		const nameArr = link.split("/");
+		const name = nameArr[nameArr.length - 1];
+		const extensionArr = link.split(".");
+		const extension = extensionArr[extensionArr.length - 1];
+
+		return `${name.substring(0, 10)}...${extension}`;
 	};
 
 	const sendChat = async () => {
@@ -615,22 +624,52 @@
 				{#each messages as msg}
 					{#if msg.sender === data.ticket.names}
 						<li class="self">
-							<p class="text">{msg.body}</p>
+							{#if msg.type === "pdf"}
+								<div class="files">
+									{#each msg.body.split(",,") as link}
+										<Button variant="link" class="mb-1" download href={link}
+											><FileSearch2 class="mr-2 h-4 w-4" />{fileNamifier(link)}</Button
+										>
+									{/each}
+								</div>
+							{:else}
+								<p class="text">
+									{#each msg.body.split("||") as txt}
+										{#if txt === "newline"}
+											<br /><br />
+										{:else}
+											<span>{txt}</span>
+										{/if}
+									{/each}
+								</p>
+							{/if}
+
 							<p class="note">{formatDbTime(msg.created_at)}</p>
 						</li>
 					{:else}
 						<li class="other">
 							<p class="note">{msg.sender === "odyn" ? "AI" : toTitleCase(msg.sender)}</p>
 
-							<p class="text">
-								{#each msg.body.split("||") as txt}
-									{#if txt === "newline"}
-										<br /><br />
-									{:else}
-										<span>{txt}</span>
-									{/if}
-								{/each}
-							</p>
+							{#if msg.type === "pdf"}
+								<div class="files">
+									{#each msg.body.split(",,") as link}
+										<Button variant="link" class="mb-1" download href={link}
+											><FileSearch2 class="mr-2 h-4 w-4" />{fileNamifier(link)}</Button
+										>
+									{/each}
+								</div>
+							{:else}
+								<p class="text">
+									{#each msg.body.split("||") as txt}
+										{#if txt === "newline"}
+											<br /><br />
+										{:else}
+											<span>{txt}</span>
+										{/if}
+									{/each}
+								</p>
+							{/if}
+
 							<p class="note">{formatDbTime(msg.created_at)}</p>
 						</li>
 					{/if}
