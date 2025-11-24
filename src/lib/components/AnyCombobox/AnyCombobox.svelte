@@ -108,6 +108,24 @@
 				<Command.Input placeholder={`Search ${dataTitle}...`} />
 				<Command.List>
 					<Command.Empty>No {dataTitle} found.</Command.Empty>
+					<!-- Ungrouped Options -->
+					{#if data.ungrouped.length}
+						<Command.Group value="data" heading="Other">
+							{#each data.ungrouped as row (row.value)}
+								<Command.Item
+									value={String(row.value)}
+									onSelect={() => {
+										value = row.value;
+										closeAndFocusTrigger();
+									}}
+								>
+									<CheckIcon class={cn(value !== row.value && "text-transparent")} />
+									{row.label}
+								</Command.Item>
+							{/each}
+						</Command.Group>
+					{/if}
+
 					{#if data.grouped.length}
 						{#each data.grouped as group}
 							<Command.Group value={group.title} heading={group.title}>
@@ -126,24 +144,6 @@
 							</Command.Group>
 							<Command.Separator />
 						{/each}
-					{/if}
-
-					<!-- Ungrouped Options -->
-					{#if data.ungrouped.length}
-						<Command.Group value="data" heading="Other">
-							{#each data.ungrouped as row (row.value)}
-								<Command.Item
-									value={String(row.value)}
-									onSelect={() => {
-										value = row.value;
-										closeAndFocusTrigger();
-									}}
-								>
-									<CheckIcon class={cn(value !== row.value && "text-transparent")} />
-									{row.label}
-								</Command.Item>
-							{/each}
-						</Command.Group>
 					{/if}
 				</Command.List>
 			</Command.Root>
