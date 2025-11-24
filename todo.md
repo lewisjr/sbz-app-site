@@ -34,7 +34,7 @@
 - [x] add chat open files in new window for admins
 - [x] add chat download files for clients
 - [x] add admin send files
-- [] add client send files
+- [x] add client send files
 
 ## ADD IP TRACKER
 

@@ -3,9 +3,10 @@
 	import { onMount, tick } from "svelte";
 	import { toast } from "svelte-sonner";
 	import { invalidateAll } from "$app/navigation";
-	import { formatDbTime } from "$lib/utils";
+	import { formatDbTime, genDbTimestamp } from "$lib/utils";
 	import { toTitleCase } from "@cerebrusinc/fstring";
 	import { createClient } from "@supabase/supabase-js";
+	import JsPDF from "jspdf";
 
 	//components - custom
 	import Head from "$lib/components/Head.svelte";
@@ -16,7 +17,17 @@
 	import Textarea from "$lib/components/ui/textarea/textarea.svelte";
 
 	//icons
-	import { Frown, Upload, Loader2Icon, MessageCircle, FileSearch2 } from "@lucide/svelte";
+	import {
+		Frown,
+		Upload,
+		Loader2Icon,
+		MessageCircle,
+		FileSearch2,
+		Download,
+		Paperclip,
+		Menu,
+		X,
+	} from "@lucide/svelte";
 
 	//types
 	import type { PageProps } from "./$types";
@@ -282,7 +293,10 @@
 		const extensionArr = link.split(".");
 		const extension = extensionArr[extensionArr.length - 1];
 
-		return `${name.substring(0, 10)}...${extension}`;
+		// console.log({ extension, extensionArr });
+
+		if (link.includes("sbz.com.zm")) return toTitleCase(name.replaceAll("-", " "));
+		else return `${name.substring(0, 10)}...${extension}`;
 	};
 
 	const sendChat = async () => {
@@ -497,6 +511,190 @@
 	let broadcastOnlineInterval = $state<ReturnType<typeof setInterval> | undefined>(undefined);
 	let checkForOnlineInterval = $state<ReturnType<typeof setInterval> | undefined>(undefined);
 
+	let menuOpen = $state<" sho" | " hid">(" hid");
+	let shortcutClass = $state<" sho" | " hid">(" hid");
+
+	const dldChat = () => {
+		const date = formatDbTime(genDbTimestamp());
+		const doc = new JsPDF();
+
+		const title = `Ticket #${data.ticketId}`;
+
+		const tmpMsgs: OdynChat[] = JSON.parse(JSON.stringify(messages));
+
+		const items: string[] = [];
+
+		tmpMsgs.forEach((m) => {
+			items.push(
+				`${toTitleCase(m.sender)} @ ${formatDbTime(m.created_at)}: ${m.type === "text" ? m.body.replaceAll("||newline||", " ") : `File => ${fileNamifier(m.body)}`}`,
+			);
+		});
+
+		// PAGE SETTINGS
+		const marginLeft = 15;
+		const marginRight = 195; // width ~210mm, so ~15 margin on each side
+		const lineHeight = 8;
+		const footerHeight = 15;
+		const pageHeight = doc.internal.pageSize.getHeight();
+
+		let y = 20; // start position
+
+		// ---- Title ----
+		doc.setFontSize(18);
+		doc.text(title, marginLeft, y);
+		y += 15;
+
+		doc.setFontSize(12);
+
+		function addFooter() {
+			const footerY = pageHeight - 10;
+			doc.setFontSize(10);
+			doc.text(
+				`Generated at ${date} by ${toTitleCase(data.ticket.names)} through Odyn Space (c).`,
+				marginLeft,
+				footerY,
+			);
+		}
+
+		function checkPageAdd(linesNeeded = 1) {
+			// If near bottom, add new page
+			if (y + linesNeeded * lineHeight + footerHeight >= pageHeight) {
+				addFooter(); // add footer before page break
+				doc.addPage();
+				y = 20; // reset cursor
+			}
+		}
+
+		// ---- Render list items with wrapping & pagination ----
+		items.forEach((item) => {
+			const wrappedLines = doc.splitTextToSize("• " + item, marginRight - marginLeft);
+
+			wrappedLines.forEach((line: any) => {
+				checkPageAdd(1); // ensure room for line
+				doc.text(line, marginLeft, y);
+				y += lineHeight;
+			});
+
+			y += 2; // spacing between items
+		});
+
+		// Add footer on final page
+		addFooter();
+
+		// ---- Output ----
+		const pdfBlob = doc.output("blob");
+		const pdfUrl = URL.createObjectURL(pdfBlob);
+
+		const a = document.createElement("a");
+		a.download = `${title} History.pdf`;
+		a.href = pdfUrl;
+		a.click();
+		a.remove();
+	};
+
+	const sendChat2 = async (body?: string, type?: "text" | "pdf", notify?: boolean) => {
+		loading = true;
+
+		const obj = {
+			body: body ? body : textValue.trim(),
+			sender: data.ticket.names,
+			ticket_no: data.ticketId,
+			type: type ? type : "text",
+		};
+
+		const notifConfig = {
+			email: data.ticket.uid ?? data.ticket.email,
+			msgId: data.ticket.email_vars ?? "",
+			subject: "",
+			name: data.ticket.names.split(" ")[0],
+		};
+
+		try {
+			const req = await fetch("/api/chat", {
+				method: "PUT",
+				body: JSON.stringify({
+					obj,
+					notifConfig: onlineStatus === "onl" ? undefined : notifConfig,
+					notify,
+				}),
+			});
+
+			const res: GenericResponse = await req.json();
+
+			loading = false;
+
+			if (!res.success) {
+				toast.error(res.message);
+				return;
+			}
+
+			textValue = "";
+		} catch (ex: any) {
+			loading = false;
+
+			const message =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex?.message || JSON.stringify(ex);
+
+			toast.error(message);
+			return;
+		}
+	};
+
+	const handleCustomUpload = async (files: FileList) => {
+		if (!files) {
+			return;
+		}
+
+		let links: string = "";
+
+		const form = new FormData();
+
+		links += `https://ljhfqraezkrlpnefgsst.supabase.co/storage/v1/object/public/tmp/${data.ticketId}/${files[0].name}`;
+		form.append("files", files[0]);
+
+		form.append("id", data.ticketId);
+
+		loading = true;
+		toast.info("Sending your file...");
+		try {
+			const req = await fetch("/api/chat/file", {
+				method: "POST",
+				body: form,
+			});
+
+			const res: GenericResponse = await req.json();
+
+			if (res.success) {
+				await sendChat2(links, "pdf", true);
+			} else {
+				toast.error(res.message);
+			}
+
+			loading = false;
+		} catch (ex) {
+			toast.error(String(ex));
+			console.log(ex);
+			loading = false;
+		}
+	};
+
+	const shortcut = async () => {
+		try {
+			const doc = document.getElementById("f-input-chat");
+
+			if (doc) {
+				doc?.click();
+			}
+		} catch (ex: any) {
+			toast.error(String(ex));
+			loading = false;
+		}
+	};
+
 	onMount(() => {
 		if (!data.error && !data.otp && !data.diffPlatform) {
 			listener = createClient<SBZdb>(data.dbUrl, data.dbAuth);
@@ -627,7 +825,7 @@
 							{#if msg.type === "pdf"}
 								<div class="files">
 									{#each msg.body.split(",,") as link}
-										<Button variant="link" class="mb-1" download href={link}
+										<Button variant="secondary" target="_blank" class="mb-1" download href={link}
 											><FileSearch2 class="mr-2 h-4 w-4" />{fileNamifier(link)}</Button
 										>
 									{/each}
@@ -653,7 +851,7 @@
 							{#if msg.type === "pdf"}
 								<div class="files">
 									{#each msg.body.split(",,") as link}
-										<Button variant="link" class="mb-1" download href={link}
+										<Button variant="secondary" target="_blank" class="mb-1" download href={link}
 											><FileSearch2 class="mr-2 h-4 w-4" />{fileNamifier(link)}</Button
 										>
 									{/each}
@@ -694,6 +892,36 @@
 		</div>
 
 		<div class="btm">
+			<div class={`extras${menuOpen}`}>
+				<Button variant="secondary" class="mb-3 rounded-full" onclick={dldChat}><Download /></Button
+				>
+				<Button
+					variant="secondary"
+					class="rounded-full"
+					onclick={() => (shortcutClass = shortcutClass === " hid" ? " sho" : " hid")}
+					><Paperclip /></Button
+				>
+			</div>
+
+			<div class={`shortcut${shortcutClass}`}>
+				<Button
+					disabled={data.ticket.is_closed ? true : loading}
+					variant="secondary"
+					class="rounded-full"
+					onclick={() => shortcut()}>Custom</Button
+				>
+				<input
+					id="f-input-chat"
+					type="file"
+					accept="application/pdf"
+					onchange={(e) => {
+						//@ts-ignore
+						handleCustomUpload(e.target.files);
+					}}
+					class="hidden"
+				/>
+			</div>
+
 			<Textarea
 				bind:value={textValue}
 				disabled={data.ticket.is_closed ? true : loading}
@@ -708,6 +936,22 @@
 					}
 				}}
 			/>
+
+			<Button
+				variant="ghost"
+				class="rounded-full"
+				onclick={() => {
+					shortcutClass = " hid";
+					menuOpen = menuOpen === " hid" ? " sho" : " hid";
+				}}
+			>
+				{#if menuOpen === " hid"}
+					<Menu />
+				{:else}
+					<X />
+				{/if}
+			</Button>
+
 			<Button
 				class="rounded-full"
 				disabled={data.ticket.is_closed ? true : textValue.length < 3 || loading}
@@ -892,6 +1136,47 @@
 			justify-content: space-between;
 			padding: 10px;
 			box-shadow: 0px 0px 3px var(--shadow);
+		}
+
+		.extras {
+			position: absolute;
+			z-index: 100;
+			background-color: var(--background);
+			bottom: 65px;
+			right: 55px;
+			display: flex;
+			flex-direction: column;
+			padding: 10px;
+			border-radius: var(--radius);
+			box-shadow: 0px 0px 3px var(--shadow);
+
+			&.hid {
+				display: none;
+			}
+
+			&.sho {
+				display: flex;
+			}
+		}
+
+		.shortcut {
+			position: absolute;
+			z-index: 2;
+			background-color: var(--background);
+			bottom: 65px;
+			right: 120px;
+			flex-direction: column;
+			padding: 10px;
+			border-radius: var(--radius);
+			box-shadow: 0px 0px 3px var(--shadow);
+
+			&.hid {
+				display: none;
+			}
+
+			&.sho {
+				display: flex;
+			}
 		}
 	}
 </style>

@@ -565,7 +565,7 @@
 			const res: GenericResponse = await req.json();
 
 			if (res.success) {
-				await sendChat2(links, "pdf");
+				await sendChat2(links, "pdf", true);
 			} else {
 				toast.error(res.message);
 			}
@@ -866,26 +866,47 @@
 			</div>
 
 			<div class={`shortcut${shortcutClass}`}>
-				<Button variant="secondary" class="mb-3 rounded-full" onclick={() => shortcuts("into-acc")}
-					>Intro - Acc.</Button
+				<Button
+					disabled={data.ticket.is_closed || loading}
+					variant="secondary"
+					class="mb-3 rounded-full"
+					onclick={() => shortcuts("into-acc")}>Intro - Acc.</Button
 				>
-				<Button variant="secondary" class="mb-3 rounded-full" onclick={() => shortcuts("into-trad")}
-					>Intro - Trading</Button
+				<Button
+					disabled={data.ticket.is_closed || loading}
+					variant="secondary"
+					class="mb-3 rounded-full"
+					onclick={() => shortcuts("into-trad")}>Intro - Trading</Button
 				>
-				<Button variant="secondary" class="mb-3 rounded-full" onclick={() => shortcuts("acc-ind")}
-					>Acc Docs - Ind.</Button
+				<Button
+					disabled={data.ticket.is_closed || loading}
+					variant="secondary"
+					class="mb-3 rounded-full"
+					onclick={() => shortcuts("acc-ind")}>Acc Docs - Ind.</Button
 				>
-				<Button variant="secondary" class="mb-3 rounded-full" onclick={() => shortcuts("acc-corp")}
-					>Acc Docs - Corp.</Button
+				<Button
+					disabled={data.ticket.is_closed || loading}
+					variant="secondary"
+					class="mb-3 rounded-full"
+					onclick={() => shortcuts("acc-corp")}>Acc Docs - Corp.</Button
 				>
-				<Button variant="secondary" class="mb-3 rounded-full" onclick={() => shortcuts("pmt")}
-					>Payment Docs</Button
+				<Button
+					disabled={data.ticket.is_closed || loading}
+					variant="secondary"
+					class="mb-3 rounded-full"
+					onclick={() => shortcuts("pmt")}>Payment Docs</Button
 				>
-				<Button variant="secondary" class="mb-3 rounded-full" onclick={() => shortcuts("trad")}
-					>Trading Docs</Button
+				<Button
+					disabled={data.ticket.is_closed || loading}
+					variant="secondary"
+					class="mb-3 rounded-full"
+					onclick={() => shortcuts("trad")}>Trading Docs</Button
 				>
-				<Button variant="secondary" class="rounded-full" onclick={() => shortcuts("cust")}
-					>Custom</Button
+				<Button
+					disabled={data.ticket.is_closed || loading}
+					variant="secondary"
+					class="rounded-full"
+					onclick={() => shortcuts("cust")}>Custom</Button
 				>
 				<input
 					id="f-input-chat"
