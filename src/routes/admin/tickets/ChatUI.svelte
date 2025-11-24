@@ -2,9 +2,10 @@
 	//function
 	import { toast } from "svelte-sonner";
 	import { toTitleCase } from "@cerebrusinc/fstring";
-	import { formatDbTime, genId } from "$lib/utils";
+	import { formatDbTime, genDbTimestamp, genId } from "$lib/utils";
 	import { onMount, tick } from "svelte";
 	import { createClient } from "@supabase/supabase-js";
+	import JsPDF from "jspdf";
 
 	//components - shadcn
 	import Button from "$lib/components/ui/button/button.svelte";
@@ -405,6 +406,82 @@
 		return `${name.substring(0, 10)}...${extension}`;
 	};
 
+	const dldChat = () => {
+		const date = formatDbTime(genDbTimestamp());
+		const doc = new JsPDF();
+
+		const title = `Ticket #${data.ticketId}`;
+
+		const tmpMsgs: OdynChat[] = JSON.parse(JSON.stringify(messages));
+
+		const items: string[] = [];
+
+		tmpMsgs.forEach((m) => {
+			const linkArr = m.body.split("/");
+
+			items.push(
+				`${m.sender} @ ${formatDbTime(m.created_at)}: ${m.type === "text" ? m.body.replaceAll("||newline||", " ") : linkArr[linkArr.length - 1]}`,
+			);
+		});
+
+		// PAGE SETTINGS
+		const marginLeft = 15;
+		const marginRight = 195; // width ~210mm, so ~15 margin on each side
+		const lineHeight = 8;
+		const footerHeight = 15;
+		const pageHeight = doc.internal.pageSize.getHeight();
+
+		let y = 20; // start position
+
+		// ---- Title ----
+		doc.setFontSize(18);
+		doc.text(title, marginLeft, y);
+		y += 15;
+
+		doc.setFontSize(12);
+
+		function addFooter() {
+			const footerY = pageHeight - 10;
+			doc.setFontSize(10);
+			doc.text(
+				`Generated at ${date} by ${toTitleCase(data.admin)} through the Odyn Portal.`,
+				marginLeft,
+				footerY,
+			);
+		}
+
+		function checkPageAdd(linesNeeded = 1) {
+			// If near bottom, add new page
+			if (y + linesNeeded * lineHeight + footerHeight >= pageHeight) {
+				addFooter(); // add footer before page break
+				doc.addPage();
+				y = 20; // reset cursor
+			}
+		}
+
+		// ---- Render list items with wrapping & pagination ----
+		items.forEach((item) => {
+			const wrappedLines = doc.splitTextToSize("• " + item, marginRight - marginLeft);
+
+			wrappedLines.forEach((line: any) => {
+				checkPageAdd(1); // ensure room for line
+				doc.text(line, marginLeft, y);
+				y += lineHeight;
+			});
+
+			y += 2; // spacing between items
+		});
+
+		// Add footer on final page
+		addFooter();
+
+		// ---- Output ----
+		const pdfBlob = doc.output("blob");
+		const pdfUrl = URL.createObjectURL(pdfBlob);
+
+		window.open(pdfUrl, "pdfWindow", "width=600,height=800,menubar=yes,toolbar=yes");
+	};
+
 	let menuOpen = $state<" sho" | " hid">(" hid");
 
 	// will only listen for messages if not AI
@@ -657,7 +734,8 @@
 			</div>
 		{:else}
 			<div class={`extras${menuOpen}`}>
-				<Button variant="secondary" class="mb-3 rounded-full"><Download /></Button>
+				<Button variant="secondary" class="mb-3 rounded-full" onclick={dldChat}><Download /></Button
+				>
 				<Button variant="secondary" class="rounded-full"><Paperclip /></Button>
 			</div>
 			<div class="btm">
