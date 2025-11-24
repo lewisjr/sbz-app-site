@@ -29,8 +29,12 @@
 - [] add table with balances for easier viewing
 - [x] add matched and on screen to portfolio
 - [] fix "chat notification plays when you send your own message"
-- [] add permissions
+- [x] add permissions
 - [] add admin block/unblock
+- [x] add chat open files in new window for admins
+- [] add chat download files for clients
+- [] add admin send files
+- [] add client send files
 
 ## ADD IP TRACKER
 

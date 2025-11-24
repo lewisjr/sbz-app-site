@@ -21,7 +21,7 @@
 	import type { SupabaseClient, RealtimeChannel } from "@supabase/supabase-js";
 
 	//icons
-	import { Upload, Loader2Icon } from "@lucide/svelte";
+	import { Upload, Loader2Icon, FileSearch2 } from "@lucide/svelte";
 
 	interface Props {
 		data: {
@@ -57,7 +57,8 @@
 				sender: data.ticket.names,
 				ticket_no: data.ticketId,
 				type: "text",
-			} /*
+			},
+			/*
 			{
 				body: data.ticket.query + " " + genId(),
 				created_at: data.ticket.created_at,
@@ -129,7 +130,8 @@
 				sender: data.ticket.names,
 				ticket_no: data.ticketId,
 				type: "text",
-			},*/,
+			},
+			*/
 			...msgs,
 		];
 	};
@@ -325,7 +327,8 @@
 			const d2 = Date.now();
 			const diff = d2 - onlineTime;
 
-			console.log({ d2, diff, onlineTime });
+			//!
+			// console.log({ d2, diff, onlineTime });
 
 			if (diff > 58000) {
 				onlineStatus = "ofl";
@@ -387,6 +390,19 @@
 			toast.error(message);
 			return;
 		}
+	};
+
+	const openFile = (link: string) => {
+		window.open(link, "pdfWindow", "width=600,height=800,menubar=no,toolbar=no,location=no");
+	};
+
+	const fileNamifier = (link: string): string => {
+		const nameArr = link.split("/");
+		const name = nameArr[nameArr.length - 1];
+		const extensionArr = link.split(".");
+		const extension = extensionArr[extensionArr.length - 1];
+
+		return `${name.substring(0, 10)}...${extension}`;
 	};
 
 	// will only listen for messages if not AI
@@ -541,21 +557,49 @@
 				{#each messages as msg}
 					{#if msg.sender === data.ticket.names}
 						<li class="other">
-							<p class="text">{msg.body}</p>
+							{#if msg.type === "pdf"}
+								<div class="files">
+									{#each msg.body.split(",,") as link}
+										<Button variant="outline" class="mb-1" onclick={() => openFile(link)}
+											><FileSearch2 class="mr-2 h-4 w-4" />{fileNamifier(link)}</Button
+										>
+									{/each}
+								</div>
+							{:else}
+								<p class="text">
+									{#each msg.body.split("||") as txt}
+										{#if txt === "newline"}
+											<br /><br />
+										{:else}
+											<span>{txt}</span>
+										{/if}
+									{/each}
+								</p>
+							{/if}
 							<p class="note">{formatDbTime(msg.created_at)}</p>
 						</li>
 					{:else}
 						<li class="self">
 							<p class="note">{toTitleCase(msg.sender)}</p>
-							<p class="text">
-								{#each msg.body.split("||") as txt}
-									{#if txt === "newline"}
-										<br /><br />
-									{:else}
-										<span>{txt}</span>
-									{/if}
-								{/each}
-							</p>
+							{#if msg.type === "pdf"}
+								<div class="files">
+									{#each msg.body.split(",,") as link}
+										<Button variant="outline" class="mb-1" onclick={() => openFile(link)}
+											><FileSearch2 class="mr-2 h-4 w-4" />{fileNamifier(link)}</Button
+										>
+									{/each}
+								</div>
+							{:else}
+								<p class="text">
+									{#each msg.body.split("||") as txt}
+										{#if txt === "newline"}
+											<br /><br />
+										{:else}
+											<span>{txt}</span>
+										{/if}
+									{/each}
+								</p>
+							{/if}
 							<p class="note">{formatDbTime(msg.created_at)}</p>
 						</li>
 					{/if}
@@ -666,6 +710,11 @@
 			overflow-y: auto; // so chat can scroll
 			display: flex;
 			flex-direction: column;
+
+			.files {
+				display: flex;
+				flex-direction: column;
+			}
 
 			ul {
 				padding: 10px;
