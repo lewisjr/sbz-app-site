@@ -480,3 +480,8 @@ export const fileNamifier = (link: string): string => {
 	if (link.includes("sbz.com.zm")) return toTitleCase(name.replaceAll("-", " "));
 	else return `${name.substring(0, 10)}...${extension}`;
 };
+
+/**For custom file uploads */
+export const sanitizeFname = (n: string): string => {
+	return n.replaceAll("[", "").replaceAll("]", "");
+};

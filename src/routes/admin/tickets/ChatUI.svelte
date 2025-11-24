@@ -2,7 +2,7 @@
 	//function
 	import { toast } from "svelte-sonner";
 	import { toTitleCase } from "@cerebrusinc/fstring";
-	import { formatDbTime, genDbTimestamp, genId, fileNamifier } from "$lib/utils";
+	import { formatDbTime, genDbTimestamp, genId, fileNamifier, sanitizeFname } from "$lib/utils";
 	import { onMount, tick } from "svelte";
 	import { createClient } from "@supabase/supabase-js";
 	import JsPDF from "jspdf";
@@ -537,7 +537,7 @@
 
 		const form = new FormData();
 
-		links += `https://ljhfqraezkrlpnefgsst.supabase.co/storage/v1/object/public/tmp/${data.ticketId}/${files[0].name}`;
+		links += `https://ljhfqraezkrlpnefgsst.supabase.co/storage/v1/object/public/tmp/${data.ticketId}/${sanitizeFname(files[0].name)}`;
 		form.append("files", files[0]);
 
 		form.append("id", data.ticketId);

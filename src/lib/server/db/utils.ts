@@ -1,6 +1,14 @@
 import notif from "../email";
 import { nfdb, sbzdb } from "./db";
-import { genDbTimestamp, genId, genDate, getOldDate, prettyDate, fileNamifier } from "$lib/utils";
+import {
+	genDbTimestamp,
+	genId,
+	genDate,
+	getOldDate,
+	prettyDate,
+	fileNamifier,
+	sanitizeFname,
+} from "$lib/utils";
 import { toTitleCase } from "@cerebrusinc/fstring";
 import manifest from "../../../../package.json";
 
@@ -1105,7 +1113,7 @@ const sbz = (): SBZutils => {
 			>[] = [];
 
 			files.forEach((f, i) => {
-				const _f = sbzdb.storage.from("tmp").upload(`${ticketId}/${f.name}`, f, {
+				const _f = sbzdb.storage.from("tmp").upload(`${ticketId}/${sanitizeFname(f.name)}`, f, {
 					// 1 year in seconds
 					cacheControl: "31536000",
 					upsert: true,
