@@ -62,6 +62,7 @@ export const POST = async (event) => {
 		case "close":
 			const _obj: CloseTicketObj = obj;
 
+			/*
 			if (!sender.permissions.split(",,").includes("close-ticket") || sender.username !== admin)
 				return json(
 					{
@@ -70,6 +71,7 @@ export const POST = async (event) => {
 					},
 					{ status: 400 },
 				);
+			*/
 
 			const closeReq = await dbs.sbz.closeTicket({
 				admin: sender.username,
