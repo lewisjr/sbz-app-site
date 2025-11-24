@@ -3,7 +3,7 @@
 	import { onMount, tick } from "svelte";
 	import { toast } from "svelte-sonner";
 	import { invalidateAll } from "$app/navigation";
-	import { formatDbTime, genDbTimestamp } from "$lib/utils";
+	import { formatDbTime, genDbTimestamp, fileNamifier } from "$lib/utils";
 	import { toTitleCase } from "@cerebrusinc/fstring";
 	import { createClient } from "@supabase/supabase-js";
 	import JsPDF from "jspdf";
@@ -285,18 +285,6 @@
 
 			if (el) el.play();
 		}
-	};
-
-	const fileNamifier = (link: string): string => {
-		const nameArr = link.split("/");
-		const name = nameArr[nameArr.length - 1];
-		const extensionArr = link.split(".");
-		const extension = extensionArr[extensionArr.length - 1];
-
-		// console.log({ extension, extensionArr });
-
-		if (link.includes("sbz.com.zm")) return toTitleCase(name.replaceAll("-", " "));
-		else return `${name.substring(0, 10)}...${extension}`;
 	};
 
 	const sendChat = async () => {

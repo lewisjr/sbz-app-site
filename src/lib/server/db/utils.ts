@@ -1,6 +1,6 @@
 import notif from "../email";
 import { nfdb, sbzdb } from "./db";
-import { genDbTimestamp, genId, genDate, getOldDate, prettyDate } from "$lib/utils";
+import { genDbTimestamp, genId, genDate, getOldDate, prettyDate, fileNamifier } from "$lib/utils";
 import { toTitleCase } from "@cerebrusinc/fstring";
 import manifest from "../../../../package.json";
 
@@ -1651,11 +1651,25 @@ const sbz = (): SBZutils => {
 			}
 
 			if (notifCongif && !skipNotif) {
+				const arr = oldBody.split(",,");
+				const names: string[] = [];
+
+				if (arr.length) {
+					arr.forEach((l) => {
+						names.push(fileNamifier(l));
+					});
+				}
+
+				const msg =
+					obj.type && obj.type === "pdf"
+						? `Hi ${notifCongif.name}<br /><br /><b>${toTitleCase(obj.sender.split(" ")[0])}</b> has just responded to your message with a file(s):<br /><i>${names.join(", ")}</i>`
+						: `Hi ${notifCongif.name}<br /><br /><b>${toTitleCase(obj.sender.split(" ")[0])}</b> has just responded to your message with:<br /><i>${oldBody}</i>`;
+
 				await notif.email.sendNested(
 					{
 						subject: notifCongif.subject,
 						title: "New Response!",
-						body: `Hi ${notifCongif.name}<br /><br /><b>${toTitleCase(obj.sender.split(" ")[0])}</b> has just responded to your message with:<br /><i>${oldBody}</i>`,
+						body: msg,
 						extra: `Click the button above to respond!`,
 						link: `https://app.sbz.com.zm/track/${obj.ticket_no}`,
 						linkText: "Open Chat",

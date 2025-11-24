@@ -2,7 +2,7 @@
 	//function
 	import { toast } from "svelte-sonner";
 	import { toTitleCase } from "@cerebrusinc/fstring";
-	import { formatDbTime, genDbTimestamp, genId } from "$lib/utils";
+	import { formatDbTime, genDbTimestamp, genId, fileNamifier } from "$lib/utils";
 	import { onMount, tick } from "svelte";
 	import { createClient } from "@supabase/supabase-js";
 	import JsPDF from "jspdf";
@@ -447,18 +447,6 @@
 
 	const openFile = (link: string) => {
 		window.open(link, "pdfWindow", "width=600,height=800,menubar=no,toolbar=no,location=no");
-	};
-
-	const fileNamifier = (link: string): string => {
-		const nameArr = link.split("/");
-		const name = nameArr[nameArr.length - 1];
-		const extensionArr = link.split(".");
-		const extension = extensionArr[extensionArr.length - 1];
-
-		// console.log({ extension, extensionArr });
-
-		if (link.includes("sbz.com.zm")) return toTitleCase(name.replaceAll("-", " "));
-		else return `${name.substring(0, 10)}...${extension}`;
 	};
 
 	let menuOpen = $state<" sho" | " hid">(" hid");
