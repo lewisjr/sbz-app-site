@@ -40,7 +40,7 @@
 - [] notification for responding or not (e.g who sent the last message)
 - [] fix closing issue
 - [] Queries only filtering
-- [] keep focus always on the input bar
+- [x] keep focus always on the input bar
 - [] move three dots to beginning of table
 - [] picture not showing up
 - [] add luse ids

@@ -640,6 +640,24 @@
 					)
 					.subscribe();
 
+				const input = document.getElementById("text-input") as HTMLElement;
+
+				const observer = new IntersectionObserver(
+					(entries) => {
+						for (const entry of entries) {
+							if (entry.isIntersecting) {
+								input.focus(); // autofocus when visible
+								observer.disconnect(); // remove if you want it to run only once
+							}
+						}
+					},
+					{
+						threshold: 0.5, // how visible it must be (50%)
+					},
+				);
+
+				observer.observe(input);
+
 				typingEvent = listener
 					.channel(`ticket-${data.ticketId}`)
 					.on("broadcast", { event: "typing" }, typingEventHandler)
@@ -911,6 +929,7 @@
 			<div class="btm">
 				<Textarea
 					bind:value={textValue}
+					id="text-input"
 					disabled={loading}
 					class="max-h-[4.5em] min-h-[1.5em] w-[80%] resize-none overflow-y-auto leading-[1.5em]"
 					maxlength={200}
