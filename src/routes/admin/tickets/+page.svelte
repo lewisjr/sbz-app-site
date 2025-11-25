@@ -592,10 +592,12 @@
 
 	const updateTicket = async (ticket: TicketRowLean) => {
 		const temp: TicketRowLean[] = JSON.parse(JSON.stringify(ticketData));
+		temp.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
 		const index = temp.findIndex((item) => (item.id = ticket.id));
 
 		// console.log({ index, ticket, temp_index: temp[index] });
+		await tick();
 
 		temp[index] = ticket;
 
