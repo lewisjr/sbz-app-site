@@ -74,9 +74,13 @@
 
 			<Sheet.Footer>
 				<div class="flex flex-row justify-end">
+					<!--
 					<Sheet.Close class="mr-4"
-						><Button variant="outline">Close<X class="ml-1 h-4 w-4" /></Button></Sheet.Close
-					>
+						><Button variant="outline">
+							Close<X class="ml-1 h-4 w-4" />
+						</Button>
+					</Sheet.Close>
+					-->
 					{@render actionButton?.()}
 				</div>
 			</Sheet.Footer>
@@ -98,9 +102,13 @@
 
 			<Sheet.Footer>
 				<div class="flex flex-row justify-end">
+					<!--
 					<Sheet.Close class="mr-4"
-						><Button variant="outline">Close<X class="ml-1 h-4 w-4" /></Button></Sheet.Close
-					>
+						><Button variant="outline">
+							Close<X class="ml-1 h-4 w-4" />
+						</Button>
+					</Sheet.Close>
+					-->
 					{@render actionButton?.()}
 				</div>
 			</Sheet.Footer>
@@ -122,9 +130,13 @@
 
 			<Sheet.Footer>
 				<div class="flex flex-row justify-end">
+					<!--
 					<Sheet.Close class="mr-4"
-						><Button variant="outline">Close<X class="ml-1 h-4 w-4" /></Button></Sheet.Close
-					>
+						><Button variant="outline">
+							Close<X class="ml-1 h-4 w-4" />
+						</Button>
+					</Sheet.Close>
+					-->
 					{@render actionButton?.()}
 				</div>
 			</Sheet.Footer>

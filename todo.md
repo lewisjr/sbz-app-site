@@ -35,6 +35,16 @@
 - [x] add chat download files for clients
 - [x] add admin send files
 - [x] add client send files
+- [x] remove close button in admin sheet
+- [] notification for responding or not
+- [] fix closing issue
+- [] Queries only filtering
+- [] picture not showing up
+- [] add luse ids
+- [] reopen chat
+- [] add automated instruction sending chat
+- [] add automated receipt feature
+- [] add subject to head
 
 ## ADD IP TRACKER
 

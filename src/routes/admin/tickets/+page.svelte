@@ -35,7 +35,14 @@
 	import Label from "$lib/components/ui/label/label.svelte";
 
 	//icons
-	import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, Upload } from "@lucide/svelte";
+	import {
+		Search,
+		SlidersHorizontal,
+		ChevronLeft,
+		ChevronRight,
+		Upload,
+		CircleCheckBig,
+	} from "@lucide/svelte";
 
 	//types
 	import type { PageProps } from "./$types";
@@ -1269,7 +1276,15 @@
 		{#snippet actionButton()}
 			{#if sheetConfig === "reassign"}
 				<Button disabled={!udp1.length || udf1.length < 10 || loading} onclick={reassignTicket}
-					>Submit<Upload class="ml-2 h-4 w-4" /></Button
+					>Submit<CircleCheckBig class="ml-2 h-4 w-4" /></Button
+				>
+			{/if}
+
+			{#if sheetConfig === "close"}
+				<Button
+					variant="destructive"
+					disabled={loading || activeRow.is_closed}
+					onclick={closeTicket}>Close Ticket<Upload class="ml-2 h-4 w-4" /></Button
 				>
 			{/if}
 
