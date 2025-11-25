@@ -1276,15 +1276,16 @@
 		{#snippet actionButton()}
 			{#if sheetConfig === "reassign"}
 				<Button disabled={!udp1.length || udf1.length < 10 || loading} onclick={reassignTicket}
-					>Submit<CircleCheckBig class="ml-2 h-4 w-4" /></Button
+					>Submit<Upload class="ml-2 h-4 w-4" /></Button
 				>
 			{/if}
 
-			{#if sheetConfig === "close"}
+			{#if sheetConfig === "chat"}
 				<Button
 					variant="destructive"
 					disabled={loading || activeRow.is_closed}
-					onclick={closeTicket}>Close Ticket<Upload class="ml-2 h-4 w-4" /></Button
+					onclick={() => openSheet("close", activeRow)}
+					>Close Ticket<CircleCheckBig class="ml-2 h-4 w-4" /></Button
 				>
 			{/if}
 

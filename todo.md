@@ -36,15 +36,18 @@
 - [x] add admin send files
 - [x] add client send files
 - [x] remove close button in admin sheet
-- [] notification for responding or not
+- [x] add close ticket button in admin sheet
+- [] notification for responding or not (e.g who sent the last message)
 - [] fix closing issue
 - [] Queries only filtering
+- [] keep focus always on the input bar
+- [] move three dots to beginning of table
 - [] picture not showing up
 - [] add luse ids
 - [] reopen chat
 - [] add automated instruction sending chat
 - [] add automated receipt feature
-- [] add subject to head
+- [] add subject to head of chat UI
 
 ## ADD IP TRACKER
 
