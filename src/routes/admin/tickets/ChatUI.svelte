@@ -10,6 +10,7 @@
 	//components - shadcn
 	import Button from "$lib/components/ui/button/button.svelte";
 	import Textarea from "$lib/components/ui/textarea/textarea.svelte";
+	import * as HoverCard from "$lib/components/ui/hover-card/index.js";
 
 	//types
 	import type {
@@ -22,7 +23,16 @@
 	import type { SupabaseClient, RealtimeChannel } from "@supabase/supabase-js";
 
 	//icons
-	import { Upload, Loader2Icon, FileSearch2, Download, Menu, X, Paperclip } from "@lucide/svelte";
+	import {
+		Upload,
+		Loader2Icon,
+		FileSearch2,
+		Download,
+		Menu,
+		X,
+		Paperclip,
+		MoveRight,
+	} from "@lucide/svelte";
 
 	interface Props {
 		data: {
@@ -706,7 +716,24 @@
 {#if initialising}
 	<div class="chat-div">
 		<div class="tp">
-			<p class="font-bold">Ticket #{data.ticketId}</p>
+			<p>
+				<span class="font-bold">Ticket #{data.ticketId}</span>
+				<br />
+				<HoverCard.Root>
+					<HoverCard.Trigger class="cursor-default">
+						<span class="flex flex-row items-center text-[11px] italic"
+							><MoveRight class="mr-2 h-4 w-4" />{data.ticket.email_vars
+								? data.ticket.email_vars.split(",,")[1].substring(0, 35) + "..."
+								: "Undefined"}</span
+						>
+					</HoverCard.Trigger>
+					<HoverCard.Content class="w-80">
+						<p class="text-center">
+							{data.ticket.email_vars ? data.ticket.email_vars.split(",,")[1] : "Undefined"}
+						</p>
+					</HoverCard.Content>
+				</HoverCard.Root>
+			</p>
 
 			<table>
 				<thead>
@@ -766,7 +793,24 @@
 {:else}
 	<div class="chat-div">
 		<div class="tp">
-			<p class="font-bold">Ticket #{data.ticketId}</p>
+			<p>
+				<span class="font-bold">Ticket #{data.ticketId}</span>
+				<br />
+				<HoverCard.Root>
+					<HoverCard.Trigger class="cursor-default">
+						<span class="flex flex-row items-center text-[11px] italic"
+							><MoveRight class="mr-2 h-4 w-4" />{data.ticket.email_vars
+								? data.ticket.email_vars.split(",,")[1].substring(0, 35) + "..."
+								: "Undefined"}</span
+						>
+					</HoverCard.Trigger>
+					<HoverCard.Content class="w-80">
+						<p class="text-center">
+							{data.ticket.email_vars ? data.ticket.email_vars.split(",,")[1] : "Undefined"}
+						</p>
+					</HoverCard.Content>
+				</HoverCard.Root>
+			</p>
 
 			<table>
 				<thead>
