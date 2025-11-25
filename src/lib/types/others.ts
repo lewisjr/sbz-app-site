@@ -71,6 +71,7 @@ export interface TicketRowLean {
 	assignee_email_vars: string | null;
 	uid: string | null;
 	close_reason: string | null;
+	read_status: SBZdb["public"]["Enums"]["read_status"];
 }
 
 export interface CloseTicketReturnObj {

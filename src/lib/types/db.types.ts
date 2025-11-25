@@ -375,6 +375,7 @@ export type Database = {
 					platform: string;
 					query: string;
 					query_type: string;
+					read_status: Database["public"]["Enums"]["read_status"];
 					referral_source: string;
 					uid: string;
 				};
@@ -398,6 +399,7 @@ export type Database = {
 					platform: string;
 					query: string;
 					query_type: string;
+					read_status?: Database["public"]["Enums"]["read_status"];
 					referral_source: string;
 					uid: string;
 				};
@@ -421,6 +423,7 @@ export type Database = {
 					platform?: string;
 					query?: string;
 					query_type?: string;
+					read_status?: Database["public"]["Enums"]["read_status"];
 					referral_source?: string;
 					uid?: string;
 				};
@@ -526,6 +529,7 @@ export type Database = {
 		Enums: {
 			"account-type": "LI" | "LC" | "FI" | "FC";
 			message_type: "text" | "pdf" | "command" | "img";
+			read_status: "unread" | "read";
 		};
 		CompositeTypes: {
 			[_ in never]: never;
@@ -656,6 +660,7 @@ export const Constants = {
 		Enums: {
 			"account-type": ["LI", "LC", "FI", "FC"],
 			message_type: ["text", "pdf", "command", "img"],
+			read_status: ["unread", "read"],
 		},
 	},
 } as const;

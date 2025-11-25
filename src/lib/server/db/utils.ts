@@ -906,7 +906,7 @@ const sbz = (): SBZutils => {
 			const { data, error } = await sbzdb
 				.from("odyn-tickets")
 				.select(
-					"assigned,close_date,created_at,email,id,id_num,is_closed,luse_id,names,phone,platform,query,query_type,referral_source,closed_by,email_vars,uid,assignee_email_vars,close_reason",
+					"assigned,close_date,created_at,email,id,id_num,is_closed,luse_id,names,phone,platform,query,query_type,referral_source,closed_by,email_vars,uid,assignee_email_vars,close_reason,read_status",
 				)
 				.order("created_at", { ascending: false });
 
@@ -930,7 +930,7 @@ const sbz = (): SBZutils => {
 	};
 
 	const _getOneTicket = async (ticketId: string): Promise<TicketRowLean> => {
-		const emptyObj = {
+		const emptyObj: TicketRowLean = {
 			assigned: "",
 			close_date: "",
 			closed_by: "",
@@ -950,13 +950,14 @@ const sbz = (): SBZutils => {
 			referral_source: "",
 			uid: "",
 			close_reason: "",
+			read_status: "unread",
 		};
 
 		try {
 			const { data, error } = await sbzdb
 				.from("odyn-tickets")
 				.select(
-					"assigned,close_date,created_at,email,id,id_num,is_closed,luse_id,names,phone,platform,query,query_type,referral_source,closed_by,email_vars,uid,assignee_email_vars,close_reason",
+					"assigned,close_date,created_at,email,id,id_num,is_closed,luse_id,names,phone,platform,query,query_type,referral_source,closed_by,email_vars,uid,assignee_email_vars,close_reason,read_status",
 				)
 				.filter("id", "eq", ticketId);
 
@@ -1650,11 +1651,19 @@ const sbz = (): SBZutils => {
 		const oldBody = obj.body;
 		obj.body = tokenise.encode(oldBody);
 
-		try {
-			const { error } = await sbzdb.from("odyn-chats").insert(obj);
+		const isFirstLower = (str: string) => /^[a-z]/.test(str);
 
-			if (error) {
-				_log({ message: error.message, title: "Send Chat Error" });
+		try {
+			const chat = sbzdb.from("odyn-chats").insert(obj);
+			const ticket = sbzdb
+				.from("odyn-tickets")
+				.update({ read_status: isFirstLower(obj.sender) ? "read" : "unread" })
+				.filter("id", "eq", obj.ticket_no);
+
+			const [chats, _] = await Promise.all([chat, ticket]);
+
+			if (chats.error) {
+				_log({ message: chats.error.message, title: "Send Chat Error" });
 				return false;
 			}
 

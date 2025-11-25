@@ -1061,21 +1061,6 @@
 			box-shadow: 0px 0px 3px var(--shadow);
 			position: relative;
 			z-index: 1;
-
-			.onl-status {
-				width: 10px;
-				height: 10px;
-				display: block;
-				border-radius: 50%;
-
-				&.onl {
-					background-color: var(--sbz-green);
-				}
-
-				&.ofl {
-					background-color: var(--sbz-red);
-				}
-			}
 		}
 
 		.mid {

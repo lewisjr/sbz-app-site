@@ -152,6 +152,21 @@
 	color: var(--sbz-red);
 }
 
+*.onl-status {
+	width: 10px;
+	height: 10px;
+	display: block;
+	border-radius: 50%;
+
+	&.onl {
+		background-color: var(--sbz-green);
+	}
+
+	&.ofl {
+		background-color: var(--sbz-red);
+	}
+}
+
 *::-webkit-scrollbar {
 	width: 7px;
 }

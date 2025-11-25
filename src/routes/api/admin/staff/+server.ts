@@ -117,7 +117,7 @@ export const POST = async (event) => {
 				},
 				{ status: pauseOdyn.success ? 200 : 400 },
 			);
-		case "unblock":
+		case "on-leave":
 			if (!sender.permissions.includes("block-staff"))
 				return json(
 					{

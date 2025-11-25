@@ -41,13 +41,14 @@
 - [] fix closing issue
 - [] Queries only filtering
 - [x] keep focus always on the input bar
-- [] move three dots to beginning of table
-- [] picture not showing up
+- [x] move three dots to beginning of table
 - [] add luse ids
 - [] reopen chat
 - [] add automated instruction sending chat
 - [] add automated receipt feature
 - [x] add subject to head of chat UI
+- [] fix analytics
+- [x] add read_status
 
 ## ADD IP TRACKER
 

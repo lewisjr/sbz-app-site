@@ -101,6 +101,7 @@
 		email_vars: null,
 		assignee_email_vars: null,
 		close_reason: null,
+		read_status: "unread",
 	};
 
 	let activeRow = $state<TicketRowLean>(initTicket);
@@ -232,6 +233,30 @@
 
 	const columns: ColumnDef<TicketRowLean>[] = [
 		{
+			accessorKey: "read_status",
+			header: "",
+			cell: ({ cell }) => {
+				const renderCell = createRawSnippet<[string]>(() => {
+					const value = cell.getValue() as SBZdb["public"]["Enums"]["read_status"];
+					return {
+						render: () => `<span class="onl-status ${value === "read" ? "onl" : "ofl"}"></span>`,
+					};
+				});
+
+				return renderSnippet(renderCell);
+			},
+		},
+		{
+			id: "actions",
+			cell: ({ row }) =>
+				renderComponent(TicketActions, {
+					data: row.original,
+					openSheet,
+					adminUsername: data.admin,
+					permissions: data.perimissions,
+				}),
+		},
+		{
 			accessorKey: "id",
 			header: "Ticket No.",
 		},
@@ -360,16 +385,6 @@
 		{
 			accessorKey: "referral_source",
 			header: "Referrer",
-		},
-		{
-			id: "actions",
-			cell: ({ row }) =>
-				renderComponent(TicketActions, {
-					data: row.original,
-					openSheet,
-					adminUsername: data.admin,
-					permissions: data.perimissions,
-				}),
 		},
 	];
 
@@ -760,6 +775,7 @@
 				query_type,
 				referral_source,
 				uid,
+				read_status,
 			} = activeRow;
 
 			const { close_date, close_reason, closed_by, is_closed } = res.data;
@@ -784,6 +800,7 @@
 				query_type,
 				referral_source,
 				uid,
+				read_status,
 			};
 
 			//console.log({ updatedTicket, res });
@@ -1027,17 +1044,31 @@
 						{#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
 							<Table.Row>
 								{#each headerGroup.headers as header (header.id)}
-									<Table.Head
-										colspan={header.colSpan}
-										class="max-w-[400px] px-8 text-center font-bold"
-									>
-										{#if !header.isPlaceholder}
-											<FlexRender
-												content={header.column.columnDef.header}
-												context={header.getContext()}
-											/>
-										{/if}
-									</Table.Head>
+									{#if ["read_status", "actions"].includes(header.id)}
+										<Table.Head
+											colspan={header.colSpan}
+											class="w-[20px] px-0 text-center font-bold"
+										>
+											{#if !header.isPlaceholder}
+												<FlexRender
+													content={header.column.columnDef.header}
+													context={header.getContext()}
+												/>
+											{/if}
+										</Table.Head>
+									{:else}
+										<Table.Head
+											colspan={header.colSpan}
+											class="max-w-[400px] px-8 text-center font-bold"
+										>
+											{#if !header.isPlaceholder}
+												<FlexRender
+													content={header.column.columnDef.header}
+													context={header.getContext()}
+												/>
+											{/if}
+										</Table.Head>
+									{/if}
 								{/each}
 							</Table.Row>
 						{/each}
@@ -1046,9 +1077,21 @@
 						{#each table.getRowModel().rows as row (row.id)}
 							<Table.Row data-state={row.getIsSelected() && "selected"}>
 								{#each row.getVisibleCells() as cell (cell.id)}
-									<Table.Cell class="max-w-[400px] px-5 py-2 text-center">
-										<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
-									</Table.Cell>
+									{#if ["read_status", "actions"].includes(row.id)}
+										<Table.Cell class="w-20px px-0">
+											<FlexRender
+												content={cell.column.columnDef.cell}
+												context={cell.getContext()}
+											/>
+										</Table.Cell>
+									{:else}
+										<Table.Cell class="max-w-[400px] px-5 py-2 text-center">
+											<FlexRender
+												content={cell.column.columnDef.cell}
+												context={cell.getContext()}
+											/>
+										</Table.Cell>
+									{/if}
 								{/each}
 							</Table.Row>
 						{:else}
