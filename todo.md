@@ -47,7 +47,7 @@
 - [] reopen chat
 - [] add automated instruction sending chat
 - [] add automated receipt feature
-- [] add subject to head of chat UI
+- [x] add subject to head of chat UI
 
 ## ADD IP TRACKER
 
