@@ -313,7 +313,7 @@
 					const value = _value.substring(0, 2) === "--" ? _value.substring(2) : _value;
 					return {
 						render: () =>
-							`<p class="w-[400px] whitespace-normal">${value.substring(0, 197).replaceAll("||newline||", " ")}</p>`,
+							`<p class="w-[400px] whitespace-normal">${value.replaceAll("||newline||", " ").substring(0, 197)}</p>`,
 					};
 				});
 
