@@ -813,9 +813,15 @@
 							{#if msg.type === "pdf"}
 								<div class="files">
 									{#each msg.body.split(",,") as link}
-										<Button variant="secondary" target="_blank" class="mb-1" download href={link}
-											><FileSearch2 class="mr-2 h-4 w-4" />{fileNamifier(link)}</Button
-										>
+										{#if link.includes("www.sbz.com.zm")}
+											<Button variant="secondary" target="_blank" class="mb-1" href={link}
+												><FileSearch2 class="mr-2 h-4 w-4" />{fileNamifier(link)}</Button
+											>
+										{:else}
+											<Button variant="secondary" target="_blank" class="mb-1" download href={link}
+												><FileSearch2 class="mr-2 h-4 w-4" />{fileNamifier(link)}</Button
+											>
+										{/if}
 									{/each}
 								</div>
 							{:else}
