@@ -2,7 +2,7 @@
 	//functions
 	import { mode } from "mode-watcher";
 	import { numParse, randomColour } from "@cerebrusinc/qol";
-	import { percentageHandler } from "$lib/utils";
+	import { devLog, percentageHandler } from "$lib/utils";
 	// @ts-ignore
 	import { chart } from "svelte-apexcharts?client";
 
@@ -24,6 +24,14 @@
 		Object.keys(data.timeRanges).forEach((t) =>
 			columns.push({ x: t, y: data.timeRanges[t], fillColor: colour }),
 		);
+
+		// devLog({ columns }, "TimeRangeAnalysis.svelte:28");
+
+		columns.sort((a, b) => {
+			const startA = parseInt(a.x.split("-")[0], 10);
+			const startB = parseInt(b.x.split("-")[0], 10);
+			return startA - startB;
+		});
 
 		const obj: ApexOptions = {
 			chart: {
