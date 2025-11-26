@@ -38,7 +38,7 @@
 				},
 			},
 			title: {
-				text: "Resolvers",
+				text: "Closing Stats",
 				align: "center",
 				style: {
 					color: mode.current === "dark" ? "#eee" : "#000",

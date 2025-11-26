@@ -38,7 +38,7 @@
 				},
 			},
 			title: {
-				text: "Responders",
+				text: "Assignee Stats",
 				align: "center",
 				style: {
 					color: mode.current === "dark" ? "#eee" : "#000",

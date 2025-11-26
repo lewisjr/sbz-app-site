@@ -18,7 +18,7 @@
 	let options = $derived.by(() => {
 		const { min, q1, median, q3, max, average, p90, p95 } = data.timeStats;
 
-		if (!data.timeRanges.min) {
+		if (!min) {
 			const obj: ApexOptions = {
 				chart: {
 					height: 300,
