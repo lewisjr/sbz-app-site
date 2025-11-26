@@ -19,6 +19,8 @@ export const POST = async (event) => {
 		obj: any;
 	} = await request.json();
 
+	// console.log({ action, obj });
+
 	switch (action) {
 		case "new":
 			if (!sender.permissions.includes("add-staff"))
