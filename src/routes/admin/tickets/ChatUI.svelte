@@ -961,7 +961,7 @@
 				<input
 					id="f-input-chat"
 					type="file"
-					accept="application/pdf"
+					accept=".pdf,image/*,.docx,.xlsx"
 					onchange={(e) => {
 						//@ts-ignore
 						handleCustomUpload(e.target.files);
