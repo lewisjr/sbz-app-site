@@ -614,17 +614,12 @@
 
 	const updateTicket = async (ticket: TicketRowLean) => {
 		const temp: TicketRowLean[] = JSON.parse(JSON.stringify(ticketData));
-		temp.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-		const index = temp.findIndex((item) => (item.id = ticket.id));
-
-		// console.log({ index, ticket, temp_index: temp[index] });
-		await tick();
+		const index = ticketData.findIndex((item) => item.id === ticket.id);
 
 		temp[index] = ticket;
 
 		ticketData = temp;
-		await tick();
 
 		closeSheet();
 	};
@@ -775,10 +770,9 @@
 				query_type,
 				referral_source,
 				uid,
-				read_status,
 			} = activeRow;
 
-			const { close_date, close_reason, closed_by, is_closed } = res.data;
+			const { close_date, close_reason, closed_by, is_closed, read_status } = res.data;
 
 			const updatedTicket: TicketRowLean = {
 				assigned,

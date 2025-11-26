@@ -30,14 +30,14 @@
 - [x] add matched and on screen to portfolio
 - [] fix "chat notification plays when you send your own message"
 - [x] add permissions
-- [] add admin block/unblock
+- [x] add admin block/unblock
 - [x] add chat open files in new window for admins
 - [x] add chat download files for clients
 - [x] add admin send files
 - [x] add client send files
 - [x] remove close button in admin sheet
 - [x] add close ticket button in admin sheet
-- [] fix closing issue
+- [x] fix closing issue
 - [] Queries only filtering
 - [x] keep focus always on the input bar
 - [x] move three dots to beginning of table
