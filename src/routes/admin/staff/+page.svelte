@@ -345,7 +345,7 @@
 	const updateMember = async (member: StaffRow) => {
 		const temp: StaffRow[] = JSON.parse(JSON.stringify(staffData));
 
-		const index = temp.findIndex((item) => (item.username = member.username));
+		const index = temp.findIndex((item) => item.username === member.username);
 
 		temp[index] = member;
 
@@ -362,7 +362,7 @@
 		permisTemp = val;
 	};
 
-	$effect(() => console.log({ permisTemp, time: Date.now() }));
+	// $effect(() => console.log({ permisTemp, time: Date.now() }));
 
 	const addStaff = async () => {
 		if (newStaffDisabled) {
