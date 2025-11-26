@@ -524,6 +524,7 @@ const sbz = (): SBZutils => {
 			close_reason: "",
 			closed_by: "",
 			is_closed: false,
+			read_status: "read",
 		};
 
 		try {
@@ -535,6 +536,7 @@ const sbz = (): SBZutils => {
 				close_reason: reason,
 				closed_by: admin,
 				is_closed: true,
+				read_status: "read",
 			};
 
 			const { error } = await sbzdb.from("odyn-tickets").update(closeObj).eq("id", ticketId);

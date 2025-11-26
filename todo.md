@@ -37,7 +37,6 @@
 - [x] add client send files
 - [x] remove close button in admin sheet
 - [x] add close ticket button in admin sheet
-- [] notification for responding or not (e.g who sent the last message)
 - [] fix closing issue
 - [] Queries only filtering
 - [x] keep focus always on the input bar

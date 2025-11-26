@@ -79,6 +79,7 @@ export interface CloseTicketReturnObj {
 	close_reason: string;
 	closed_by: string;
 	is_closed: boolean;
+	read_status: SBZdb["public"]["Enums"]["read_status"];
 }
 
 export type SettledTradeInsert = SBZdb["public"]["Tables"]["settled_trades"]["Insert"];
