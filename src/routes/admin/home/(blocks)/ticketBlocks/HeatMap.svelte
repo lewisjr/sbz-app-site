@@ -18,14 +18,28 @@
 
 	let options = $derived.by(() => {
 		if (data.length) {
-			const totalsCodex: { [key: string]: number } = {};
+			// 1️⃣ Collect all unique dates across all series
+			const allDates = Array.from(new Set(data.flatMap((s) => s.data.map((d) => d.x)))).sort(
+				(a, b) => new Date(a).getTime() - new Date(b).getTime(),
+			);
 
-			const _data: HeatMapData[] = JSON.parse(JSON.stringify(data));
+			// 2️⃣ Fill missing dates with y = 0 for each series
+			const col = mode.current === "dark" ? "#242425" : "#FFFFFF";
+			const normalizedData = data.map((series) => {
+				const dateMap = Object.fromEntries(series.data.map((d) => [d.x, d.y]));
+				const filledData = allDates.map((date) => ({
+					x: date,
+					y: dateMap[date] ?? 0,
+				}));
 
-			_data.forEach((s) => {
+				return { ...series, data: filledData };
+			});
+
+			// 3️⃣ Compute totals for tooltips if needed
+			const totalsCodex: Record<string, number> = {};
+			normalizedData.forEach((s) => {
 				s.data.forEach((d) => {
-					if (!totalsCodex[d.x]) totalsCodex[d.x] = d.y;
-					else totalsCodex[d.x] = totalsCodex[d.x] + d.y;
+					totalsCodex[d.x] = (totalsCodex[d.x] ?? 0) + d.y;
 				});
 			});
 
@@ -53,7 +67,7 @@
 					offsetY: 10,
 				},
 
-				series: data,
+				series: normalizedData,
 				plotOptions: {
 					heatmap: {
 						colorScale: {
@@ -84,7 +98,7 @@
 					//@ts-ignore
 					formatter: (_, opts) => {
 						const { dataPointIndex, seriesIndex, value } = opts;
-						const { x } = data[seriesIndex].data[dataPointIndex];
+						const { x } = normalizedData[seriesIndex].data[dataPointIndex];
 						const total = totalsCodex[x];
 
 						return [numParse(value), percentageHandler(value / total)];
@@ -143,6 +157,7 @@
 				legend: {
 					labels: {
 						colors: [
+							"#00000000",
 							mode.current === "dark" ? "#eee" : "#000",
 							mode.current === "dark" ? "#eee" : "#000",
 							mode.current === "dark" ? "#eee" : "#000",
@@ -152,17 +167,17 @@
 			};
 
 			return obj;
+		} else {
+			const obj: ApexOptions = {
+				chart: {
+					height: 500,
+					type: "bar",
+				},
+				series: [{ data: [] }],
+			};
+
+			return obj;
 		}
-
-		const obj: ApexOptions = {
-			chart: {
-				height: 500,
-				type: "bar",
-			},
-			series: [{ data: [] }],
-		};
-
-		return obj;
 	});
 </script>
 
