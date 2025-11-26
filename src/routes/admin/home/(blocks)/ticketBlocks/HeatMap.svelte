@@ -8,7 +8,7 @@
 	//types
 	import type { ApexOptions } from "$lib/types";
 	import type { HeatMapData } from "./types";
-	import { formatDbTime, percentageHandler } from "$lib/utils";
+	import { devLog, formatDbTime, percentageHandler } from "$lib/utils";
 
 	interface Props {
 		data: HeatMapData[];
@@ -44,7 +44,7 @@
 					},
 				},
 				title: {
-					text: "WoW Query Departments", //`Peak Query Time • ${_24to12(data.peakHour)}`,
+					text: "WoW Social Media Concentration", //`Peak Query Time • ${_24to12(data.peakHour)}`,
 					align: "center",
 					style: {
 						color: mode.current === "dark" ? "#eee" : "#000",

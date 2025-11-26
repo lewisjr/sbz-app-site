@@ -2,7 +2,7 @@
 	//functions
 	import { toTitleCase } from "@cerebrusinc/fstring";
 	import { numParse } from "@cerebrusinc/qol";
-	import { formatDbTime, percentageHandler } from "$lib/utils";
+	import { devLog, formatDbTime, percentageHandler } from "$lib/utils";
 
 	//components - custom
 	import { HeatMap, Radar, PolarArea } from "./ticketBlocks";
@@ -19,205 +19,135 @@
 
 	let { data }: Props = $props();
 
-	let heatMapData = $state<HeatMapData[]>([]);
-	let radarData = $state<RadarData>({ data: [], labels: [] });
-	let polarData = $state<RadarData>({ data: [], labels: [] });
-	let barData = $state<TicketsAnalysis | undefined>(undefined);
-	let querySummary = $state<string>("");
+	let analytics = $derived.by(() => {
+		if (!data?.length) {
+			return {
+				heatMapData: [] as HeatMapData[],
+				radarData: { data: [], labels: [] } as RadarData,
+				polarData: { data: [], labels: [] } as RadarData,
+				barData: undefined as TicketsAnalysis | undefined,
+				querySummary: "No data available for this period.",
+			};
+		}
 
-	$effect(() => {
-		const _data: TicketRowLean[] = JSON.parse(JSON.stringify(data));
+		// --- LAST 7 UNIQUE DATES ---
+		const dates = Array.from(new Set(data.map((t) => t.created_at.slice(0, 10))))
+			.sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+			.slice(0, 7);
 
-		const dates: string[] = [];
+		const wowData = data.filter((t) => dates.includes(t.created_at.slice(0, 10)));
 
-		_data.forEach((t) => {
-			const date = t.created_at.split("T")[0];
-
-			if (!dates.includes(date) && dates.length < 7) {
-				dates.push(date);
-				return true;
-			}
-		});
-
-		// console.log({ dates });
-
-		const wowData = _data.filter((t) => {
-			const date = t.created_at.split("T")[0];
-
-			if (dates.includes(date)) return true;
-		});
-
-		// console.log({ wowData });
-
-		const heatMapCodex: { [key: string]: { name: string; x: string; y: number } } = {};
-		const radarCodex: { [key: string]: number } = {};
-		const polarCodex: { [key: string]: number } = {};
+		// --- CODICES ---
+		const heatMapCodex: Record<string, { name: string; x: string; y: number }> = {};
+		const radarCodex: Record<string, number> = {};
+		const polarCodex: Record<string, number> = {};
+		const barCodex: Record<string, number> = {};
+		const resolvedCodex: Record<string, number> = {};
 
 		let total = 0;
-		let incomplete = 0;
 		let complete = 0;
-
-		const barCodex: { [key: string]: number } = {};
-		const resolvedCodex: { [key: string]: number } = {};
+		let incomplete = 0;
 
 		wowData.forEach((t) => {
-			const date = t.created_at.split("T")[0];
+			const date = t.created_at.slice(0, 10);
 
-			// heatmap ops
-			const hKey = t.referral_source ? toTitleCase(t.referral_source.split("-").join(" ")) : null;
+			// HeatMap
+			const hKey = t.referral_source ? toTitleCase(t.referral_source.replace(/-/g, " ")) : null;
+			if (hKey) {
+				const key = `${date}-${hKey}`;
+				heatMapCodex[key] = { name: hKey, x: date, y: (heatMapCodex[key]?.y ?? 0) + 1 };
+			}
 
-			if (hKey && heatMapCodex[`${date}-${hKey}`])
-				heatMapCodex[`${date}-${hKey}`].y = heatMapCodex[`${date}-${hKey}`].y + 1;
-			else if (hKey && !heatMapCodex[`${date}-${hKey}`])
-				heatMapCodex[`${date}-${hKey}`] = { name: hKey, x: date, y: 1 };
+			// Radar
+			const rKey = t.query_type ? toTitleCase(t.query_type.replace(/-/g, " ")) : null;
+			if (rKey) radarCodex[rKey] = (radarCodex[rKey] ?? 0) + 1;
 
-			// radar ops
-			const rKey = t.query_type ? toTitleCase(t.query_type.split("-").join(" ")) : null;
-			if (rKey && radarCodex[rKey]) radarCodex[rKey] = radarCodex[rKey] + 1;
-			else if (rKey && !heatMapCodex[rKey]) radarCodex[rKey] = 1;
-
-			// polar ops
+			// Polar
 			const pKey = t.close_date ? "Complete" : "Incomplete";
-			if (pKey && polarCodex[pKey]) polarCodex[pKey] = polarCodex[pKey] + 1;
-			else if (pKey && !polarCodex[pKey]) polarCodex[pKey] = 1;
+			polarCodex[pKey] = (polarCodex[pKey] ?? 0) + 1;
 
-			// bar ops
-			total += 1;
+			// Bar
+			total++;
+			if (t.close_date) complete++;
+			else incomplete++;
+			if (t.platform)
+				barCodex[t.platform.toLowerCase()] = (barCodex[t.platform.toLowerCase()] ?? 0) + 1;
 
-			if (!t.close_date) incomplete += 1;
-			if (t.close_date) complete += 1;
-
-			if (t.platform) {
-				if (barCodex[t.platform.toLowerCase()])
-					barCodex[t.platform.toLowerCase()] = barCodex[t.platform.toLowerCase()] + 1;
-				else barCodex[t.platform.toLowerCase()] = 1;
-			}
-
-			// most resolved
+			// Resolved by
 			if (t.closed_by) {
-				if (resolvedCodex[toTitleCase(t.closed_by)])
-					resolvedCodex[toTitleCase(t.closed_by)] = resolvedCodex[toTitleCase(t.closed_by)] + 1;
-				else resolvedCodex[toTitleCase(t.closed_by)] = 1;
+				const name = toTitleCase(t.closed_by);
+				resolvedCodex[name] = (resolvedCodex[name] ?? 0) + 1;
 			}
 		});
 
-		// heatmap analysis
-		const _heatMapConsolidatedCodex: { [key: string]: { x: string; y: number }[] } = {};
-
-		let daysArr: { date: string; volume: number }[] = [];
-		let referrersArr: { name: string; volume: number }[] = [];
-
-		Object.keys(heatMapCodex).forEach((key) => {
-			const { name, x, y } = heatMapCodex[key];
-
-			if (!_heatMapConsolidatedCodex[name]) _heatMapConsolidatedCodex[name] = [{ x, y }];
-			else _heatMapConsolidatedCodex[name].push({ x, y });
-
-			daysArr.push({ date: x, volume: y });
-			referrersArr.push({ name, volume: y });
+		// --- HeatMap Data (Immutable) ---
+		const heatMapGrouped: Record<string, { x: string; y: number }[]> = {};
+		Object.values(heatMapCodex).forEach(({ name, x, y }) => {
+			heatMapGrouped[name] = [...(heatMapGrouped[name] ?? []), { x, y }];
 		});
+		const heatMapData: HeatMapData[] = Object.entries(heatMapGrouped).map(([name, data]) => ({
+			name,
+			data: [...data].sort((a, b) => new Date(a.x).getTime() - new Date(b.x).getTime()),
+		}));
 
-		const _heatMapData: HeatMapData[] = [];
+		// --- Radar Data ---
+		const radarLabels = Object.keys(radarCodex);
+		const radarValues = radarLabels.map((label) => radarCodex[label]);
+		const radarData: RadarData = { data: radarValues, labels: radarLabels };
 
-		Object.keys(_heatMapConsolidatedCodex).forEach((key) => {
-			_heatMapData.push({
-				name: key,
-				data: _heatMapConsolidatedCodex[key],
-			});
-		});
+		// --- Polar Data ---
+		const polarLabels = Object.keys(polarCodex);
+		const polarValues = polarLabels.map((label) => polarCodex[label]);
+		const polarData: RadarData = { data: polarValues, labels: polarLabels };
 
-		_heatMapData.forEach((s) => {
-			s.data.sort((a, b) => new Date(a.x).getTime() - new Date(b.x).getTime());
-		});
+		// --- Bar Data ---
+		const barArr = Object.entries(barCodex)
+			.map(([platform, volume]) => ({ platform, volume }))
+			.sort((a, b) => b.volume - a.volume);
 
-		// console.log({ _heatMapData });
-		// console.log({ heatMapCodex });
-
-		heatMapData = _heatMapData;
-
-		const radarLabels: string[] = [];
-		const radarValues: number[] = [];
-
-		const polarRanking: { label: string; volume: number }[] = [];
-
-		Object.keys(radarCodex).forEach((key) => {
-			radarLabels.push(key);
-			radarValues.push(radarCodex[key]);
-
-			polarRanking.push({ label: key, volume: radarCodex[key] });
-		});
-
-		radarData = { data: radarValues, labels: radarLabels };
-
-		// polar analysis
-		const polarLabels: string[] = [];
-		const polarValues: number[] = [];
-
-		Object.keys(polarCodex).forEach((key) => {
-			polarLabels.push(key);
-			polarValues.push(polarCodex[key]);
-		});
-
-		polarData = { data: polarValues, labels: polarLabels };
-
-		// bar analysis
-		const incompletePercent = incomplete / total;
-		const completePercent = complete / total;
-
-		const efficiency =
-			completePercent < 0.5
-				? "BAD"
-				: completePercent < 0.7
-					? "FAIR"
-					: completePercent < 0.9
-						? "GOOD"
-						: "SUPERB";
-
-		const barArr: { platform: string; volume: number }[] = [];
-
-		Object.keys(barCodex).forEach((platform) => {
-			const volume = barCodex[platform];
-
-			barArr.push({ platform, volume });
-		});
-
-		barArr.sort((a, b) => b.volume - a.volume);
-
-		barData = {
+		const completePercent = total ? complete / total : 0;
+		const barData: TicketsAnalysis = {
 			complete,
 			completePercent,
-			efficiency,
+			efficiency:
+				completePercent < 0.5
+					? "BAD"
+					: completePercent < 0.7
+						? "FAIR"
+						: completePercent < 0.9
+							? "GOOD"
+							: "SUPERB",
 			incomplete,
-			incompletePercent,
+			incompletePercent: total ? incomplete / total : 0,
 			platforms: barArr,
-			popular: barArr[0].platform,
+			popular: barArr[0]?.platform ?? "",
 			total,
 		};
 
-		// summary calcs
-		const resolveArr: { name: string; volume: number }[] = [];
+		// --- Summary ---
+		const resolveArr = Object.entries(resolvedCodex)
+			.map(([name, volume]) => ({ name, volume }))
+			.sort((a, b) => b.volume - a.volume);
 
-		Object.keys(resolvedCodex).forEach((name) => {
-			const volume = resolvedCodex[name];
+		const polarRanking = radarLabels
+			.map((label) => ({ label, volume: radarCodex[label] }))
+			.sort((a, b) => b.volume - a.volume)
+			.slice(0, 3);
 
-			resolveArr.push({ name, volume });
-		});
+		const daysArr = Object.values(heatMapCodex)
+			.map(({ x, y }) => ({ date: x, volume: y }))
+			.sort((a, b) => b.volume - a.volume);
 
-		resolveArr.sort((a, b) => b.volume - a.volume);
+		const referrersArr = Object.values(heatMapCodex)
+			.map(({ name, y }) => ({ name, volume: y }))
+			.sort((a, b) => b.volume - a.volume);
 
-		polarRanking.sort((a, b) => b.volume - a.volume);
+		const querySummary =
+			total === 0
+				? "No data available."
+				: `Over the past week, we received a total of ${numParse(barData.total)} queries with a completion rate of ${percentageHandler(barData.complete / barData.total)} resulting in a ${barData.efficiency.toLowerCase()} efficiency rating. The platform that received the most queries was ${toTitleCase(barData.popular)} representing ${percentageHandler(barData.platforms[0].volume / barData.total)} of all queries. Most were resolved by ${resolveArr[0]?.name} (${resolveArr[0]?.volume} queries or ${percentageHandler(resolveArr[0]?.volume / barData.total)}) with the top three query types being: ${polarRanking.map((p) => `${p.label} (${numParse(p.volume)} queries or ${percentageHandler(p.volume / barData.total)})`).join(", ")}. Regarding the query departments, the most requested department was ${referrersArr[0]?.name} with ${percentageHandler(referrersArr[0]?.volume / barData.total)} (${numParse(referrersArr[0]?.volume)} queries) directed to them and the busiest date this week being ${formatDbTime(daysArr[0]?.date ?? "").split(",")[0]} where we got ${numParse(daysArr[0]?.volume ?? 0)} queries accounting for ${percentageHandler((daysArr[0]?.volume ?? 0) / barData.total)} of all queries.`;
 
-		daysArr.sort((a, b) => b.volume - a.volume);
-		referrersArr.sort((a, b) => b.volume - a.volume);
-
-		const topThreePolarArr = polarRanking.filter((value, i) => {
-			if (i < 3) return true;
-		});
-
-		const topThreeLabels = topThreePolarArr.map((l) => l.label);
-		const topThreeVolume = topThreePolarArr.map((l) => l.volume);
-
-		querySummary = `Over the past week, we received a total of ${numParse(barData.total)} queries with a completion rate of ${percentageHandler(barData.complete / barData.total)} resulting in a ${barData.efficiency.toLowerCase()} efficiency rating. The platform that received the most queries was ${toTitleCase(barData.popular)} representing ${percentageHandler(barData.platforms[0].volume / barData.total)} of all queries. Most were resolved by ${resolveArr[0].name} (${resolveArr[0].volume} queries or ${percentageHandler(resolveArr[0].volume / barData.total)}) with the top three query types being: ${topThreeLabels[0]} (${numParse(topThreeVolume[0])} queries or ${percentageHandler(topThreeVolume[0] / barData.total)}), ${topThreeLabels[1]} (${numParse(topThreeVolume[1])} queries or ${percentageHandler(topThreeVolume[1] / barData.total)}), ${topThreeLabels[2]} (${numParse(topThreeVolume[2])} queries or ${percentageHandler(topThreeVolume[2] / barData.total)}). Regarding the query departments, the most requested department was ${referrersArr[0].name} with ${percentageHandler(referrersArr[0].volume / barData.total)} (${numParse(referrersArr[0].volume)} queries) directed to them and the busiest date this week being ${formatDbTime(daysArr[0].date).split(",")[0]} where we got ${numParse(daysArr[0].volume)} queries accounting for ${percentageHandler(daysArr[0].volume / barData.total)} of all queries.`;
+		return { heatMapData, radarData, polarData, barData, querySummary };
 	});
 </script>
 
@@ -229,14 +159,14 @@
 
 <div class="main-tainer">
 	<div class="heat-radar">
-		<div class="heat"><HeatMap data={heatMapData} /></div>
-		<div class="radar"><Radar data={radarData} /></div>
+		<div class="heat"><HeatMap data={analytics.heatMapData} /></div>
+		<div class="radar"><Radar data={analytics.radarData} /></div>
 	</div>
 	<div class="bar-polar-comment">
 		<div class="bar">
-			{#if barData}
+			{#if analytics.barData}
 				<PlatformsColumn
-					data={barData}
+					data={analytics.barData}
 					height={300}
 					offsetY={10}
 					title="WoW Platform Contribution"
@@ -247,10 +177,10 @@
 				</div>
 			{/if}
 		</div>
-		<div class="polar"><PolarArea data={polarData} /></div>
+		<div class="polar"><PolarArea data={analytics.polarData} /></div>
 		<div class="comment">
 			<h4>WoW Query Summary</h4>
-			<p class="px-3 text-justify text-[11pt]">{querySummary}</p>
+			<p class="px-3 text-justify text-[11pt]">{analytics.querySummary}</p>
 		</div>
 	</div>
 </div>

@@ -42,6 +42,11 @@ export const print = (arg: any) => {
 	console.log(util.inspect(arg, false, null, true));
 };
 
+/**Deep console logging, for any debugging */
+export const devLog = (arg: any, location: string) => {
+	console.log(arg, { location, timestamp: genDbTimestamp() });
+};
+
 /**Convert supabase timestamp to human readable */
 export const formatDbTime = (isoString: string) => {
 	const date = new Date(isoString);

@@ -18,7 +18,9 @@
 
 	let options = $derived.by(() => {
 		if (data) {
-			let total: number = data.data.reduce((sum, val) => sum + val, 0);
+			const _data: RadarData = JSON.parse(JSON.stringify(data));
+
+			let total: number = _data.data.reduce((sum, val) => sum + val, 0);
 
 			const obj: ApexOptions = {
 				chart: {
@@ -28,8 +30,8 @@
 						show: false,
 					},
 				},
-				series: data.data,
-				labels: data.labels,
+				series: _data.data,
+				labels: _data.labels,
 				colors: ["#f23645", "#42f58d"],
 				stroke: {
 					width: 1,
@@ -64,8 +66,8 @@
 					formatter: (_, opt) => {
 						const { seriesIndex } = opt;
 
-						const value = data.data[seriesIndex];
-						const name = data.labels[seriesIndex];
+						const value = _data.data[seriesIndex];
+						const name = _data.labels[seriesIndex];
 
 						return [name, numParse(value), percentageHandler(value / total)];
 					},
@@ -86,18 +88,18 @@
 				},
 			};
 
-			options = obj;
+			return obj;
+		} else {
+			const obj: ApexOptions = {
+				chart: {
+					width: 1024,
+					type: "polarArea",
+				},
+				series: [{ data: [] }],
+			};
+
+			return obj;
 		}
-
-		const obj: ApexOptions = {
-			chart: {
-				width: 1024,
-				type: "polarArea",
-			},
-			series: [{ data: [] }],
-		};
-
-		return obj;
 	});
 </script>
 

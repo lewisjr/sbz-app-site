@@ -20,7 +20,7 @@
 - [] fix b-engine recording names incorrectly on matched trades
 - [x] finish news
 - [x] finish market analysis
-- [] add clients table with portfolio statements
+- [x] add clients table with portfolio statements
 - [x] order stocks on trade summary
 - [x] order stocks on cn
 - [] make client search work with websockets instead
@@ -46,7 +46,7 @@
 - [] add automated instruction sending chat
 - [] add automated receipt feature
 - [x] add subject to head of chat UI
-- [] fix analytics
+- [x] fix analytics
 - [x] add read_status
 
 ## ADD IP TRACKER
