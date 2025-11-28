@@ -166,7 +166,7 @@
 
 	let clientPortfolio = $state<ClientTradeHistory | undefined>(undefined);
 
-	let expandDate = $state<boolean>(false);
+	let expandDate = $state<boolean>(true);
 
 	let dateImatched = $state<number>(0);
 	const updateDateImatched = (val: number) => (dateImatched = val);

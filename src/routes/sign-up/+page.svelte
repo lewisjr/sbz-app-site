@@ -909,6 +909,7 @@
 			luseId: luseId.length ? Number(luseId) : undefined,
 			is_in_trust_of: isInTrustOf === "yes" ? true : undefined,
 			signing_arrangement,
+			cv_num: "",
 		};
 
 		// append obj

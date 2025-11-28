@@ -179,7 +179,7 @@
 
 		// console.log({ matchedDateI, matchedDateF });
 
-		if (matchedDateI && matchedDateF)
+		if (matchedDateI !== 0 && matchedDateF !== 0)
 			tradesRaw = tradesRaw.filter(
 				(item) => item.trade_date >= matchedDateI && item.trade_date <= matchedDateF,
 			);
