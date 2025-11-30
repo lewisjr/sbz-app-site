@@ -107,7 +107,7 @@ export const POST = async (event) => {
 					{ status: 400 },
 				);
 
-			const pauseOdyn = await dbs.sbz.pauseOdyn(obj.username, sender.username);
+			const pauseOdyn = await dbs.sbz.unPauseOdyn(obj.username, sender.username);
 
 			obj.ticketable = false;
 
@@ -129,7 +129,7 @@ export const POST = async (event) => {
 					{ status: 400 },
 				);
 
-			const unPauseOdyn = await dbs.sbz.unPauseOdyn(obj.username, sender.username);
+			const unPauseOdyn = await dbs.sbz.pauseOdyn(obj.username, sender.username);
 
 			obj.ticketable = true;
 

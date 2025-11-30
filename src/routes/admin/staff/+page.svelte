@@ -174,6 +174,15 @@
 
 	const columns: ColumnDef<StaffRow>[] = [
 		{
+			id: "actions",
+			cell: ({ row }) =>
+				renderComponent(StaffActions, {
+					data: row.original,
+					openSheet,
+					permissions: data.perimissions,
+				}),
+		},
+		{
 			accessorKey: "username",
 			header: "Username",
 		},
@@ -249,15 +258,6 @@
 
 				return renderSnippet(renderCell);
 			},
-		},
-		{
-			id: "actions",
-			cell: ({ row }) =>
-				renderComponent(StaffActions, {
-					data: row.original,
-					openSheet,
-					permissions: data.perimissions,
-				}),
 		},
 	];
 
