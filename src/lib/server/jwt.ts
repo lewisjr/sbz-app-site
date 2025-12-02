@@ -48,12 +48,12 @@ export const scourgeOfClients = (event: ServerLoadEvent): AdminJwt => {
 };
 
 export interface ClientJwt {
-	data: SBZdb["public"]["Tables"]["admins"]["Row"];
+	data: SBZdb["public"]["Tables"]["clients"]["Row"];
 	iat: number;
 	exp: number;
 }
 
-export const scourgeOfClientsInvestor = (event: ServerLoadEvent): ClientJwt => {
+export const scourgeOfInvestor = (event: ServerLoadEvent): ClientJwt => {
 	const user = event.cookies.get("sbz-client");
 	if (!user) throw redirect(307, "/");
 

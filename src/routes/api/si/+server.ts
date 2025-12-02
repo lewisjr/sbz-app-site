@@ -41,21 +41,34 @@ export const PUT = async ({ request }) => {
 			}
 
 			if (isApprovedClient[0].acc_type === "individual" && isApprovedClient[0].is_in_trust_of) {
-				emails.push(isApprovedClient[0].manag_email);
+				const managEmail = isApprovedClient[0].manag_email;
+				const email = managEmail ? managEmail : isApprovedClient[0].email;
+
+				emails.push(email);
 			}
 
 			if (isApprovedClient[0].acc_type === "joint") {
-				// @ts-ignore
-				isApprovedClient[0].joint_partners.push((row: UserObj) => {
-					emails.push(row.email);
-				});
+				//
+				if (isApprovedClient[0].joint_partners.length) {
+					// @ts-ignore
+					isApprovedClient[0].joint_partners.forEach((row: UserObj) => {
+						emails.push(row.email);
+					});
+				} else {
+					emails.push(isApprovedClient[0].email);
+				}
 			}
 
 			if (isApprovedClient[0].acc_type === "institution") {
-				// @ts-ignore
-				isApprovedClient[0].comp_managers.push((row: UserObj) => {
-					emails.push(row.email);
-				});
+				//
+				if (isApprovedClient[0].comp_managers.length) {
+					// @ts-ignore
+					isApprovedClient[0].comp_managers.forEach((row: UserObj) => {
+						emails.push(row.email);
+					});
+				} else {
+					emails.push(isApprovedClient[0].email);
+				}
 			}
 			break;
 		default:
@@ -70,16 +83,14 @@ export const PUT = async ({ request }) => {
 
 	const obj: OTPBulkObj[] = [];
 
-	const otp = genOTP();
-
 	emails.forEach((email) => {
-		obj.push({ id: email, otp, updated_at: genDbTimestamp() });
+		obj.push({ id: email, otp: genOTP(), updated_at: genDbTimestamp() });
 	});
 
-	const emailReqs = emails.map((address) =>
+	const emailReqs = obj.map((user) =>
 		notif.email.sendOtp(
-			{ otp, subject: "Sign In OTP | Stockbrokers Zambia", title: "One Time Passcode" },
-			address,
+			{ otp: user.otp, subject: "Sign In OTP | Stockbrokers Zambia", title: "One Time Passcode" },
+			user.id,
 		),
 	);
 
@@ -177,6 +188,13 @@ export const POST = async ({ request, cookies }) => {
 				maxAge: 60 * 60 * 168,
 				secure: true,
 			});
+
+			cookies.set("sbz-client-mail", genJwt(client[0], "30d"), {
+				path: "/",
+				httpOnly: true,
+				maxAge: 60 * 60 * 168,
+				secure: true,
+			});
 			break;
 	}
 
@@ -184,7 +202,7 @@ export const POST = async ({ request, cookies }) => {
 		{
 			success: correct.success,
 			message: correct.message,
-			redirect: label === "Admin Username" ? "/admin/home" : "/dashboard/home", // correct.success ? "//home" : undefined,
+			redirect: label === "Admin Username" ? "/admin/home" : "/d/home", // correct.success ? "//home" : undefined,
 		},
 		{ status: correct.success ? 200 : 400 },
 	);

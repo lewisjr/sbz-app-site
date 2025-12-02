@@ -28,6 +28,25 @@ export interface PickerObj<T> {
 	label: string;
 }
 
+interface PartnerObj {
+	//details
+	fname: string;
+	lname: string;
+	phone: string;
+	email: string;
+	dob: string;
+	gender: string;
+	mstatus: string;
+	nationality: string;
+	//address
+	street: string;
+	city: string;
+	country: string;
+	//identity
+	idType: string;
+	idNum: string;
+}
+
 export interface Types {
 	/**For tickets */
 	ReferralSource: ReferralSource;
@@ -40,6 +59,9 @@ export interface Types {
 	AnyPickerObj: { label: string; value: any };
 	Folio: Folio;
 	ClientKyc: ClientKyc;
+	AccountType: "individual" | "joint" | "institution";
+	/**The data shape for indoviduals as *joint partners*, *comp_managers*, and *comp_directors* */
+	PartnerObj: PartnerObj;
 }
 
 export interface GenericResponse {
