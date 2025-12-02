@@ -582,8 +582,9 @@
 				links: "https://www.sbz.com.zm/download/broking-crash-course-account-opening",
 			},
 			"into-trad": {
-				text: "To begin trading we would need you to send us an instruction to buy/sell form. Please see the document attached for more details.",
-				links: "https://www.sbz.com.zm/download/broking-crash-course-trading",
+				text: "To begin trading we would need you to send us an instruction to buy/sell form. Please see the document attached for more details, however, the essense is that we have a minimum of K 500 per company per order you make, and there is a 1.5% comission deducted from the funds you send.",
+				links:
+					"https://www.sbz.com.zm/download/broking-crash-course-trading,,https://www.sbz.com.zm/download/payment-details,,https://www.sbz.com.zm/download/payment-details-usd,,https://www.sbz.com.zm/download/instruction-to-buy-sell-form",
 			},
 			"acc-ind": {
 				text: "Please fill in the form attached to and create your brokerage account. You can either respond here or send it to kycprocessing@sbz.com.zm. Note that you are required to attach certified (stamped by the police, church, or comissioner of oaths) copies of both your ID (national ID, voters card, passport, or birth certificarte for minors, as well as a proof of address (tax certificate, utility bill, bank statement (last 3 months), or a tenancy agreement).",
@@ -622,6 +623,9 @@
 				await Promise.all([sendChat2(links[cfg].text, "text"), sendChat2(links[cfg].links, "pdf")]);
 				loading = false;
 			}
+
+			menuOpen = " hid";
+			shortcutClass = " hid";
 		} catch (ex: any) {
 			toast.error(String(ex));
 			loading = false;
