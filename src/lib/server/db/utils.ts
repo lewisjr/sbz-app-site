@@ -150,6 +150,7 @@ interface ApiVersion {
 }
 
 type ClientInsert = SBZdb["public"]["Tables"]["clients"]["Insert"];
+type ClientUpdate = SBZdb["public"]["Tables"]["clients"]["Update"];
 
 interface SBZutils {
 	log: (obj: LogObj) => Promise<void>;
@@ -178,6 +179,13 @@ interface SBZutils {
 	isClientCorrect: (luseId: number) => Promise<boolean>;
 	getClient: (luseId: number) => Promise<ClientRow[]>;
 	openAccount: (obj: ClientInsert) => Promise<GenericResponse>;
+	updateClient: (
+		obj: ClientUpdate,
+		luseId: number,
+		idNum: string,
+		isRecovery?: boolean,
+		isAdmin?: string,
+	) => Promise<GenericResponse>;
 
 	getAgents: () => Promise<AgentIDs[]>;
 
@@ -1406,6 +1414,54 @@ const sbz = (): SBZutils => {
 		}
 	};
 
+	const _updateClient = async (
+		obj: ClientUpdate,
+		luseId: number,
+		idNum: string,
+		isRecovery: boolean = false,
+		isAdmin?: string,
+	): Promise<GenericResponse> => {
+		try {
+			const { error } = await sbzdb.from("clients").update(obj).filter("luseId", "eq", luseId);
+
+			if (error) {
+				await _log({ message: error.message, title: "Update Client Error" });
+				return {
+					message: "Failed to update, please wait a few minutes and try again.",
+					success: false,
+				};
+			}
+
+			let message: string = `Client ${luseId} just updated their details to ${JSON.stringify(obj)}`;
+
+			if (isRecovery && obj.signatures) {
+				// @ts-ignore
+				message = `Client ${luseId} just used one of their recovery codes! They are left with ${obj.signatures.backups.backups[idNum].length}`;
+			}
+
+			if (isAdmin) {
+				message = `Admin '${toTitleCase(isAdmin)}' updateed client '${luseId}' details to ${JSON.stringify(obj)}`;
+			}
+
+			await _log({ message, title: "Client Details Update" });
+
+			return { message: "Account successfully updated!", success: true };
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Open Account Exception" });
+			return {
+				success: false,
+				message: "Server error, please wait 10 minutes and try again.",
+			};
+		}
+	};
+
 	const _auditTicket = async (ticketId: string): Promise<GenericResponseWData<AuditRow[]>> => {
 		try {
 			const { data, error } = await sbzdb
@@ -2353,6 +2409,7 @@ const sbz = (): SBZutils => {
 		unPauseOdyn: _unPauseOdyn,
 		uploadFiles: _uploadFiles,
 		openAccount: _openAccount,
+		updateClient: _updateClient,
 	};
 };
 

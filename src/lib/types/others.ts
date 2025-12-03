@@ -62,6 +62,14 @@ export interface Types {
 	AccountType: "individual" | "joint" | "institution";
 	/**The data shape for indoviduals as *joint partners*, *comp_managers*, and *comp_directors* */
 	PartnerObj: PartnerObj;
+	GenQrReturn: GenericResponseWData<{
+		raw: string;
+		qr: string;
+		encoded: string;
+		backups: { encoded: string[]; raw: string[] };
+		key: string;
+	}>;
+	ClientSignature: { value: string; backups: { [key: string]: string[] } };
 }
 
 export interface GenericResponse {

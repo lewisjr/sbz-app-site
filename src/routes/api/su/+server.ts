@@ -1,30 +1,11 @@
 import dbs from "$lib/server/db";
 import notif from "$lib/server/email";
+import totp from "$lib/server/totp";
 import { genOTP } from "$lib/utils";
 import { json } from "@sveltejs/kit";
-import { toTitleCase } from "@cerebrusinc/fstring";
 
-import type { SBZdb } from "$lib/types";
+import type { SBZdb, Types } from "$lib/types";
 import type { FileData } from "$lib/server/db/utils.js";
-
-export interface UserObj {
-	//details
-	fname: string;
-	lname: string;
-	phone: string;
-	email: string;
-	dob: string;
-	gender: string;
-	mstatus: string;
-	nationality: string;
-	//address
-	street: string;
-	city: string;
-	country: string;
-	//identity
-	idType: string;
-	idNum: string;
-}
 
 // Set an OTP
 export const PUT = async ({ request }) => {
@@ -67,6 +48,7 @@ export const POST = async ({ request }) => {
 	const formData = await request.formData();
 
 	const otp = Number(formData.get("otp")); // comes in as string → cast to number
+	const totpVal = String(formData.get("totp")); // comes in as string
 	const emails = JSON.parse(formData.get("emails") as string) as string[]; // if multiple inputs named "emails"
 	const obj = JSON.parse(
 		formData.get("obj") as string,
@@ -75,13 +57,28 @@ export const POST = async ({ request }) => {
 	// now otp, emails, and obj have the right types
 	// console.log({ otp, emails, obj });
 
-	const serverOtp = await dbs.sbz.checkOtp({ otp, user: emails.join(",,") });
+	const secret = obj.signatures ? (obj.signatures as Types["ClientSignature"]) : undefined;
+
+	const [serverOtp, serverTotp] = await Promise.all([
+		dbs.sbz.checkOtp({ otp, user: emails.join(",,") }),
+		totp.validate({ val: totpVal, secret: secret ? secret.value : "" }),
+	]);
 
 	if (!serverOtp.success)
 		return json(
 			{
 				success: false,
 				message: "Failed to confirm your OTP, please ensure that it is correct and try again.",
+			},
+			{ status: 400 },
+		);
+
+	if (!serverTotp)
+		return json(
+			{
+				success: false,
+				message:
+					"Failed to confirm your signature, please ensure that it is correct and try again.",
 			},
 			{ status: 400 },
 		);

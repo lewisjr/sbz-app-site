@@ -28,14 +28,14 @@
 	import * as Dialog from "$lib/components/ui/dialog/index.js";
 
 	//icons
-	import { CirclePlus, SquarePlus, Trash2, Eye } from "@lucide/svelte";
+	import { CirclePlus, SquarePlus, Trash2, Eye, Copy, Signature } from "@lucide/svelte";
 
 	//constants
 	import { nationalities, countries } from "./utils";
 	import tc from "$lib/tc";
 
 	//types
-	import type { SBZdb } from "$lib/types";
+	import type { SBZdb, Types } from "$lib/types";
 
 	let activeTab = $state<string>("individual");
 	let isMobile = $derived<boolean>($screenWidthStore < 1025);
@@ -49,7 +49,9 @@
 	let lnameValue = $state<string>("");
 
 	let dobValue = $state<string | undefined>("");
-	const updateDob = (value: any) => (dobValue = value);
+	const updateDob = (value: any) => (dobValue = value + "T08:00:00.000Z");
+
+	// $effect(() => console.log({ dobValue }));
 
 	let genderValue = $state<string>("");
 	const updateGender = (value: string) => (genderValue = value);
@@ -131,7 +133,9 @@
 	let lnameValueManager = $state<string>("");
 
 	let dobValueManager: string | undefined = "";
-	const updateDobManager = (value: any) => (dobValueManager = value);
+	const updateDobManager = (value: any) => (dobValueManager = value + "T08:00:00.000Z");
+
+	// $effect(() => console.log({ dobValueManager }));
 
 	let genderValueManager = $state<string>("");
 	const updateGenderManager = (value: string) => (genderValueManager = value);
@@ -599,6 +603,79 @@
 
 	let otpLayout = $state<boolean>(false);
 
+	let signatures = $state<Types["ClientSignature"] | undefined>(undefined);
+	let qrUrl = $state<string | undefined>(undefined);
+	let signatureValue = $state<string | undefined>(undefined);
+	let backupCodes = $state<string[] | undefined>(undefined);
+
+	const copyVal = (val: string): void => {
+		if (navigator.clipboard && window.isSecureContext) {
+			navigator.clipboard
+				.writeText(val)
+				.then(() => {
+					toast.success("Copied!");
+				})
+				.catch((err) => {
+					toast.error("Failed to copy!");
+				});
+		} else {
+			const textarea = document.createElement("textarea");
+			textarea.value = val;
+			textarea.style.position = "fixed"; // avoid scrolling to bottom
+			textarea.style.opacity = "0";
+
+			document.body.appendChild(textarea);
+			textarea.focus();
+			textarea.select();
+
+			try {
+				document.execCommand("copy");
+				toast.success("Copied!");
+			} finally {
+				document.body.removeChild(textarea);
+			}
+		}
+	};
+
+	const genSignature = async () => {
+		if (!idNumValue.length) {
+			toast.error("You need to fill out your ID number first!");
+			return;
+		}
+
+		toast.info("Generating signature...");
+		loading = true;
+
+		try {
+			const req = await fetch(`/api/sign/${idNumValue.trim()}`, {
+				method: "POST",
+			});
+
+			const { data, message, success }: Types["GenQrReturn"] = await req.json();
+
+			loading = false;
+
+			if (!success) {
+				toast.error(message);
+				return;
+			}
+
+			toast.success(message);
+
+			const backups: { [key: string]: string[] } = {};
+			backups[data.key] = data.backups.encoded;
+
+			signatures = { value: data.encoded, backups };
+			qrUrl = data.qr;
+			signatureValue = data.raw;
+			backupCodes = data.backups.raw;
+		} catch (ex: any) {
+			console.error(ex);
+			loading = false;
+			toast.error(String(ex));
+		}
+	};
+
 	const getOtp = async () => {
 		if (disabled) {
 			toast.error("One or more of your inputs is incorrect!");
@@ -626,6 +703,20 @@
 		if (activeTab === "institution") {
 			managerEmails.push(...instituteManagers.map((user) => user.email.trim()));
 			managerPhones.push(...instituteManagers.map((user) => user.phone.trim()));
+		}
+
+		if (!tcVal) {
+			toast.info(
+				"You are required to read and accept the terms and conditions to create an account!",
+			);
+			loading = false;
+			return;
+		}
+
+		if (!signatures) {
+			toast.info("You are required to create a signature!");
+			loading = false;
+			return;
 		}
 
 		loading = true;
@@ -666,18 +757,15 @@
 		otpValue = val;
 	};
 
+	let totpValue = $state<string>("");
+	const totpValueHandler = (val: string) => {
+		totpValue = val;
+	};
+
 	let endLayout = $state<boolean>(false);
 	let tcVal = $state<boolean>(false);
 
 	const openAccount = async () => {
-		if (!tcVal) {
-			toast.info(
-				"You are required to read and accept the terms and conditions to create an account!",
-			);
-			loading = false;
-			return;
-		}
-
 		toast.info("Submitting...");
 		loading = true;
 
@@ -686,6 +774,20 @@
 		switch (activeTab) {
 			case "individual":
 				signing_arrangement = 1;
+
+				cityValueManager = cityValue.trim();
+				countryValueManager = countryValue;
+				emailValueManager = emailValue.trim();
+				fnameValueManager = fnameValue.trim();
+				genderValueManager = genderValue;
+				idNumValueManager = idNumValue.trim();
+				idTypeValueManager = idTypeValue;
+				lnameValueManager = lnameValue.trim();
+				maritalValueManager = maritalValue;
+				nationalityValueManager = nationalityValue;
+				phoneValueManager = phoneValue.trim();
+				streetValueManager = streetValue.trim();
+
 				break;
 			case "joint":
 				signing_arrangement = Number(jointSigningValue);
@@ -728,6 +830,7 @@
 
 		// append otp
 		form.append("otp", otpValue);
+		form.append("totp", totpValue);
 
 		// append emails
 		const managerEmails: string[] = [];
@@ -798,33 +901,36 @@
 			branch_code: branchNumValue.trim(),
 			branch_name: branchNameValue.trim(),
 			city,
-			country,
-			dob: dobValue ?? "",
+			country: toTitleCase(country),
+			dob: dobValue ?? "2099-12-03T19:06:00.000Z",
 			email,
 			fname,
-			gender: genderValue,
+			gender: toTitleCase(genderValue),
 			id_num,
-			id_type: idTypeValue,
+			id_type: toTitleCase(idTypeValue.replace("-", " ")),
 			lname: lnameValue.trim(),
-			mstatus: maritalValue,
-			nationality: nationalityValue,
+			mstatus: toTitleCase(maritalValue),
+			nationality: toTitleCase(nationalityValue),
 			phone,
-			signatures: {},
+			signatures: signatures ? signatures : {},
 			street,
 			swift_code: swiftCodealue.trim(),
 			// others
 			manag_city: cityValueManager.trim(),
-			manag_country: countryValueManager,
-			manag_dob: dobValueManager ?? "",
+			manag_country: toTitleCase(countryValueManager),
+			manag_dob:
+				dobValueManager && dobValueManager.length
+					? dobValueManager
+					: (dobValue ?? "2099-12-03T19:06:00.000Z"),
 			manag_email: emailValueManager.trim(),
 			manag_fname: fnameValueManager.trim(),
-			manag_gender: genderValueManager,
+			manag_gender: toTitleCase(genderValueManager),
 			manag_id_num: idNumValueManager.trim(),
-			manag_id_type: idTypeValueManager,
+			manag_id_type: toTitleCase(idTypeValueManager.replace("-", " ")),
 			manag_lname: lnameValueManager.trim(),
-			manag_mstatus: maritalValueManager,
-			manag_nationality: nationalityValueManager,
-			manag_phone: Number(phoneValueManager.trim()) ?? 0,
+			manag_mstatus: toTitleCase(maritalValueManager),
+			manag_nationality: toTitleCase(nationalityValueManager),
+			manag_phone: Number(phoneValueManager.trim()) ?? -1,
 			manag_street: streetValueManager.trim(),
 			// managers
 			comp_directors: directors.map((row) => {
@@ -846,16 +952,16 @@
 
 				return {
 					city: city.trim(),
-					country,
+					country: toTitleCase(country),
 					dob,
 					email: email.trim(),
 					fname: fname.trim(),
-					gender,
+					gender: toTitleCase(gender),
 					idNum: idNum.trim(),
-					idType,
+					idType: toTitleCase(idType.replace("-", " ")),
 					lname: lname.trim(),
-					mstatus,
-					nationality,
+					mstatus: toTitleCase(mstatus),
+					nationality: toTitleCase(nationality),
 					phone: phone.trim(),
 					street: street.trim(),
 				};
@@ -879,16 +985,16 @@
 
 				return {
 					city: city.trim(),
-					country,
+					country: toTitleCase(country),
 					dob,
 					email: email.trim(),
 					fname: fname.trim(),
-					gender,
+					gender: toTitleCase(gender),
 					idNum: idNum.trim(),
-					idType,
+					idType: toTitleCase(idType.replace("-", " ")),
 					lname: lname.trim(),
-					mstatus,
-					nationality,
+					mstatus: toTitleCase(mstatus),
+					nationality: toTitleCase(nationality),
 					phone: phone.trim(),
 					street: street.trim(),
 				};
@@ -912,16 +1018,16 @@
 
 				return {
 					city: city.trim(),
-					country,
+					country: toTitleCase(country),
 					dob,
 					email: email.trim(),
 					fname: fname.trim(),
-					gender,
+					gender: toTitleCase(gender),
 					idNum: idNum.trim(),
-					idType,
+					idType: toTitleCase(idType.replace("-", " ")),
 					lname: lname.trim(),
-					mstatus,
-					nationality,
+					mstatus: toTitleCase(mstatus),
+					nationality: toTitleCase(nationality),
 					phone: phone.trim(),
 					street: street.trim(),
 				};
@@ -958,6 +1064,11 @@
 			toast.success(res.message);
 			otpLayout = false;
 			endLayout = true;
+
+			signatures = undefined;
+			qrUrl = undefined;
+			signatureValue = undefined;
+			backupCodes = undefined;
 		} catch (ex: any) {
 			loading = false;
 			const message =
@@ -972,7 +1083,7 @@
 	};
 
 	$effect(() => {
-		if (otpValue.length === 6) {
+		if (otpValue.length === 6 && totpValue.length === 6) {
 			openAccount();
 		}
 	});
@@ -1158,8 +1269,16 @@
 			<div class="mx-auto mt-3">
 				<OTP handler={otpValueHandler} bind:disabled={loading} />
 			</div>
+
+			<h3 class="tmid mt-10 mb-2">Enter Your Signature</h3>
+			<p class="tmid mb-3">
+				Please check your <b>authenticator app</b> for your <b>six digit code</b>.
+			</p>
+			<div class="mx-auto mt-3">
+				<OTP handler={totpValueHandler} bind:disabled={loading} />
+			</div>
 		{:else if endLayout}
-			<h3 class="tmid mb-2">Account Submitted!</h3>
+			<h3 class="tmid mb-2">Request Submitted!</h3>
 			<p class="tmid mb-3">
 				Your submission is being processed, you will receive notification via email within 24 hours.
 			</p>
@@ -3068,6 +3187,91 @@
 				</section>
 			{/if}
 
+			<h3 class="mt-7 mb-4">Signature</h3>
+			<section class="inputs mb-5">
+				<div class="items tp flex">
+					{#if backupCodes && backupCodes.length}
+						<div class="cntnt flex w-full max-w-sm flex-col gap-1.5">
+							<div class="grid gap-2">
+								<img class="sig-img" src={qrUrl} alt="signature qr" />
+								<p class="max-w-[800px] text-sm text-muted-foreground">
+									Scan the QR Code above into any authenticator app, we recommend <a
+										href="https://www.google.com/search?q=google+authenticator"
+										target="_blank">Google Authenticar</a
+									>.
+								</p>
+								<p class="max-w-[800px] text-sm text-muted-foreground">
+									Or alternatively, enter the code below to set it up manually in your authenticator
+									app of your choice.
+								</p>
+								<div class="sig-check">
+									<p class="num">{signatureValue}</p>
+									<Button
+										class="ml-5"
+										variant="outline"
+										onclick={() => copyVal(signatureValue ?? "")}><Copy /></Button
+									>
+								</div>
+
+								<h3 class="mt-5">Backup Codes</h3>
+								<table class="sig-backups">
+									<tbody>
+										{#each backupCodes.slice(0, 4) as code, i}
+											<tr>
+												<td class="num">{code}</td>
+												{#if backupCodes[i + 4]}
+													<td class="num">{backupCodes[i + 4]}</td>
+												{/if}
+											</tr>
+										{/each}
+									</tbody>
+								</table>
+								<p class="max-w-[800px] text-sm text-muted-foreground">
+									These codes will only be shown once, and once you use them they cannot be reused.
+								</p>
+								<p class="max-w-[800px] text-sm text-muted-foreground">
+									Please keep them safe and <b>DO NOT</b> share them with anyone.
+								</p>
+								<Button
+									variant="outline"
+									onclick={() => copyVal(backupCodes ? backupCodes.join(" ") : "")}
+									>Copy Codes<Copy class="ml-2 h-4 w-4" /></Button
+								>
+							</div>
+						</div>
+					{:else}
+						<div class="cntnt flex w-full max-w-sm flex-col gap-1.5">
+							<Label>Create a Signature</Label>
+
+							<p class="max-w-[800px] text-sm text-muted-foreground">
+								This will act as your digital identity and enable you to securely "sign" on
+								instructions and other important actions
+							</p>
+							<p class="max-w-[800px] text-sm text-muted-foreground">
+								It will also secure your account from malicious actors
+							</p>
+							<p class="max-w-[800px] text-sm text-muted-foreground">
+								<b>NOTE</b> that you are responsible for keeping it only accessible to you.
+							</p>
+							<p class="max-w-[800px] text-sm text-muted-foreground">
+								You are required to use an <b>Authenticator App</b> to securely generate your signature
+								on demand.
+							</p>
+							<p class="max-w-[800px] text-sm text-muted-foreground">
+								We recommend
+								<a href="https://www.google.com/search?q=google+authenticator" target="_blank"
+									>Google Authenticator</a
+								>.
+							</p>
+
+							<Button variant="outline" onclick={genSignature} disabled={loading}
+								>Create Signature<Signature class="ml-2 h-4 w-4" /></Button
+							>
+						</div>
+					{/if}
+				</div>
+			</section>
+
 			<h3 class="mt-7 mb-4">Questionnaire</h3>
 			<section class="inputs mb-5">
 				<div class="items tp flex">
@@ -3130,9 +3334,9 @@
 			<h3 class="mt-7 mb-4">Terms and Conditions</h3>
 			<section class="inputs mb-5">
 				<div class="flex items-start gap-3">
-					<Checkbox id="terms-2" onCheckedChange={(v) => (tcVal = !tcVal)} disabled={loading} />
+					<Checkbox onCheckedChange={(v) => (tcVal = !tcVal)} disabled={loading} />
 					<div class="grid gap-2">
-						<Label for="terms-2">Accept terms and conditions</Label>
+						<Label>Accept terms and conditions</Label>
 						<p class="max-w-[600px] text-sm text-muted-foreground">
 							By clicking this checkbox, you agree to our terms and conditions, and privacy policy.
 						</p>
@@ -3177,6 +3381,40 @@
 </div>
 
 <style lang="scss">
+	.sig-img {
+		margin: 0px auto;
+		width: 100%;
+		height: auto;
+		border-radius: var(--radius);
+		box-shadow: 0px 0px 3px var(--shadow);
+	}
+
+	.sig-check {
+		width: 100%;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		background-color: var(--shadow);
+		padding: 8px 0px;
+		border-radius: var(--radius);
+		margin-top: 10px;
+		box-shadow: 0px 0px 3px var(--shadow);
+	}
+
+	.sig-backups {
+		background-color: var(--shadow);
+		padding: 8px 0px;
+		border-radius: var(--radius);
+		margin-top: 10px;
+		box-shadow: 0px 0px 3px var(--shadow);
+
+		td {
+			text-align: center;
+			padding: 8px 0px;
+		}
+	}
+
 	.tc {
 		// border: 1px solid lightblue;
 		width: 100%;
