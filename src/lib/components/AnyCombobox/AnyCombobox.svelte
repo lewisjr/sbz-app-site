@@ -71,7 +71,7 @@
 	let cfg = $state<"one" | "two">("one");
 
 	const valHandler = () => {
-		console.log({ cfg, value, valueTwo });
+		// console.log({ cfg, value, valueTwo });
 		if (value && value !== oldVal && cfg === "one") {
 			handler(value);
 			oldVal = value;
