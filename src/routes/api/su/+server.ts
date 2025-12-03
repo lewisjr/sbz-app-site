@@ -71,10 +71,9 @@ export const POST = async ({ request }) => {
 	const obj = JSON.parse(
 		formData.get("obj") as string,
 	) as SBZdb["public"]["Tables"]["clients"]["Insert"];
-	const referral_source = formData.get("referral") as string;
 
 	// now otp, emails, and obj have the right types
-	console.log({ otp, emails, obj });
+	// console.log({ otp, emails, obj });
 
 	const serverOtp = await dbs.sbz.checkOtp({ otp, user: emails.join(",,") });
 
@@ -91,7 +90,7 @@ export const POST = async ({ request }) => {
 
 	const { acc_type, is_in_trust_of } = obj;
 
-	let queryHelper: string = "";
+	// let queryHelper: string = "";
 	let qWord = obj.luseId ? "opening" : "linking";
 
 	const details: { name: string; email: string; luseId: number; idNumber: string; phone: string } =
@@ -114,7 +113,7 @@ export const POST = async ({ request }) => {
 		details.idNumber = obj.id_num;
 		details.name = `${obj.fname} ${obj.lname}`;
 		details.phone = obj.phone.toString();
-		queryHelper = `Requesting the ${qWord} of an individual account for ${details.name}`;
+		// queryHelper = `Requesting the ${qWord} of an individual account for ${details.name}`;
 	}
 
 	if (acc_type === "individual" && is_in_trust_of) {
@@ -128,7 +127,7 @@ export const POST = async ({ request }) => {
 		details.idNumber = obj.manag_id_num;
 		details.name = `${obj.manag_fname} ${obj.manag_lname}`;
 		details.phone = obj.manag_phone.toString();
-		queryHelper = `Requesting the ${qWord} of an in trust of account for ${obj.fname} ${obj.lname} managed by ${details.name}.`;
+		// queryHelper = `Requesting the ${qWord} of an in trust of account for ${obj.fname} ${obj.lname} managed by ${details.name}.`;
 	}
 
 	if (obj.joint_partners.length) {
@@ -155,7 +154,7 @@ export const POST = async ({ request }) => {
 				details.name = `${details.name}, and ${row.fname} ${row.lname}`;
 			}
 
-			queryHelper = `Requesting the ${qWord} of a joint account for ${details.name}.`;
+			// queryHelper = `Requesting the ${qWord} of a joint account for ${details.name}.`;
 		});
 	}
 
@@ -170,7 +169,7 @@ export const POST = async ({ request }) => {
 			files.push({ file: poa, id: row.idNum, type: "poa" });
 			files.push({ file: poi, id: row.idNum, type: "poi" });
 
-			queryHelper = `Requesting the ${qWord} of an institutional account for ${obj.fname}.`;
+			// queryHelper = `Requesting the ${qWord} of an institutional account for ${obj.fname}.`;
 		});
 	}
 
@@ -202,64 +201,7 @@ export const POST = async ({ request }) => {
 		});
 	}
 
-	const agent = await dbs.sbz.getTicketCandidate();
+	const res = await dbs.sbz.openAccount(obj);
 
-	// create ticket
-	const ticketRes = await dbs.sbz.createTicket(
-		{
-			assigned: agent.data.agentId,
-			email: details.email,
-			id: "",
-			id_num: details.idNumber,
-			luse_id: -1,
-			names: details.name,
-			phone: details.phone,
-			query: `--${queryHelper}`,
-			query_type: "Account Opening",
-			object: obj,
-			platform: "Web",
-			uid: details.email,
-			referral_source,
-		},
-		agent.data,
-	);
-
-	if (!ticketRes.success)
-		return json(
-			{
-				success: false,
-				message: "Failed to submit your request. Please try again in a few minutes.",
-			},
-			{ status: 400 },
-		);
-
-	const updateAgentReq = dbs.sbz.updateTicketCandidate(agent.data);
-	const uploadKycReq = dbs.sbz.uploadKyc(files);
-
-	const emailReqs = emails.map((address) =>
-		notif.email.sendUpdate(
-			{
-				subject: "Account Opening | Stockbrokers Zambia",
-				title: "Request Received!",
-				body: `Your account opening submission has been received and assigned to <b>${toTitleCase(agent.data.agentId)}</b> with ticket number <b>${ticketRes.data}</b>. This process usually takes <b>24 hours</b> and you will be notified.`,
-				extra: "",
-			},
-			address,
-		),
-	);
-
-	const historyReq = dbs.sbz.appendHistory({
-		creator: "odyn",
-		message: `Odyn assigned this ticket to ${toTitleCase(agent.data.agentId)}.`,
-		ticketId: ticketRes.data,
-	});
-
-	const [updateAgentRes, uploadKycRes] = await Promise.all([
-		updateAgentReq,
-		uploadKycReq,
-		historyReq,
-		...emailReqs,
-	]);
-
-	return json({ success: true, message: "Request submitted!" }, { status: 201 });
+	return json(res, { status: res.success ? 201 : 400 });
 };

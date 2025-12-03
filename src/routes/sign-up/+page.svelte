@@ -4,6 +4,7 @@
 	import { toast } from "svelte-sonner";
 	import { onMount } from "svelte";
 	import isEmail from "is-email";
+	import { marked } from "marked";
 
 	//stores
 	import { screenWidthStore } from "$lib/stores";
@@ -13,6 +14,7 @@
 	import AnyPicker from "$lib/components/AnyPicker.svelte";
 	import OTP from "$lib/components/OTP.svelte";
 	import AnyCombobox from "$lib/components/AnyCombobox/AnyCombobox.svelte";
+	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
 
 	//components - shadcn
 	import Label from "$lib/components/ui/label/label.svelte";
@@ -23,12 +25,14 @@
 	import Button from "$lib/components/ui/button/button.svelte";
 	import * as RadioGroup from "$lib/components/ui/radio-group/index.js";
 	import * as Table from "$lib/components/ui/table/index.js";
+	import * as Dialog from "$lib/components/ui/dialog/index.js";
 
 	//icons
-	import { CirclePlus, SquarePlus, Trash2 } from "@lucide/svelte";
+	import { CirclePlus, SquarePlus, Trash2, Eye } from "@lucide/svelte";
 
 	//constants
 	import { nationalities, countries } from "./utils";
+	import tc from "$lib/tc";
 
 	//types
 	import type { SBZdb } from "$lib/types";
@@ -663,8 +667,17 @@
 	};
 
 	let endLayout = $state<boolean>(false);
+	let tcVal = $state<boolean>(false);
 
-	const createTicket = async () => {
+	const openAccount = async () => {
+		if (!tcVal) {
+			toast.info(
+				"You are required to read and accept the terms and conditions to create an account!",
+			);
+			loading = false;
+			return;
+		}
+
 		toast.info("Submitting...");
 		loading = true;
 
@@ -768,6 +781,14 @@
 			id_num = idNumValueInstitute;
 			phone = Number(phoneValueInstitute) ?? 0;
 		}
+
+		const referralSource = !sanitisedReferralValue
+			? "e1"
+			: sanitisedReferralValue === "Other"
+				? otherReferralValue.length < 3
+					? "e2"
+					: otherReferralValue.trim()
+				: sanitisedReferralValue;
 
 		const obj: SBZdb["public"]["Tables"]["clients"]["Insert"] = {
 			acc_type: activeTab,
@@ -910,6 +931,7 @@
 			is_in_trust_of: isInTrustOf === "yes" ? true : undefined,
 			signing_arrangement,
 			cv_num: "",
+			referral_src: referralSource,
 		};
 
 		// append obj
@@ -917,16 +939,6 @@
 
 		// add emails
 		form.append("emails", JSON.stringify(managerEmails));
-
-		// add referral source
-		const referralSource = !sanitisedReferralValue
-			? "e1"
-			: sanitisedReferralValue === "Other"
-				? otherReferralValue.length < 3
-					? "e2"
-					: otherReferralValue.trim()
-				: sanitisedReferralValue;
-		form.append("referral", referralSource);
 
 		try {
 			const req = await fetch("/api/su", {
@@ -961,7 +973,7 @@
 
 	$effect(() => {
 		if (otpValue.length === 6) {
-			createTicket();
+			openAccount();
 		}
 	});
 
@@ -3115,6 +3127,41 @@
 				</div>
 			</section>
 
+			<h3 class="mt-7 mb-4">Terms and Conditions</h3>
+			<section class="inputs mb-5">
+				<div class="flex items-start gap-3">
+					<Checkbox id="terms-2" onCheckedChange={(v) => (tcVal = !tcVal)} disabled={loading} />
+					<div class="grid gap-2">
+						<Label for="terms-2">Accept terms and conditions</Label>
+						<p class="max-w-[600px] text-sm text-muted-foreground">
+							By clicking this checkbox, you agree to our terms and conditions, and privacy policy.
+						</p>
+						<Dialog.Root>
+							<Dialog.Trigger disabled={loading}>
+								{#snippet child({ props })}
+									<Button {...props} variant="link" class="w-fit">
+										View Ts & Cs<Eye class="h-4 w-4" />
+									</Button>
+								{/snippet}
+							</Dialog.Trigger>
+
+							<Dialog.Content>
+								<Dialog.Header>
+									<Dialog.Title>Stockbrokers Zambia Ts & Cs</Dialog.Title>
+									<Dialog.Description>
+										In order to open an account an use our platform, you are required to read and
+										accept these.
+									</Dialog.Description>
+								</Dialog.Header>
+								<div class="tc">
+									{@html marked(tc)}
+								</div>
+							</Dialog.Content>
+						</Dialog.Root>
+					</div>
+				</div>
+			</section>
+
 			<Button
 				class={`mt-10 cursor-pointer${!isMobile ? " mx-auto w-[200px]" : ""}`}
 				{disabled}
@@ -3130,6 +3177,13 @@
 </div>
 
 <style lang="scss">
+	.tc {
+		// border: 1px solid lightblue;
+		width: 100%;
+		height: 70vh;
+		overflow-y: auto;
+	}
+
 	.tmid {
 		width: 97%;
 		text-align: center;

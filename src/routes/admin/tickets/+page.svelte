@@ -5,7 +5,7 @@
 	import { getCoreRowModel, getPaginationRowModel } from "@tanstack/table-core";
 	import { toTitleCase } from "@cerebrusinc/fstring";
 	import { numParse } from "@cerebrusinc/qol";
-	import { formatDbTime } from "$lib/utils";
+	import { formatDbTime, devLog } from "$lib/utils";
 	import { createRawSnippet, onMount, tick } from "svelte";
 	import { renderSnippet, renderComponent } from "$lib/components/ui/data-table/index";
 	import {
@@ -400,44 +400,129 @@
 	let strongFilter = $state<StrongFilter>("none");
 	const updateStrongFilter = (val: StrongFilter) => (strongFilter = val);
 
+	let strongFilterTwo = $state<StrongFilter>("none");
+	const updateStrongFilterTwo = (val: StrongFilter) => (strongFilterTwo = val);
+
 	let cleanedTickets = $derived.by(() => {
+		const _open = ticketData.filter((item) => !item.is_closed);
+		const _closed = ticketData.filter((item) => item.is_closed);
+
+		let _ticketData: TicketRowLean[] = [..._open, ..._closed];
+
 		switch (strongFilter) {
 			case "none":
-				return ticketData;
+				// return _ticketData;
+				break;
 			case "agent":
-				const agentTickets = ticketData.filter((item) => item.assigned === data.admin);
+				/*
+				const agentTickets = _ticketData.filter((item) => item.assigned === data.admin);
 				return agentTickets;
+				*/
+				_ticketData = ticketData.filter((item) => item.assigned === data.admin);
+				break;
 			case "closed":
-				const closeddTickets = ticketData.filter((item) => item.is_closed);
+				/*
+				const closeddTickets = _ticketData.filter((item) => item.is_closed);
 				return closeddTickets;
+				*/
+				_ticketData = ticketData.filter((item) => item.is_closed);
+				break;
 			case "open":
-				const openTickets = ticketData.filter((item) => !item.is_closed);
+				/*
+				const openTickets = _ticketData.filter((item) => !item.is_closed);
 				return openTickets;
+				*/
+				_ticketData = ticketData.filter((item) => !item.is_closed);
+				break;
 			default:
 				const [code, filter] = strongFilter.split(":");
 
 				if (code === "AG") {
-					const agentTickets = ticketData.filter((item) => item.assigned === filter);
+					/*
+					const agentTickets = _ticketData.filter((item) => item.assigned === filter);
 					return agentTickets;
+					*/
+					_ticketData = ticketData.filter((item) => item.assigned === filter);
+					devLog(
+						{
+							msg: `filtered ticketData (${numParse(ticketData.length)}) into _ticketData (${numParse(_ticketData.length)})`,
+							code,
+							filter,
+						},
+						"cleanedTickets:446",
+					);
+					break;
 				}
 
 				if (code === "RS") {
-					const referralTickets = ticketData.filter((item) => item.referral_source === filter);
+					/*
+					const referralTickets = _ticketData.filter((item) => item.referral_source === filter);
 					return referralTickets;
+					*/
+					_ticketData = ticketData.filter((item) => item.referral_source === filter);
+					break;
 				}
 
 				if (code === "QT") {
-					const qTypeTickets = ticketData.filter((item) => item.query_type === filter);
+					/*
+					const qTypeTickets = _ticketData.filter((item) => item.query_type === filter);
 					return qTypeTickets;
+					*/
+					_ticketData = ticketData.filter((item) => item.query_type === filter);
+					break;
 				}
 
 				if (code === "P") {
-					const platformTickets = ticketData.filter((item) => item.platform === filter);
+					/*
+					const platformTickets = _ticketData.filter((item) => item.platform === filter);
 					return platformTickets;
+					*/
+					_ticketData = ticketData.filter((item) => item.platform === filter);
+					break;
 				}
 
-				return ticketData;
+				_ticketData = JSON.parse(JSON.stringify(ticketData));
 		}
+
+		if (strongFilterTwo !== "none") {
+			switch (strongFilterTwo) {
+				case "none":
+					return _ticketData;
+				case "agent":
+					const agentTickets = _ticketData.filter((item) => item.assigned === data.admin);
+					return agentTickets;
+				case "closed":
+					const closeddTickets = _ticketData.filter((item) => item.is_closed);
+					return closeddTickets;
+				case "open":
+					const openTickets = _ticketData.filter((item) => !item.is_closed);
+					return openTickets;
+				default:
+					const [code, filter] = strongFilter.split(":");
+
+					if (code === "AG") {
+						const agentTickets = _ticketData.filter((item) => item.assigned === filter);
+						return agentTickets;
+					}
+
+					if (code === "RS") {
+						const referralTickets = _ticketData.filter((item) => item.referral_source === filter);
+						return referralTickets;
+					}
+
+					if (code === "QT") {
+						const qTypeTickets = _ticketData.filter((item) => item.query_type === filter);
+						return qTypeTickets;
+					}
+
+					if (code === "P") {
+						const platformTickets = _ticketData.filter((item) => item.platform === filter);
+						return platformTickets;
+					}
+			}
+		}
+
+		return _ticketData;
 	});
 
 	let globalFilterValue = $state<string>("");
@@ -983,6 +1068,7 @@
 			/>
 			<AnyCombobox
 				handler={updateStrongFilter}
+				handlerTwo={updateStrongFilterTwo}
 				data={{
 					grouped: [
 						{

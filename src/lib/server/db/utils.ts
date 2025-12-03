@@ -148,6 +148,9 @@ interface ApiVersion {
 	success: boolean;
 	version: string;
 }
+
+type ClientInsert = SBZdb["public"]["Tables"]["clients"]["Insert"];
+
 interface SBZutils {
 	log: (obj: LogObj) => Promise<void>;
 	setOtp: (obj: OTPObj) => Promise<GenericResponse>;
@@ -174,6 +177,7 @@ interface SBZutils {
 	// getAdmins: () => Promise<AdminRow[]>;
 	isClientCorrect: (luseId: number) => Promise<boolean>;
 	getClient: (luseId: number) => Promise<ClientRow[]>;
+	openAccount: (obj: ClientInsert) => Promise<GenericResponse>;
 
 	getAgents: () => Promise<AgentIDs[]>;
 
@@ -1327,6 +1331,81 @@ const sbz = (): SBZutils => {
 		}
 	};
 
+	const _openAccount = async (obj: ClientInsert): Promise<GenericResponse> => {
+		try {
+			const tempId: number = Number(obj.id_num.replace(/\D+/g, "")) * -1;
+			obj.luseId = tempId;
+
+			const firstCheck = await sbzdb.from("clients").select().filter("id_num", "eq", obj.id_num);
+
+			if (firstCheck.error) {
+				await _log({ message: firstCheck.error.message, title: "Open Account E1" });
+				return {
+					message: "Failed to validate, please wait a few minutes and try again.",
+					success: false,
+				};
+			}
+
+			if (firstCheck.data.length) {
+				return {
+					message:
+						"You already have an account with us! Please select 'forgot password' to retrieve your account.",
+					success: false,
+				};
+			}
+
+			const { error } = await sbzdb.from("clients").insert(obj);
+
+			if (error) {
+				await _log({ message: error.message, title: "Open Account E2" });
+				return {
+					message: "Failed to upload, please wait a few minutes and try again.",
+					success: false,
+				};
+			}
+
+			const internalEmail = notif.email.sendLink(
+				{
+					subject: `New Account Request | ${obj.fname} ${obj.lname}`,
+					title: `Account Opening`,
+					body: `A new client <b>${obj.fname} ${obj.lname}</b> wants to open an account!. Please click below to review.`,
+					link: `https://app.sbz.com.zm/admin/aco?q=${tempId}`,
+					linkText: "View Request",
+					extra: `This is a ${obj.country === "Zambia" ? "local" : "foreign"} client (currenly residing in ${obj.country}).`,
+					cc: IS_DEV ? "sbzlewis@gmail.com" : "trading@sbz.com.zm",
+				},
+				"",
+			);
+
+			const clientEmail = notif.email.sendUpdate(
+				{
+					subject: `Your Account Opening Request | SBZ Digital`,
+					title: `Account Opening`,
+					body: `Hi ${obj.fname},<br /><br />We have received your request and are currently processing your account opening! You will be notified via email on any status updates.`,
+					extra: "Please note that we usually open accounts wihtin 24 hours on working days.",
+				},
+				obj.email,
+			);
+
+			await Promise.all([internalEmail, clientEmail]);
+
+			return { message: "Successfully submitted your account opening request!", success: true };
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Open Account Exception" });
+			return {
+				success: false,
+				message: "Server error, please wait 10 minutes and try again.",
+			};
+		}
+	};
+
 	const _auditTicket = async (ticketId: string): Promise<GenericResponseWData<AuditRow[]>> => {
 		try {
 			const { data, error } = await sbzdb
@@ -2273,6 +2352,7 @@ const sbz = (): SBZutils => {
 		pauseOdyn: _pauseOdyn,
 		unPauseOdyn: _unPauseOdyn,
 		uploadFiles: _uploadFiles,
+		openAccount: _openAccount,
 	};
 };
 

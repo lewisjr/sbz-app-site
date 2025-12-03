@@ -114,6 +114,7 @@ export type Database = {
 					mstatus: string;
 					nationality: string;
 					phone: number;
+					referral_src: string;
 					signatures: Json;
 					signing_arrangement: number;
 					street: string;
@@ -160,6 +161,7 @@ export type Database = {
 					mstatus: string;
 					nationality: string;
 					phone: number;
+					referral_src?: string;
 					signatures: Json;
 					signing_arrangement?: number;
 					street: string;
@@ -206,6 +208,7 @@ export type Database = {
 					mstatus?: string;
 					nationality?: string;
 					phone?: number;
+					referral_src?: string;
 					signatures?: Json;
 					signing_arrangement?: number;
 					street?: string;
