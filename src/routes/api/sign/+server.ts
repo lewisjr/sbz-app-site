@@ -22,7 +22,7 @@ export const POST = async ({ request }) => {
 
 			if (!client.length || !client[0]) {
 				return json(
-					{ success: false, message: "Ensure your LuSE ID and ID number are correct." },
+					{ success: false, message: "Ensure your LuSE ID is correct." },
 					{ status: 400 },
 				);
 			}
@@ -49,7 +49,7 @@ export const POST = async ({ request }) => {
 		return json(
 			{
 				success: false,
-				message: "Failed to validate your signature, please try again in a few minutes.",
+				message: "Invalid signature provided.",
 			},
 			{ status: 400 },
 		);

@@ -1309,11 +1309,8 @@ const sbz = (): SBZutils => {
 
 	const _getClient = async (luseId: number): Promise<ClientRow[]> => {
 		try {
-			const { data, error } = await sbzdb
-				.from("clients")
-				.select()
-				.filter("luseId", "eq", luseId)
-				.filter("is_approved", "eq", true);
+			const { data, error } = await sbzdb.from("clients").select().filter("luseId", "eq", luseId);
+			//.filter("is_approved", "eq", true);
 
 			if (error) {
 				_log({
