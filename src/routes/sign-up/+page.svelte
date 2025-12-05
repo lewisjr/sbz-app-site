@@ -1080,16 +1080,16 @@
 			if (!res.success) {
 				toast.error(res.message);
 				return;
+			} else {
+				toast.success(res.message);
+				otpLayout = false;
+				endLayout = true;
+
+				signatures = undefined;
+				qrUrl = undefined;
+				signatureValue = undefined;
+				backupCodes = undefined;
 			}
-
-			toast.success(res.message);
-			otpLayout = false;
-			endLayout = true;
-
-			signatures = undefined;
-			qrUrl = undefined;
-			signatureValue = undefined;
-			backupCodes = undefined;
 		} catch (ex: any) {
 			loading = false;
 			const message =
@@ -1099,7 +1099,7 @@
 						? ex.message
 						: ex?.message || JSON.stringify(ex);
 
-			// toast.error(message);
+			toast.error(String(ex));
 		}
 	};
 

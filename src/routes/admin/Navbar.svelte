@@ -24,6 +24,7 @@
 		FileChartPie,
 		LogOut,
 		GitCompareArrows,
+		UserRoundCheck,
 	} from "@lucide/svelte";
 
 	//types
@@ -157,6 +158,11 @@
 	<a class={`link${path === "/admin/clients" ? " current" : ""}`} href="/admin/clients">
 		<User class="h-8 w-8" />
 		<p>Clients</p>
+	</a>
+
+	<a class={`link${path === "/admin/requests" ? " current" : ""}`} href="/admin/requests">
+		<UserRoundCheck class="h-8 w-8" />
+		<p>Requests</p>
 	</a>
 
 	<a class={`link${path === "/admin/trades" ? " current" : ""}`} href="/admin/trades">

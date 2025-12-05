@@ -235,6 +235,23 @@ interface SBZutils {
 	getAgentStatus: () => Promise<ApiVersion>;
 	getSiteStatus: () => Promise<ApiVersion>;
 	getClientNameById: (luseIds: number[]) => Promise<TempClientNameTwo[]>;
+
+	// requests
+	getRequests: () => Promise<ClientRow[]>;
+	approveRequest: (
+		idNum: string,
+		fname: string,
+		sender: string,
+		email: string,
+	) => Promise<GenericResponse>;
+	rejectRequest: (
+		idNum: string,
+		luseId: string,
+		fname: string,
+		sender: string,
+		email: string,
+		reason: string,
+	) => Promise<GenericResponse>;
 }
 
 const sbz = (): SBZutils => {
@@ -940,6 +957,132 @@ const sbz = (): SBZutils => {
 
 			_log({ message: error, title: "Get Tickets Exception" });
 			return [];
+		}
+	};
+
+	// ? requests
+
+	const _getRequests = async (): Promise<ClientRow[]> => {
+		try {
+			const { data, error } = await sbzdb
+				.from("clients")
+				.select()
+				.order("created_at", { ascending: true })
+				.filter("luseId", "lt", 0);
+
+			if (error) {
+				await _log({ message: error.message, title: "Get Requests Error" });
+				return [];
+			}
+
+			return data;
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Get Requests Exception" });
+			return [];
+		}
+	};
+
+	const _approveRequest = async (
+		idNum: string,
+		fname: string,
+		sender: string,
+		email: string,
+	): Promise<GenericResponse> => {
+		try {
+			const { error } = await sbzdb
+				.from("clients")
+				.update({ is_approved: true, approved_by: sender, approve_date: genDbTimestamp() })
+				.filter("id_num", "eq", idNum);
+
+			if (error) {
+				await _log({ message: error.message, title: "Approve Request Error" });
+				return { success: false, message: error.message };
+			}
+
+			const eReq = notif.email.sendUpdate(
+				{
+					body: `Hi ${fname},<br /><br />Your account opening request status has changed from <i>in review</i> to <b>approved</b>! Your account details will be sent to you within the next 24 hours.`,
+					extra: "<b>NOTE</b> that account details are only sent on working days.",
+					subject: "Account Opening Update | SBZ Digital",
+					title: "Status Update",
+				},
+				email,
+			);
+
+			const histReq = _log({
+				message: `${toTitleCase(sender)} just approved ${fname}'s (${idNum}) account!`,
+				title: "Account Approved",
+			});
+
+			await Promise.all([eReq, histReq]);
+
+			return { message: `${fname}'s account has been approved!`, success: true };
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Get Requests Exception" });
+			return { message: String(ex), success: false };
+		}
+	};
+
+	const _rejectRequest = async (
+		idNum: string,
+		luseId: string,
+		fname: string,
+		sender: string,
+		email: string,
+		reason: string,
+	): Promise<GenericResponse> => {
+		try {
+			const { error } = await sbzdb.from("clients").delete().filter("luseId", "eq", luseId);
+
+			if (error) {
+				await _log({ message: error.message, title: "Reject Request Error" });
+				return { success: false, message: error.message };
+			}
+
+			const eReq = notif.email.sendLink(
+				{
+					body: `Hi ${fname},<br /><br />Your account opening request status has changed from <i>in review</i> to <b>rejected</b> with the following reason:<br /><br /><i>${reason}</i>`,
+					extra: "You may click above to retry when you're ready!",
+					subject: "Account Opening Update | SBZ Digital",
+					title: "Status Update",
+					link: "https://app.sbz.com.zm/sign-up",
+					linkText: "Retry",
+				},
+				email,
+			);
+
+			const histReq = _log({
+				message: `${toTitleCase(sender)} just rejected ${fname}'s (${idNum}) account with reason: ${reason}!`,
+				title: "Account Rejected",
+			});
+
+			await Promise.all([eReq, histReq]);
+
+			return { message: `${fname}'s account has been rejected!`, success: true };
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Get Requests Exception" });
+			return { message: String(ex), success: false };
 		}
 	};
 
@@ -2288,6 +2431,8 @@ const sbz = (): SBZutils => {
 						return "Proof of Address";
 					case "poi":
 						return "Proof of Identity";
+					case "selfie":
+						return "Selfie";
 					default:
 						return "Unkown";
 				}
@@ -2407,6 +2552,9 @@ const sbz = (): SBZutils => {
 		uploadFiles: _uploadFiles,
 		openAccount: _openAccount,
 		updateClient: _updateClient,
+		approveRequest: _approveRequest,
+		getRequests: _getRequests,
+		rejectRequest: _rejectRequest,
 	};
 };
 

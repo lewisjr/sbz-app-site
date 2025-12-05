@@ -75,6 +75,8 @@ export type Database = {
 			clients: {
 				Row: {
 					acc_type: string;
+					approve_date: string | null;
+					approved_by: string;
 					bank_acc_name: string;
 					bank_acc_num: string;
 					bank_name: string;
@@ -122,6 +124,8 @@ export type Database = {
 				};
 				Insert: {
 					acc_type: string;
+					approve_date?: string | null;
+					approved_by?: string;
 					bank_acc_name: string;
 					bank_acc_num: string;
 					bank_name: string;
@@ -169,6 +173,8 @@ export type Database = {
 				};
 				Update: {
 					acc_type?: string;
+					approve_date?: string | null;
+					approved_by?: string;
 					bank_acc_name?: string;
 					bank_acc_num?: string;
 					bank_name?: string;
