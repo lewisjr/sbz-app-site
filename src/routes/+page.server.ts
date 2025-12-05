@@ -1,6 +1,9 @@
+import { kratosSafety } from "$lib/server/jwt.js";
 import { redirect } from "@sveltejs/kit";
 
 export const load = (data) => {
+	// kratosSafety(data);
+
 	const { cookies } = data;
 
 	const admin = cookies.get("sbz-admin");

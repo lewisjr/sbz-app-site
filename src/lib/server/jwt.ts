@@ -67,3 +67,30 @@ export const scourgeOfInvestor = (event: ServerLoadEvent): ClientJwt => {
 
 	return userDetails; // or whatever is useful
 };
+
+export const kratosSafety = (event: ServerLoadEvent): void => {
+	const user = event.cookies.get("sbz-authed");
+
+	if (!user) {
+		event.cookies.set("sbz-authed", genJwt({ setBy: "svelte" }, "30d"), {
+			path: "/",
+			httpOnly: true,
+			maxAge: 60 * 60 * 168,
+			secure: true,
+		});
+
+		return;
+	}
+
+	const details = checkJwt(user);
+	if (!details) {
+		event.cookies.set("sbz-authed", genJwt({ setBy: "svelte" }, "30d"), {
+			path: "/",
+			httpOnly: true,
+			maxAge: 60 * 60 * 168,
+			secure: true,
+		});
+
+		return;
+	}
+};

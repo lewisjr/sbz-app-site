@@ -5,8 +5,10 @@ import notif from "$lib/server/email";
 import { genDbTimestamp, genOTP } from "$lib/utils";
 import { genJwt } from "$lib/server/jwt";
 
-import type { UserObj } from "../su/+server.js";
+// import type { UserObj } from "../su/+server.js";
 import type { OTPBulkObj } from "$lib/server/db/utils.js";
+
+type UserObj = any;
 
 export const PUT = async ({ request }) => {
 	const { id, label }: { label: "Admin Username" | "LuSE ID"; id: string } = await request.json();
@@ -28,6 +30,11 @@ export const PUT = async ({ request }) => {
 			emails.push(isApprovedAdmin[0].email);
 			break;
 		case "LuSE ID":
+			return json(
+				{ success: false, message: "Coming soon! Stay tuned on our Facebook." },
+				{ status: 400 },
+			);
+		/*
 			const isApprovedClient = await dbs.sbz.getClient(Number(id));
 
 			if (!isApprovedClient.length)
@@ -71,6 +78,7 @@ export const PUT = async ({ request }) => {
 				}
 			}
 			break;
+			*/
 		default:
 			return json(
 				{
@@ -179,6 +187,7 @@ export const POST = async ({ request, cookies }) => {
 			});
 			break;
 		default:
+			/*
 			const client = await dbs.sbz.getClient(Number(id));
 			dbs.sbz.log({ message: `Client ${id} just logged in.`, title: "Login Attempt" });
 
@@ -195,6 +204,7 @@ export const POST = async ({ request, cookies }) => {
 				maxAge: 60 * 60 * 168,
 				secure: true,
 			});
+			*/
 			break;
 	}
 
