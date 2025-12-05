@@ -36,6 +36,7 @@ export const load = async ({ cookies, params }) => {
 		referral_source: "",
 		uid: "",
 		close_reason: "",
+		read_status: "read",
 	};
 
 	let assigneeEmail: string = "";
@@ -72,6 +73,7 @@ export const load = async ({ cookies, params }) => {
 		};
 	}
 
+	/*
 	if (!cookie) {
 		const otp = genOTP();
 
@@ -94,6 +96,7 @@ export const load = async ({ cookies, params }) => {
 			diffPlatform: false,
 		};
 	}
+	*/
 
 	const [assignee, _messages] = await Promise.all([
 		dbs.sbz.getAdmin(_ticket.assigned),

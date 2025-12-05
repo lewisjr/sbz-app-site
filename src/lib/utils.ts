@@ -482,9 +482,15 @@ export const fileNamifier = (link: string): string => {
 	const extension = extensionArr[extensionArr.length - 1];
 
 	// console.log({ extension, extensionArr });
+	console.log({ nameArr, link, name });
 
-	if (link.includes("sbz.com.zm")) return toTitleCase(name.replaceAll("-", " "));
-	else return `${name.substring(0, 10)}...${extension}`;
+	if (link.includes("sbz.com.zm")) {
+		return toTitleCase(name.replaceAll("-", " "));
+	} else {
+		console.log({ nameArr, link, name, shouldBe: `${name.substring(0, 10)}...${extension}` });
+
+		return `${name.substring(0, 10)}...${extension}`;
+	}
 };
 
 /**For custom file uploads */
