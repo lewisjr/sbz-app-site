@@ -60,6 +60,34 @@
 
 	let messages = $state<OdynChat[]>([]);
 	const initMessage = (msgs: OdynChat[]) => {
+		const tmp: OdynChat[] = [];
+
+		msgs.forEach((m) => {
+			const { body: _body, created_at, id, sender, ticket_no, type } = m;
+
+			let body = _body;
+
+			const bArr = body.replaceAll(",,", "").split("https://");
+
+			// console.log({ bArr, body });
+
+			if (bArr.length > 1) {
+				body = "";
+
+				bArr.forEach((l, i) => {
+					if (l.length) {
+						if (!i || !body.length) {
+							body += `https://${l}`;
+						} else {
+							body += `,,https://${l}`;
+						}
+					}
+				});
+			}
+
+			tmp.push({ created_at, id, sender, ticket_no, type, body });
+		});
+
 		messages = [
 			{
 				body: data.ticket.query,
@@ -143,7 +171,7 @@
 				type: "text",
 			},
 			*/
-			...msgs,
+			...tmp,
 		];
 	};
 

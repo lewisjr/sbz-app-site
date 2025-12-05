@@ -176,7 +176,7 @@
 
 			const bArr = body.replaceAll(",,", "").split("https://");
 
-			console.log({ bArr, body });
+			// console.log({ bArr, body });
 
 			if (bArr.length > 1) {
 				body = "";
@@ -195,7 +195,7 @@
 			tmp.push({ created_at, id, sender, ticket_no, type, body });
 		});
 
-		console.log({ tmp });
+		// console.log({ tmp });
 
 		messages = [
 			{
