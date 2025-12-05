@@ -1,7 +1,7 @@
 {
 	"name": "sbz-app-site",
 	"private": true,
-	"version": "1.0.1",
+	"version": "1.1.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev --host",
@@ -14,7 +14,8 @@
 		"lint": "prettier --check .",
 		"bd": "yarn napi build --manifest-path ./rust/Cargo.toml --release",
 		"postbd": "copy /Y rust\\index.node src\\lib\\server\\rust\\ && copy /Y rust\\index.d.ts src\\lib\\server\\rust\\",
-		"bdg": "yarn napi build --manifest-path ./rust/Cargo.toml"
+		"bdg": "yarn napi build --manifest-path ./rust/Cargo.toml",
+		"ssl": "local-ssl-proxy --source 5174 --target 5173"
 	},
 	"devDependencies": {
 		"@internationalized/date": "^3.8.2",
@@ -29,6 +30,7 @@
 		"@types/qrcode": "^1.5.6",
 		"bits-ui": "^2.14.4",
 		"clsx": "^2.1.1",
+		"local-ssl-proxy": "^2.0.5",
 		"prettier": "^3.4.2",
 		"prettier-plugin-svelte": "^3.3.3",
 		"prettier-plugin-tailwindcss": "^0.6.11",

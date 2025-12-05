@@ -69,8 +69,8 @@ type OdynInsert = SBZdb["public"]["Tables"]["odyn-tickets"]["Insert"];
 
 export interface FileData {
 	id: string;
-	type: "poi" | "poa";
-	file: File;
+	type: "poi" | "poa" | "selfie";
+	file: File | Blob;
 }
 
 type AdminRow = SBZdb["public"]["Tables"]["admins"]["Row"];
@@ -1071,7 +1071,7 @@ const sbz = (): SBZutils => {
 		try {
 			files.forEach((f) => {
 				const timestamp = Date.now();
-				const ext = _getFileExtension(f.file);
+				const ext = f.file instanceof Blob ? "png" : _getFileExtension(f.file);
 
 				const _f = sbzdb.storage
 					.from("kyc")

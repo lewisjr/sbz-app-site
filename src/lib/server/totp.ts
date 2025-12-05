@@ -80,6 +80,8 @@ const _checkSignature = (args: { val: string; secret: string }): boolean => {
 	const tokenise = new Tokenise();
 	const decoded = tokenise.decode(secret);
 
+	//console.log("\n\n", { secret, decoded });
+
 	return Totp.validate({ passcode: val, secret: decoded });
 };
 

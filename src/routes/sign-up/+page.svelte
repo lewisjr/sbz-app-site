@@ -2,7 +2,7 @@
 	//functions
 	import { toTitleCase } from "@cerebrusinc/fstring";
 	import { toast } from "svelte-sonner";
-	import { onMount } from "svelte";
+	import { onMount, tick } from "svelte";
 	import isEmail from "is-email";
 	import { marked } from "marked";
 
@@ -14,6 +14,7 @@
 	import AnyPicker from "$lib/components/AnyPicker.svelte";
 	import OTP from "$lib/components/OTP.svelte";
 	import AnyCombobox from "$lib/components/AnyCombobox/AnyCombobox.svelte";
+	import FocusIcon from "./FocusIcon.svelte";
 	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
 
 	//components - shadcn
@@ -28,7 +29,17 @@
 	import * as Dialog from "$lib/components/ui/dialog/index.js";
 
 	//icons
-	import { CirclePlus, SquarePlus, Trash2, Eye, Copy, Signature } from "@lucide/svelte";
+	import {
+		CirclePlus,
+		SquarePlus,
+		Trash2,
+		Eye,
+		Copy,
+		Signature,
+		Camera,
+		Circle,
+		RotateCcw,
+	} from "@lucide/svelte";
 
 	//constants
 	import { nationalities, countries } from "./utils";
@@ -676,6 +687,9 @@
 		}
 	};
 
+	let imgSrc = $state<string | undefined>(undefined);
+	let imgBlob = $state<Blob | null>(null);
+
 	const getOtp = async () => {
 		if (disabled) {
 			toast.error("One or more of your inputs is incorrect!");
@@ -714,6 +728,12 @@
 		}
 
 		if (!signatures) {
+			toast.info("You are required to create a signature!");
+			loading = false;
+			return;
+		}
+
+		if (!imgBlob) {
 			toast.info("You are required to create a signature!");
 			loading = false;
 			return;
@@ -805,6 +825,7 @@
 		// append main files
 		form.append(`${idNumValue}-poa`, poaValue ? poaValue : "");
 		form.append(`${idNumValue}-poi`, poiValue ? poiValue : "");
+		form.append(`${idNumValue}-selfie`, imgBlob ? imgBlob : "");
 
 		// append manager files
 		form.append(`${idNumValueManager}-poa`, poaValueManager ? poaValueManager : "");
@@ -907,7 +928,7 @@
 			fname,
 			gender: toTitleCase(genderValue),
 			id_num,
-			id_type: toTitleCase(idTypeValue.replace("-", " ")),
+			id_type: toTitleCase(idTypeValue.replace("-", " ")).replace("Id", "ID"),
 			lname: lnameValue.trim(),
 			mstatus: toTitleCase(maritalValue),
 			nationality: toTitleCase(nationalityValue),
@@ -926,7 +947,7 @@
 			manag_fname: fnameValueManager.trim(),
 			manag_gender: toTitleCase(genderValueManager),
 			manag_id_num: idNumValueManager.trim(),
-			manag_id_type: toTitleCase(idTypeValueManager.replace("-", " ")),
+			manag_id_type: toTitleCase(idTypeValueManager.replace("-", " ")).replace("Id", "ID"),
 			manag_lname: lnameValueManager.trim(),
 			manag_mstatus: toTitleCase(maritalValueManager),
 			manag_nationality: toTitleCase(nationalityValueManager),
@@ -958,7 +979,7 @@
 					fname: fname.trim(),
 					gender: toTitleCase(gender),
 					idNum: idNum.trim(),
-					idType: toTitleCase(idType.replace("-", " ")),
+					idType: toTitleCase(idType.replace("-", " ")).replace("Id", "ID"),
 					lname: lname.trim(),
 					mstatus: toTitleCase(mstatus),
 					nationality: toTitleCase(nationality),
@@ -991,7 +1012,7 @@
 					fname: fname.trim(),
 					gender: toTitleCase(gender),
 					idNum: idNum.trim(),
-					idType: toTitleCase(idType.replace("-", " ")),
+					idType: toTitleCase(idType.replace("-", " ")).replace("Id", "ID"),
 					lname: lname.trim(),
 					mstatus: toTitleCase(mstatus),
 					nationality: toTitleCase(nationality),
@@ -1024,7 +1045,7 @@
 					fname: fname.trim(),
 					gender: toTitleCase(gender),
 					idNum: idNum.trim(),
-					idType: toTitleCase(idType.replace("-", " ")),
+					idType: toTitleCase(idType.replace("-", " ")).replace("Id", "ID"),
 					lname: lname.trim(),
 					mstatus: toTitleCase(mstatus),
 					nationality: toTitleCase(nationality),
@@ -1078,7 +1099,7 @@
 						? ex.message
 						: ex?.message || JSON.stringify(ex);
 
-			toast.error(message);
+			// toast.error(message);
 		}
 	};
 
@@ -1088,156 +1109,59 @@
 		}
 	});
 
-	// SCAFOLDING
-	/*
-	// for testing purposes, prefill the details for an individual
-	const _scaffoldIndividual = () => {
-		activeTab = "individual";
-		bankAccName = "Lewis Mosho";
-		bankAccValue = "63080165434";
-		bankNameValue = "First National Bank";
-		branchNumValue = "260001";
-		branchNameValue = "Commercial";
-		cityValue = "Lusaka";
-		countryValue = "zambia";
-		dobValue = "2000-07-14";
-		emailValue = "mrmoshojr@gmail.com";
-		fnameValue = "Lewis";
-		genderValue = "male";
-		idNumValue = "554721101";
-		idTypeValue = "id-card";
-		lnameValue = "Mosho";
-		maritalValue = "single";
-		nationalityValue = "zambian";
-		phoneValue = "260776552592";
-		streetValue = "94/100 Off Lake Road";
-		swiftCodealue = "FIRNZMLX";
+	let videoEl = $state<HTMLVideoElement | undefined>(undefined);
+	let kycBegin = $state<boolean>(false);
 
-		//	manag_city: cityValueManager,
-		//	manag_country: countryValueManager,
-		//	manag_dob: dobValueManager ?? "",
-		//	manag_email: emailValueManager,
-		//	manag_fname: fnameValueManager,
-		//	manag_gender: genderValueManager,
-		//	manag_id_num: idNumValueManager,
-		//	manag_id_type: idTypeValueManager,
-		//	manag_lname: lnameValueManager,
-		//	manag_mstatus: maritalValueManager,
-		//	manag_nationality: nationalityValueManager,
-		//	manag_phone: Number(phoneValueManager) ?? 0,
-		//	manag_street: streetValueManager,
-		//
+	const capturePhoto = () => {
+		const c = document.createElement("canvas");
 
-		//
-		//	luseId = ""
+		if (!videoEl) return;
+
+		c.width = videoEl.videoWidth;
+		c.height = videoEl.videoHeight;
+
+		const ctx = c.getContext("2d");
+
+		if (!ctx) return;
+
+		// mirror horizontally
+		ctx.scale(-1, 1);
+		ctx.drawImage(videoEl, -c.width, 0, c.width, c.height);
+
+		c.toBlob(
+			(blob) => {
+				if (blob) {
+					imgBlob = blob;
+					imgSrc = URL.createObjectURL(blob);
+					// toast.info("took a pic!");
+					c.remove();
+				}
+			},
+			"image/png",
+			0.9,
+		);
 	};
 
-	// for testing purposes, prefill the details for an individual with manager
-	const _scaffoldInTrustOf = () => {
-		activeTab = "individual";
-		bankAccName = "Lewis Mosho";
-		bankAccValue = "63080165434";
-		bankNameValue = "First National Bank";
-		branchNumValue = "260001";
-		branchNameValue = "Commercial";
-		cityValue = "Lusaka";
-		countryValue = "zambia";
-		dobValue = "2000-07-14";
-		emailValue = "mrmoshojr@gmail.com";
-		fnameValue = "Lewis";
-		genderValue = "male";
-		idNumValue = "554721101";
-		idTypeValue = "id-card";
-		lnameValue = "Mosho";
-		maritalValue = "single";
-		nationalityValue = "zambian";
-		phoneValue = "260776552592";
-		streetValue = "94/100 Off Lake Road";
-		swiftCodealue = "FIRNZMLX";
+	const startCam = async () => {
+		kycBegin = true;
 
-		isInTrustOf = "yes";
+		await tick();
 
-		cityValueManager = "Ithica";
-		countryValueManager = "greece";
-		dobValueManager = "2000-01-01";
-		emailValueManager = "charimos@hellenes.com";
-		fnameValueManager = "Charimos";
-		genderValueManager = "male";
-		idNumValueManager = "123456101";
-		idTypeValueManager = "id-card";
-		lnameValueManager = "Komnenos";
-		maritalValueManager = "married";
-		nationalityValueManager = "greek";
-		phoneValueManager = "260764171622";
-		streetValueManager = "123 Apollo Avenue";
+		if (videoEl) {
+			const stream = await navigator.mediaDevices.getUserMedia({
+				video: { facingMode: "user" },
+			});
 
-		luseId = "";
+			videoEl.srcObject = stream;
+			videoEl.play();
+		}
 	};
 
-	// for testing purposes, prefill some details for a joint account
-	const _scaffoldJoint = () => {
-		activeTab = "joint";
-
-		setTimeout(() => {
-			bankAccName = "Lewis Mosho";
-			bankAccValue = "63080165434";
-			bankNameValue = "First National Bank";
-			branchNumValue = "260001";
-			branchNameValue = "Commercial";
-			swiftCodealue = "FIRNZMLX";
-		}, 150);
+	const retakePhoto = () => {
+		imgBlob = null;
+		imgSrc = undefined;
+		startCam();
 	};
-
-	// for testing purposes, prefill the details for an institute
-	const _scaffoldCompany = () => {
-		activeTab = "institution";
-
-		setTimeout(() => {
-			bankAccName = "Lewis Mosho";
-			bankAccValue = "63080165434";
-			bankNameValue = "First National Bank";
-			branchNumValue = "260001";
-			branchNameValue = "Commercial";
-			cityValue = "Lusaka";
-			countryValue = "zambia";
-			dobValue = "2000-07-14";
-			emailValue = "mrmoshojr@gmail.com";
-			fnameValue = "Lewis";
-			genderValue = "male";
-			idNumValue = "554721101";
-			idTypeValue = "id-card";
-			lnameValue = "Mosho";
-			maritalValue = "single";
-			nationalityValue = "zambian";
-			phoneValue = "260776552592";
-			streetValue = "94/100 Off Lake Road";
-			swiftCodealue = "FIRNZMLX";
-
-			cityValueManager = "Ithica";
-			countryValueManager = "greece";
-			dobValueManager = "2000-01-01";
-			emailValueManager = "charimos@hellenes.com";
-			fnameValueManager = "Charimos";
-			genderValueManager = "male";
-			idNumValueManager = "123456101";
-			idTypeValueManager = "id-card";
-			lnameValueManager = "Komnenos";
-			maritalValueManager = "married";
-			nationalityValueManager = "greek";
-			phoneValueManager = "260764171622";
-			streetValueManager = "123 Apollo Avenue";
-		}, 150);
-
-		luseId = "473044";
-	};
-
-	onMount(() => {
-		_scaffoldIndividual();
-		// _scaffoldInTrustOf();
-		// _scaffoldJoint();
-		// _scaffoldCompany();
-	});
-	*/
 </script>
 
 <Head
@@ -3187,6 +3111,65 @@
 				</section>
 			{/if}
 
+			<h3 class="mt-7 mb-4">Photo ID</h3>
+			<section class="inputs mb-5">
+				<div class="items tp flex">
+					<div class="cntnt flex w-full max-w-sm flex-col gap-1.5">
+						{#if !kycBegin && !imgSrc}
+							<Label>Why We Need This</Label>
+							<p class="text-justify text-sm text-muted-foreground">
+								To both verify and protect your identity, we require you to upload a live selfie of
+								yourself to be processed.
+							</p>
+							<Button variant="outline" onclick={startCam}
+								>Open Camera<Camera class="ml-2 h-4 w-4" /></Button
+							>
+						{/if}
+
+						{#if kycBegin && !imgSrc}
+							<Label>What To Do</Label>
+							<p class="text-justify text-sm text-muted-foreground">
+								1. Ensure that the camera is clean with no glare.
+							</p>
+							<p class="text-justify text-sm text-muted-foreground">
+								2. Ensure that you have no glasses on.
+							</p>
+							<p class="text-justify text-sm text-muted-foreground">
+								3. Make sure to take the photo on a plain background.
+							</p>
+							<p class="text-justify text-sm text-muted-foreground">4. Keep a straight face.</p>
+							<p class="text-justify text-sm text-muted-foreground">
+								5. Take the photo when your face is in the white box.
+							</p>
+
+							<div class="selfie-tainer">
+								<video bind:this={videoEl} class="selfie-cam mt-4" autoplay playsinline>
+									<track kind="captions" />
+								</video>
+
+								<div class="focus-tainer"><FocusIcon size={260} stroke={1} /></div>
+							</div>
+
+							<p class="text-justify text-sm text-muted-foreground">
+								<b>Tip:</b> Press the button below to take the photo.
+							</p>
+
+							<button class="selfie-button" onclick={capturePhoto}
+								><Circle class="h-[35px] w-[35px]" /></button
+							>
+						{/if}
+
+						{#if kycBegin && imgSrc}
+							<Label>That's a Great Angle!</Label>
+							<img class="photo-id-taken" src={imgSrc} alt="foto-id" />
+							<Button variant="destructive" onclick={retakePhoto}
+								>Retake<RotateCcw class="ml-2 h-4 w-4" /></Button
+							>
+						{/if}
+					</div>
+				</div>
+			</section>
+
 			<h3 class="mt-7 mb-4">Signature</h3>
 			<section class="inputs mb-5">
 				<div class="items tp flex">
@@ -3381,6 +3364,53 @@
 </div>
 
 <style lang="scss">
+	.selfie-tainer {
+		position: relative;
+		width: 100%;
+		height: fit-content;
+	}
+
+	.photo-id-taken {
+		border-radius: var(--radius);
+		box-shadow: 0px 0px 3px var(--shadow);
+	}
+
+	.focus-tainer {
+		position: absolute;
+		//border: 1px solid red;
+		z-index: 1;
+		color: #f7f7f7;
+		top: 50%;
+		left: 50%;
+		transform: translateX(-50%) translateY(-50%);
+		opacity: 0.7;
+	}
+
+	.selfie-cam {
+		transform: scaleX(-1);
+		border-radius: var(--radius);
+		box-shadow: 0px 0px 3px var(--shadow);
+		aspect-ratio: 0.78;
+		width: fit-content;
+		object-fit: cover;
+	}
+
+	.selfie-button {
+		background-color: var(--secondary);
+		margin: 0px auto;
+		border-radius: 50%;
+		height: 50px;
+		width: 50px;
+		box-shadow: 0px 0px 3px var(--shadow);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		&:active {
+			transform: scale(0.9);
+		}
+	}
+
 	.sig-img {
 		margin: 0px auto;
 		width: 100%;

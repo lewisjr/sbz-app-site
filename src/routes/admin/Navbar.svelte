@@ -84,6 +84,12 @@
 			toast.error(message);
 		}
 	};
+
+	$effect(() => {
+		if (page.url.pathname) {
+			mode = "hid";
+		}
+	});
 </script>
 
 <button
