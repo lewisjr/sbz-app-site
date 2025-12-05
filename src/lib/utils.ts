@@ -104,6 +104,7 @@ export const queryTypesArray = [
 	"QT:Account Opening",
 	"QT:Trade Status",
 	"QT:Compliment",
+	"QT:Order",
 	"QT:Complaint",
 	"QT:Portfolio",
 	"QT:Contract Note",
