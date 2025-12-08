@@ -649,16 +649,40 @@
 	};
 
 	const genSignature = async () => {
-		if (!idNumValue.length) {
-			toast.error("You need to fill out your ID number first!");
-			return;
+		let id: string = "";
+
+		if (activeTab === "individual") {
+			id = idNumValue;
+
+			if (!idNumValue.length) {
+				toast.error("You need to fill out your ID number first!");
+				return;
+			}
+		}
+
+		if (activeTab === "joint") {
+			id = jointUsers[0].idNum;
+
+			if (!jointUsers[0].idNum) {
+				toast.error("You need to fill out your ID number first!");
+				return;
+			}
+		}
+
+		if (activeTab === "institution") {
+			id = idNumValueInstitute;
+
+			if (!idNumValueInstitute) {
+				toast.error("You need to fill out your ID number first!");
+				return;
+			}
 		}
 
 		toast.info("Generating signature...");
 		loading = true;
 
 		try {
-			const req = await fetch(`/api/sign/${idNumValue.trim()}`, {
+			const req = await fetch(`/api/sign/${id.trim()}`, {
 				method: "POST",
 			});
 
