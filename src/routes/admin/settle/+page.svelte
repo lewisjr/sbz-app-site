@@ -78,6 +78,8 @@
 		side: "",
 		symbol: "",
 		value: 0,
+		luse_comission: 0,
+		sec_commision: 0,
 	};
 
 	let openTrigger = $state<number>(0);

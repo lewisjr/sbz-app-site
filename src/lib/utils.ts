@@ -48,7 +48,7 @@ export const devLog = (arg: any, location: string) => {
 };
 
 /**Convert supabase timestamp to human readable */
-export const formatDbTime = (isoString: string) => {
+export const formatDbTime = (isoString: string, woTime?: boolean) => {
 	const date = new Date(isoString);
 
 	// Get local parts
@@ -66,7 +66,8 @@ export const formatDbTime = (isoString: string) => {
 	}
 	*/
 
-	return `${day} ${month} ${year}, ${hours}:${minutes}`;
+	if (!woTime) return `${day} ${month} ${year}, ${hours}:${minutes}`;
+	else return `${day} ${month} ${year}`;
 };
 
 /**Generating tickets, and other indexing items */

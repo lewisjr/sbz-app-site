@@ -2422,15 +2422,15 @@ const sbz = (): SBZutils => {
 			const _titleIfier = (url: string): string => {
 				const urlSegments = url.split("/");
 				const name = urlSegments[urlSegments.length - 1];
-				const tag = name.substring(0, 3);
+				const tag = name.split("-")[0];
 
 				switch (tag) {
 					case "aco":
 						return "Account Opening Form";
 					case "poa":
-						return "Proof of Address";
+						return "Proof Of Address";
 					case "poi":
-						return "Proof of Identity";
+						return "Proof Of Identity";
 					case "selfie":
 						return "Selfie";
 					default:

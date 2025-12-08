@@ -6,7 +6,7 @@
 	import { toTitleCase } from "@cerebrusinc/fstring";
 	import { numParse } from "@cerebrusinc/qol";
 	import { formatDbTime } from "$lib/utils";
-	import { createRawSnippet, tick } from "svelte";
+	import { createRawSnippet, onMount, tick } from "svelte";
 	import { renderSnippet, renderComponent } from "$lib/components/ui/data-table/index";
 
 	//stores
@@ -22,9 +22,10 @@
 	import Button from "$lib/components/ui/button/button.svelte";
 	import * as Table from "$lib/components/ui/table/index";
 	import Label from "$lib/components/ui/label/label.svelte";
+	import Textarea from "$lib/components/ui/textarea/textarea.svelte";
 
 	//icons
-	import { Search, ChevronLeft, ChevronRight, Upload, Check, X } from "@lucide/svelte";
+	import { Search, ChevronLeft, ChevronRight, Check, X, Eye } from "@lucide/svelte";
 
 	//types
 	import type { PageProps } from "./$types";
@@ -107,22 +108,85 @@
 	};
 
 	let activeRow = $state<ClientRow>(initClient);
-	let sheetWidth = $state<number | undefined>(undefined);
 
 	let sheetTitle = $state<string>("");
-	let sheetDesc = $state<string>("");
 
 	let udf1 = $state<string>("");
 
+	let kycLoading = $state<boolean>(false);
+	let kycDocs = $state<Types["ClientKyc"][] | undefined>(undefined);
+
 	const resetSheet = () => {
 		udf1 = "";
+		kycLoading = false;
+		kycDocs = undefined;
 	};
+
+	const getDocs = async () => {
+		kycLoading = true;
+
+		try {
+			const req = await fetch("/api/admin/requests", {
+				method: "POST",
+				body: JSON.stringify({ action: "kyc", obj: { idNum: activeRow.id_num } }),
+			});
+
+			const { data, message, success }: GenericResponseWData<Types["ClientKyc"][]> =
+				await req.json();
+
+			if (!success) {
+				toast.error(message);
+				return;
+			}
+
+			kycDocs = data;
+			await tick();
+			kycLoading = false;
+		} catch (ex: any) {
+			toast.error(String(ex));
+		}
+	};
+
+	const openDoc = (cfg: "poa" | "poi" | "selfie") => {
+		let expndedCfg = "";
+
+		switch (cfg) {
+			case "poa":
+				expndedCfg = "proof of address";
+				break;
+			case "poi":
+				expndedCfg = "proof of identity";
+				break;
+			case "selfie":
+				expndedCfg = "selfie";
+				break;
+			default:
+				expndedCfg = "unkown";
+		}
+
+		if (kycDocs) {
+			const doc = kycDocs.find((item) => item.title.includes(toTitleCase(expndedCfg)));
+
+			if (!doc) {
+				toast.error(`No '${expndedCfg}' provided!`);
+				return;
+			}
+
+			window.open(doc.url, "pdfWindow", "width=600,height=800,menubar=no,toolbar=no,location=no");
+		}
+	};
+
+	let isRejection = $state<boolean>(false);
 
 	const openSheet = (row: ClientRow, width?: number) => {
 		resetSheet();
 
 		activeRow = row;
-		sheetWidth = width;
+		getDocs();
+		// console.log({ requestData });
+		// activeRow = requestData[0];
+		sheetTitle = `${row.fname}'s KYC`;
+		isRejection = false;
 
 		openTrigger = Date.now();
 	};
@@ -161,13 +225,16 @@
 		},
 		{
 			id: "age",
-			header: "Status",
-			cell: ({ cell }) => {
+			header: "Age",
+			cell: ({ row }) => {
 				const renderCell = createRawSnippet<[string]>(() => {
-					const value = cell.getValue() as boolean;
+					const dNow = new Date();
+					const dobClient = new Date(row.original.dob);
+
+					const age = dNow.getFullYear() - dobClient.getFullYear();
+
 					return {
-						render: () =>
-							value ? `<span class="gren">Active</span>` : `<span class="rd">Blocked</span>`,
+						render: () => age.toString(),
 					};
 				});
 
@@ -367,6 +434,14 @@
 			toast.error(String(ex));
 		}
 	};
+
+	/*
+	onMount(() => {
+		if (filteredClients.length) {
+			openSheet(filteredClients[0]);
+		}
+	});
+	*/
 </script>
 
 <Head
@@ -537,29 +612,227 @@
 	<AnySheet
 		{openTrigger}
 		{forceClose}
-		width={sheetWidth}
+		width={undefined}
+		big={true}
 		title={sheetTitle}
 		description={"The client will be informed of your action, however, they will not know who did it."}
 	>
 		{#snippet main()}
 			<div class="flex w-full max-w-sm flex-col gap-1.5">
-				<table></table>
-				<p class="text-justify text-sm text-muted-foreground">This cannot be changed later.</p>
+				{#if !isRejection}
+					<Label>Client Details</Label>
+					<table class="data-table">
+						<tbody>
+							<tr>
+								<td>F. Name</td>
+								<td>O. Names</td>
+								<td>Phone</td>
+								<td>Email</td>
+								<td>D.O.B</td>
+							</tr>
+							<tr>
+								<td>{activeRow.fname}</td>
+								<td>{activeRow.lname}</td>
+								<td class="num">{activeRow.phone}</td>
+								<td>{activeRow.email}</td>
+								<td class="num">{formatDbTime(activeRow.dob, true)}</td>
+							</tr>
+
+							<tr>
+								<td>Gender</td>
+								<td>M. Status</td>
+								<td>Nationality</td>
+								<td
+									rowspan="2"
+									colspan="2"
+									style="background-color: var(--background); border-right: 0px solid transparent;"
+									><Button
+										class="ml-6"
+										variant="outline"
+										disabled={kycLoading}
+										onclick={() => openDoc("selfie")}>View Selfie<Eye class="h-4 w-4" /></Button
+									></td
+								>
+							</tr>
+							<tr>
+								<td>{activeRow.gender}</td>
+								<td class="num">{activeRow.mstatus}</td>
+								<td>{activeRow.nationality}</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<Label class="mt-5">Client Address</Label>
+					<table class="data-table">
+						<tbody>
+							<tr>
+								<td colspan="2">Street</td>
+								<td
+									rowspan="4"
+									style="background-color: var(--background); border-right: 0px solid transparent;"
+									><Button
+										class="ml-6"
+										variant="outline"
+										disabled={kycLoading}
+										onclick={() => openDoc("poa")}
+										>View Proof of Address<Eye class="h-4 w-4" /></Button
+									></td
+								>
+							</tr>
+							<tr>
+								<td colspan="2" class="whitespace-normal">{activeRow.street}</td>
+							</tr>
+
+							<tr>
+								<td>City</td>
+								<td style="border-right: 0px solid transparent;">Country</td>
+							</tr>
+							<tr>
+								<td>{activeRow.city}</td>
+								<td style="border-right: 0px solid transparent;">{activeRow.country}</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<Label class="mt-5">Client Identity</Label>
+					<table class="data-table">
+						<tbody>
+							<tr>
+								<td>ID Type</td>
+								<td style="border-right: 0px solid transparent;">ID Number</td>
+								<td
+									rowspan="2"
+									style="background-color: var(--background); border-right: 0px solid transparent;"
+									><Button
+										class="ml-6"
+										variant="outline"
+										disabled={kycLoading}
+										onclick={() => openDoc("poi")}
+										>View Proof of Identity<Eye class="h-4 w-4" /></Button
+									></td
+								>
+							</tr>
+							<tr>
+								<td>{activeRow.id_type}</td>
+								<td style="border-right: 0px solid transparent;">{activeRow.id_num}</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<Label class="mt-5">Client Banking</Label>
+					<table class="data-table">
+						<tbody>
+							<tr>
+								<td>Bank Name</td>
+								<td>Bank Acc. Name</td>
+								<td>Bank Acc. No.</td>
+							</tr>
+							<tr>
+								<td>{activeRow.bank_name}</td>
+								<td>{activeRow.bank_acc_name}</td>
+								<td>{activeRow.bank_acc_num}</td>
+							</tr>
+
+							<tr>
+								<td>Branch Name</td>
+								<td>Branch Code</td>
+								<td>Swift Code</td>
+							</tr>
+							<tr>
+								<td>{activeRow.branch_name}</td>
+								<td>{activeRow.branch_code}</td>
+								<td>{activeRow.swift_code}</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<Label class="mt-5">Questionnaire</Label>
+					<table class="data-table">
+						<tbody>
+							<tr>
+								<td>Where Did You Hear About SBZ?</td>
+							</tr>
+							<tr>
+								<td>{activeRow.referral_src}</td>
+							</tr>
+
+							<tr>
+								<td>Signing Arrangement</td>
+							</tr>
+							<tr>
+								<td class="num">{activeRow.signing_arrangement}</td>
+							</tr>
+						</tbody>
+					</table>
+				{/if}
+
+				{#if isRejection}
+					<div class="flex w-full max-w-sm flex-col gap-1.5">
+						<Label>Rejection Reason</Label>
+						<Textarea
+							bind:value={udf1}
+							placeholder="E.g Your documents need to be certified."
+							disabled={loading}
+							onkeypress={(e) => {
+								if (e.key === "Enter") {
+									e.preventDefault();
+									rejectMember();
+								}
+							}}
+							maxlength={120}
+							class="h-[100px]"
+						/>
+						<p class="text-justify text-sm text-muted-foreground">
+							This will be shown in the logs, and in an email to the client.
+						</p>
+					</div>
+				{/if}
 			</div>
 		{/snippet}
 
 		{#snippet actionButton()}
-			<Button variant="destructive" disabled={loading} onclick={rejectMember}
+			<Button
+				variant="destructive"
+				class="mr-5"
+				disabled={loading}
+				onclick={isRejection ? rejectMember : () => (isRejection = true)}
 				>Reject<X class="ml-2 h-4 w-4" /></Button
 			>
-			<Button disabled={loading} onclick={approveMember}
-				>Approve<Check class="ml-2 h-4 w-4" /></Button
-			>
+			{#if !isRejection}
+				<Button disabled={loading} onclick={approveMember}
+					>Approve<Check class="ml-2 h-4 w-4" /></Button
+				>
+			{/if}
 		{/snippet}
 	</AnySheet>
 {/if}
 
 <style lang="scss">
+	.data-table {
+		// border: 1px solid red;
+		max-width: 100%;
+		white-space: nowrap;
+		text-align: center;
+		table-layout: auto;
+
+		tr:nth-child(odd) {
+			background-color: var(--shadow);
+		}
+
+		tr td:nth-child(2) {
+			border-right: 1px solid var(--foreground);
+		}
+
+		tr td:nth-child(4) {
+			border-right: 1px solid var(--foreground);
+		}
+
+		td {
+			min-width: 200px;
+			padding: 0px 5px;
+		}
+	}
+
 	.main-tainer {
 		height: calc(100% - 85px);
 		width: 100%;

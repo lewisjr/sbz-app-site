@@ -15,7 +15,7 @@ export const POST = async (event) => {
 		action,
 		obj,
 	}: {
-		action: "approve" | "reject";
+		action: "approve" | "reject" | "kyc";
 		obj: any;
 	} = await request.json();
 
@@ -55,6 +55,10 @@ export const POST = async (event) => {
 				},
 				{ status: rejectClient.success ? 200 : 400 },
 			);
+		case "kyc":
+			const kyc = await dbs.sbz.getFiles(obj.idNum);
+
+			return json(kyc, { status: kyc.success ? 200 : 400 });
 		default:
 			return json(
 				{
