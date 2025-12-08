@@ -1,7 +1,7 @@
 import dbs from "$lib/server/db";
 import notif from "$lib/server/email";
 import totp from "$lib/server/totp";
-import { genOTP } from "$lib/utils";
+import { genOTP, print } from "$lib/utils";
 import { json } from "@sveltejs/kit";
 import Tokenise from "$lib/server/tokenise.js";
 
@@ -212,6 +212,8 @@ export const POST = async ({ request }) => {
 		}
 
 		await dbs.sbz.uploadKyc(files);
+
+		print(obj);
 
 		const res = await dbs.sbz.openAccount(obj);
 

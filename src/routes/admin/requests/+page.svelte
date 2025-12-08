@@ -114,7 +114,10 @@
 	let udf1 = $state<string>("");
 
 	let kycLoading = $state<boolean>(false);
+	let kycLoadingMng = $state<boolean>(false);
 	let kycDocs = $state<Types["ClientKyc"][] | undefined>(undefined);
+	type KycDocsMng = { [key: string]: Types["ClientKyc"][] };
+	let kycDocsMng = $state<KycDocsMng>({});
 
 	const resetSheet = () => {
 		udf1 = "";
@@ -122,13 +125,15 @@
 		kycDocs = undefined;
 	};
 
-	const getDocs = async () => {
+	const getDocs = async (id?: string) => {
 		kycLoading = true;
+
+		const _id = id ? id : activeRow.id_num;
 
 		try {
 			const req = await fetch("/api/admin/requests", {
 				method: "POST",
-				body: JSON.stringify({ action: "kyc", obj: { idNum: activeRow.id_num } }),
+				body: JSON.stringify({ action: "kyc", obj: { idNum: _id } }),
 			});
 
 			const { data, message, success }: GenericResponseWData<Types["ClientKyc"][]> =
@@ -142,6 +147,40 @@
 			kycDocs = data;
 			await tick();
 			kycLoading = false;
+		} catch (ex: any) {
+			toast.error(String(ex));
+		}
+	};
+
+	const getDocsOther = async (id?: string) => {
+		const _id = id ? id : activeRow.id_num;
+
+		if (kycDocsMng[_id]) return;
+
+		kycLoadingMng = true;
+
+		try {
+			const req = await fetch("/api/admin/requests", {
+				method: "POST",
+				body: JSON.stringify({ action: "kyc", obj: { idNum: _id } }),
+			});
+
+			const { data, message, success }: GenericResponseWData<Types["ClientKyc"][]> =
+				await req.json();
+
+			if (!success) {
+				toast.error(message);
+				return;
+			}
+
+			const temp: KycDocsMng = JSON.parse(JSON.stringify(kycDocsMng));
+
+			temp[_id] = data;
+
+			kycDocsMng = temp;
+
+			await tick();
+			kycLoadingMng = false;
 		} catch (ex: any) {
 			toast.error(String(ex));
 		}
@@ -174,6 +213,38 @@
 
 			window.open(doc.url, "pdfWindow", "width=600,height=800,menubar=no,toolbar=no,location=no");
 		}
+	};
+
+	const openDocMng = async (cfg: "poa" | "poi" | "selfie", idNum: string) => {
+		try {
+			await getDocsOther(idNum);
+			let expndedCfg = "";
+
+			switch (cfg) {
+				case "poa":
+					expndedCfg = "proof of address";
+					break;
+				case "poi":
+					expndedCfg = "proof of identity";
+					break;
+				case "selfie":
+					expndedCfg = "selfie";
+					break;
+				default:
+					expndedCfg = "unkown";
+			}
+
+			if (kycDocs) {
+				const doc = kycDocs.find((item) => item.title.includes(toTitleCase(expndedCfg)));
+
+				if (!doc) {
+					toast.error(`No '${expndedCfg}' provided!`);
+					return;
+				}
+
+				window.open(doc.url, "pdfWindow", "width=600,height=800,menubar=no,toolbar=no,location=no");
+			}
+		} catch (ex: any) {}
 	};
 
 	let isRejection = $state<boolean>(false);
@@ -620,104 +691,519 @@
 		{#snippet main()}
 			<div class="flex w-full max-w-sm flex-col gap-1.5">
 				{#if !isRejection}
-					<Label>Client Details</Label>
-					<table class="data-table">
-						<tbody>
-							<tr>
-								<td>F. Name</td>
-								<td>O. Names</td>
-								<td>Phone</td>
-								<td>Email</td>
-								<td>D.O.B</td>
-							</tr>
-							<tr>
-								<td>{activeRow.fname}</td>
-								<td>{activeRow.lname}</td>
-								<td class="num">{activeRow.phone}</td>
-								<td>{activeRow.email}</td>
-								<td class="num">{formatDbTime(activeRow.dob, true)}</td>
-							</tr>
+					{#if activeRow.acc_type === "individual"}
+						<Label>Client Details</Label>
+						<table class="data-table">
+							<tbody>
+								<tr>
+									<td>F. Name</td>
+									<td>O. Names</td>
+									<td>Phone</td>
+									<td>Email</td>
+									<td>D.O.B</td>
+								</tr>
+								<tr>
+									<td>{activeRow.fname}</td>
+									<td>{activeRow.lname}</td>
+									<td class="num">{activeRow.phone}</td>
+									<td>{activeRow.email}</td>
+									<td class="num">{formatDbTime(activeRow.dob, true)}</td>
+								</tr>
 
-							<tr>
-								<td>Gender</td>
-								<td>M. Status</td>
-								<td>Nationality</td>
-								<td
-									rowspan="2"
-									colspan="2"
-									style="background-color: var(--background); border-right: 0px solid transparent;"
-									><Button
-										class="ml-6"
-										variant="outline"
-										disabled={kycLoading}
-										onclick={() => openDoc("selfie")}>View Selfie<Eye class="h-4 w-4" /></Button
-									></td
-								>
-							</tr>
-							<tr>
-								<td>{activeRow.gender}</td>
-								<td class="num">{activeRow.mstatus}</td>
-								<td>{activeRow.nationality}</td>
-							</tr>
-						</tbody>
-					</table>
+								<tr>
+									<td>Gender</td>
+									<td>M. Status</td>
+									<td>Nationality</td>
+									<td
+										rowspan="2"
+										colspan="2"
+										style="background-color: var(--background); border-right: 0px solid transparent;"
+										><Button
+											class="ml-6"
+											variant="outline"
+											disabled={kycLoading}
+											onclick={() => openDoc("selfie")}>View Selfie<Eye class="h-4 w-4" /></Button
+										></td
+									>
+								</tr>
+								<tr>
+									<td>{activeRow.gender}</td>
+									<td class="num">{activeRow.mstatus}</td>
+									<td>{activeRow.nationality}</td>
+								</tr>
+							</tbody>
+						</table>
 
-					<Label class="mt-5">Client Address</Label>
-					<table class="data-table">
-						<tbody>
-							<tr>
-								<td colspan="2">Street</td>
-								<td
-									rowspan="4"
-									style="background-color: var(--background); border-right: 0px solid transparent;"
-									><Button
-										class="ml-6"
-										variant="outline"
-										disabled={kycLoading}
-										onclick={() => openDoc("poa")}
-										>View Proof of Address<Eye class="h-4 w-4" /></Button
-									></td
-								>
-							</tr>
-							<tr>
-								<td colspan="2" class="whitespace-normal">{activeRow.street}</td>
-							</tr>
+						<Label class="mt-5">Client Address</Label>
+						<table class="data-table">
+							<tbody>
+								<tr>
+									<td colspan="2">Street</td>
+									<td
+										rowspan="4"
+										style="background-color: var(--background); border-right: 0px solid transparent;"
+										><Button
+											class="ml-6"
+											variant="outline"
+											disabled={kycLoading}
+											onclick={() => openDoc("poa")}
+											>View Proof of Address<Eye class="h-4 w-4" /></Button
+										></td
+									>
+								</tr>
+								<tr>
+									<td colspan="2" class="whitespace-normal">{activeRow.street}</td>
+								</tr>
 
-							<tr>
-								<td>City</td>
-								<td style="border-right: 0px solid transparent;">Country</td>
-							</tr>
-							<tr>
-								<td>{activeRow.city}</td>
-								<td style="border-right: 0px solid transparent;">{activeRow.country}</td>
-							</tr>
-						</tbody>
-					</table>
+								<tr>
+									<td>City</td>
+									<td style="border-right: 0px solid transparent;">Country</td>
+								</tr>
+								<tr>
+									<td>{activeRow.city}</td>
+									<td style="border-right: 0px solid transparent;">{activeRow.country}</td>
+								</tr>
+							</tbody>
+						</table>
 
-					<Label class="mt-5">Client Identity</Label>
-					<table class="data-table">
-						<tbody>
-							<tr>
-								<td>ID Type</td>
-								<td style="border-right: 0px solid transparent;">ID Number</td>
-								<td
-									rowspan="2"
-									style="background-color: var(--background); border-right: 0px solid transparent;"
-									><Button
-										class="ml-6"
-										variant="outline"
-										disabled={kycLoading}
-										onclick={() => openDoc("poi")}
-										>View Proof of Identity<Eye class="h-4 w-4" /></Button
-									></td
-								>
-							</tr>
-							<tr>
-								<td>{activeRow.id_type}</td>
-								<td style="border-right: 0px solid transparent;">{activeRow.id_num}</td>
-							</tr>
-						</tbody>
-					</table>
+						<Label class="mt-5">Client Identity</Label>
+						<table class="data-table">
+							<tbody>
+								<tr>
+									<td>ID Type</td>
+									<td style="border-right: 0px solid transparent;">ID Number</td>
+									<td
+										rowspan="2"
+										style="background-color: var(--background); border-right: 0px solid transparent;"
+										><Button
+											class="ml-6"
+											variant="outline"
+											disabled={kycLoading}
+											onclick={() => openDoc("poi")}
+											>View Proof of Identity<Eye class="h-4 w-4" /></Button
+										></td
+									>
+								</tr>
+								<tr>
+									<td>{activeRow.id_type}</td>
+									<td style="border-right: 0px solid transparent;">{activeRow.id_num}</td>
+								</tr>
+							</tbody>
+						</table>
+
+						{#if activeRow.is_in_trust_of}
+							<Label>Manager Details</Label>
+							<table class="data-table">
+								<tbody>
+									<tr>
+										<td>F. Name</td>
+										<td>O. Names</td>
+										<td>Phone</td>
+										<td>Email</td>
+										<td>D.O.B</td>
+									</tr>
+									<tr>
+										<td>{activeRow.manag_fname}</td>
+										<td>{activeRow.manag_lname}</td>
+										<td class="num">{activeRow.manag_phone}</td>
+										<td>{activeRow.manag_email}</td>
+										<td class="num">{formatDbTime(activeRow.manag_dob, true)}</td>
+									</tr>
+
+									<tr>
+										<td>Gender</td>
+										<td>M. Status</td>
+										<td>Nationality</td>
+										<td
+											rowspan="2"
+											colspan="2"
+											style="background-color: var(--background); border-right: 0px solid transparent;"
+											><Button
+												class="ml-6"
+												variant="outline"
+												disabled={kycLoadingMng}
+												onclick={() => openDocMng("selfie", activeRow.manag_id_num)}
+												>View Selfie<Eye class="h-4 w-4" /></Button
+											></td
+										>
+									</tr>
+									<tr>
+										<td>{activeRow.manag_gender}</td>
+										<td class="num">{activeRow.manag_mstatus}</td>
+										<td>{activeRow.manag_nationality}</td>
+									</tr>
+								</tbody>
+							</table>
+
+							<Label class="mt-5">Manager Address</Label>
+							<table class="data-table">
+								<tbody>
+									<tr>
+										<td colspan="2">Street</td>
+										<td
+											rowspan="4"
+											style="background-color: var(--background); border-right: 0px solid transparent;"
+											><Button
+												class="ml-6"
+												variant="outline"
+												disabled={kycLoadingMng}
+												onclick={() => openDocMng("poa", activeRow.manag_id_num)}
+												>View Proof of Address<Eye class="h-4 w-4" /></Button
+											></td
+										>
+									</tr>
+									<tr>
+										<td colspan="2" class="whitespace-normal">{activeRow.manag_street}</td>
+									</tr>
+
+									<tr>
+										<td>City</td>
+										<td style="border-right: 0px solid transparent;">Country</td>
+									</tr>
+									<tr>
+										<td>{activeRow.manag_city}</td>
+										<td style="border-right: 0px solid transparent;">{activeRow.manag_country}</td>
+									</tr>
+								</tbody>
+							</table>
+
+							<Label class="mt-5">Manager Identity</Label>
+							<table class="data-table">
+								<tbody>
+									<tr>
+										<td>ID Type</td>
+										<td style="border-right: 0px solid transparent;">ID Number</td>
+										<td
+											rowspan="2"
+											style="background-color: var(--background); border-right: 0px solid transparent;"
+											><Button
+												class="ml-6"
+												variant="outline"
+												disabled={kycLoadingMng}
+												onclick={() => openDocMng("poi", activeRow.manag_id_num)}
+												>View Proof of Identity<Eye class="h-4 w-4" /></Button
+											></td
+										>
+									</tr>
+									<tr>
+										<td>{activeRow.manag_id_type}</td>
+										<td style="border-right: 0px solid transparent;">{activeRow.manag_id_num}</td>
+									</tr>
+								</tbody>
+							</table>
+						{/if}
+					{/if}
+
+					{#if activeRow.acc_type === "joint"}
+						{#each activeRow.joint_partners as any[] as Types["PartnerObj"][] as entry}
+							<Label>{entry.fname} Details</Label>
+							<table class="data-table">
+								<tbody>
+									<tr>
+										<td>F. Name</td>
+										<td>O. Names</td>
+										<td>Phone</td>
+										<td>Email</td>
+										<td>D.O.B</td>
+									</tr>
+									<tr>
+										<td>{entry.fname}</td>
+										<td>{entry.lname}</td>
+										<td class="num">{entry.phone}</td>
+										<td>{entry.email}</td>
+										<td class="num">{formatDbTime(entry.dob, true)}</td>
+									</tr>
+
+									<tr>
+										<td>Gender</td>
+										<td>M. Status</td>
+										<td>Nationality</td>
+										<td
+											rowspan="2"
+											colspan="2"
+											style="background-color: var(--background); border-right: 0px solid transparent;"
+											><Button
+												class="ml-6"
+												variant="outline"
+												disabled={kycLoadingMng}
+												onclick={() => openDocMng("selfie", entry.idNum)}
+												>View Selfie<Eye class="h-4 w-4" /></Button
+											></td
+										>
+									</tr>
+									<tr>
+										<td>{entry.gender}</td>
+										<td class="num">{entry.mstatus}</td>
+										<td>{entry.nationality}</td>
+									</tr>
+								</tbody>
+							</table>
+
+							<Label class="mt-5">{entry.fname} Address</Label>
+							<table class="data-table">
+								<tbody>
+									<tr>
+										<td colspan="2">Street</td>
+										<td
+											rowspan="4"
+											style="background-color: var(--background); border-right: 0px solid transparent;"
+											><Button
+												class="ml-6"
+												variant="outline"
+												disabled={kycLoadingMng}
+												onclick={() => openDocMng("poa", entry.idNum)}
+												>View Proof of Address<Eye class="h-4 w-4" /></Button
+											></td
+										>
+									</tr>
+									<tr>
+										<td colspan="2" class="whitespace-normal">{entry.street}</td>
+									</tr>
+
+									<tr>
+										<td>City</td>
+										<td style="border-right: 0px solid transparent;">Country</td>
+									</tr>
+									<tr>
+										<td>{entry.city}</td>
+										<td style="border-right: 0px solid transparent;">{entry.country}</td>
+									</tr>
+								</tbody>
+							</table>
+
+							<Label class="mt-5">{entry.fname} Identity</Label>
+							<table class="data-table">
+								<tbody>
+									<tr>
+										<td>ID Type</td>
+										<td style="border-right: 0px solid transparent;">ID Number</td>
+										<td
+											rowspan="2"
+											style="background-color: var(--background); border-right: 0px solid transparent;"
+											><Button
+												class="ml-6"
+												variant="outline"
+												disabled={kycLoadingMng}
+												onclick={() => openDocMng("poi", entry.idNum)}
+												>View Proof of Identity<Eye class="h-4 w-4" /></Button
+											></td
+										>
+									</tr>
+									<tr>
+										<td>{entry.idType}</td>
+										<td style="border-right: 0px solid transparent;">{entry.idNum}</td>
+									</tr>
+								</tbody>
+							</table>
+						{/each}
+					{/if}
+
+					{#if activeRow.acc_type === "institution"}
+						{#each activeRow.comp_directors as any[] as Types["PartnerObj"][] as entry}
+							<Label>D - {entry.fname} Details</Label>
+							<table class="data-table">
+								<tbody>
+									<tr>
+										<td>F. Name</td>
+										<td>O. Names</td>
+										<td>Phone</td>
+										<td>Email</td>
+										<td>D.O.B</td>
+									</tr>
+									<tr>
+										<td>{entry.fname}</td>
+										<td>{entry.lname}</td>
+										<td class="num">{entry.phone}</td>
+										<td>{entry.email}</td>
+										<td class="num">{formatDbTime(entry.dob, true)}</td>
+									</tr>
+
+									<tr>
+										<td>Gender</td>
+										<td>M. Status</td>
+										<td>Nationality</td>
+										<td
+											rowspan="2"
+											colspan="2"
+											style="background-color: var(--background); border-right: 0px solid transparent;"
+											><Button
+												class="ml-6"
+												variant="outline"
+												disabled={kycLoadingMng}
+												onclick={() => openDocMng("selfie", entry.idNum)}
+												>View Selfie<Eye class="h-4 w-4" /></Button
+											></td
+										>
+									</tr>
+									<tr>
+										<td>{entry.gender}</td>
+										<td class="num">{entry.mstatus}</td>
+										<td>{entry.nationality}</td>
+									</tr>
+								</tbody>
+							</table>
+
+							<Label class="mt-5">D - {entry.fname} Address</Label>
+							<table class="data-table">
+								<tbody>
+									<tr>
+										<td colspan="2">Street</td>
+										<td
+											rowspan="4"
+											style="background-color: var(--background); border-right: 0px solid transparent;"
+											><Button
+												class="ml-6"
+												variant="outline"
+												disabled={kycLoadingMng}
+												onclick={() => openDocMng("poa", entry.idNum)}
+												>View Proof of Address<Eye class="h-4 w-4" /></Button
+											></td
+										>
+									</tr>
+									<tr>
+										<td colspan="2" class="whitespace-normal">{entry.street}</td>
+									</tr>
+
+									<tr>
+										<td>City</td>
+										<td style="border-right: 0px solid transparent;">Country</td>
+									</tr>
+									<tr>
+										<td>{entry.city}</td>
+										<td style="border-right: 0px solid transparent;">{entry.country}</td>
+									</tr>
+								</tbody>
+							</table>
+
+							<Label class="mt-5">D - {entry.fname} Identity</Label>
+							<table class="data-table">
+								<tbody>
+									<tr>
+										<td>ID Type</td>
+										<td style="border-right: 0px solid transparent;">ID Number</td>
+										<td
+											rowspan="2"
+											style="background-color: var(--background); border-right: 0px solid transparent;"
+											><Button
+												class="ml-6"
+												variant="outline"
+												disabled={kycLoadingMng}
+												onclick={() => openDocMng("poi", entry.idNum)}
+												>View Proof of Identity<Eye class="h-4 w-4" /></Button
+											></td
+										>
+									</tr>
+									<tr>
+										<td>{entry.idType}</td>
+										<td style="border-right: 0px solid transparent;">{entry.idNum}</td>
+									</tr>
+								</tbody>
+							</table>
+						{/each}
+						<!-- END DIRECTORS -->
+						{#each activeRow.comp_directors as any[] as Types["PartnerObj"][] as entry}
+							<Label>M - {entry.fname} Details</Label>
+							<table class="data-table">
+								<tbody>
+									<tr>
+										<td>F. Name</td>
+										<td>O. Names</td>
+										<td>Phone</td>
+										<td>Email</td>
+										<td>D.O.B</td>
+									</tr>
+									<tr>
+										<td>{entry.fname}</td>
+										<td>{entry.lname}</td>
+										<td class="num">{entry.phone}</td>
+										<td>{entry.email}</td>
+										<td class="num">{formatDbTime(entry.dob, true)}</td>
+									</tr>
+
+									<tr>
+										<td>Gender</td>
+										<td>M. Status</td>
+										<td>Nationality</td>
+										<td
+											rowspan="2"
+											colspan="2"
+											style="background-color: var(--background); border-right: 0px solid transparent;"
+											><Button
+												class="ml-6"
+												variant="outline"
+												disabled={kycLoadingMng}
+												onclick={() => openDocMng("selfie", entry.idNum)}
+												>View Selfie<Eye class="h-4 w-4" /></Button
+											></td
+										>
+									</tr>
+									<tr>
+										<td>{entry.gender}</td>
+										<td class="num">{entry.mstatus}</td>
+										<td>{entry.nationality}</td>
+									</tr>
+								</tbody>
+							</table>
+
+							<Label class="mt-5">M - {entry.fname} Address</Label>
+							<table class="data-table">
+								<tbody>
+									<tr>
+										<td colspan="2">Street</td>
+										<td
+											rowspan="4"
+											style="background-color: var(--background); border-right: 0px solid transparent;"
+											><Button
+												class="ml-6"
+												variant="outline"
+												disabled={kycLoadingMng}
+												onclick={() => openDocMng("poa", entry.idNum)}
+												>View Proof of Address<Eye class="h-4 w-4" /></Button
+											></td
+										>
+									</tr>
+									<tr>
+										<td colspan="2" class="whitespace-normal">{entry.street}</td>
+									</tr>
+
+									<tr>
+										<td>City</td>
+										<td style="border-right: 0px solid transparent;">Country</td>
+									</tr>
+									<tr>
+										<td>{entry.city}</td>
+										<td style="border-right: 0px solid transparent;">{entry.country}</td>
+									</tr>
+								</tbody>
+							</table>
+
+							<Label class="mt-5">M - {entry.fname} Identity</Label>
+							<table class="data-table">
+								<tbody>
+									<tr>
+										<td>ID Type</td>
+										<td style="border-right: 0px solid transparent;">ID Number</td>
+										<td
+											rowspan="2"
+											style="background-color: var(--background); border-right: 0px solid transparent;"
+											><Button
+												class="ml-6"
+												variant="outline"
+												disabled={kycLoadingMng}
+												onclick={() => openDocMng("poi", entry.idNum)}
+												>View Proof of Identity<Eye class="h-4 w-4" /></Button
+											></td
+										>
+									</tr>
+									<tr>
+										<td>{entry.idType}</td>
+										<td style="border-right: 0px solid transparent;">{entry.idNum}</td>
+									</tr>
+								</tbody>
+							</table>
+						{/each}
+						<!-- END MANAGERS -->
+					{/if}
 
 					<Label class="mt-5">Client Banking</Label>
 					<table class="data-table">

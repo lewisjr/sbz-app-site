@@ -51,7 +51,7 @@
 	import type { SBZdb, NFHelp, Types, GetPortfolioData, GenericResponseWData } from "$lib/types";
 	import type { ColumnDef, PaginationState } from "@tanstack/table-core";
 
-	type TempClient = SBZdb["public"]["Tables"]["csd-clients-temp"]["Row"];
+	type TempClient = SBZdb["public"]["Tables"]["clients"]["Row"];
 	type GetPortfolioAPIResponse = GenericResponseWData<GetPortfolioData | undefined>;
 
 	let { data }: PageProps = $props();
@@ -76,14 +76,53 @@
 	let disabled = $state<boolean>(false);
 
 	const initRow: TempClient = {
+		acc_type: "individual",
+		bank_acc_name: "",
+		bank_acc_num: "",
+		bank_name: "",
+		branch_code: "",
+		branch_name: "",
+		broker_comission: 0,
+		city: "",
+		comp_directors: [],
+		comp_managers: [],
+		country: "",
 		created_at: "",
+		cv_num: "",
+		dob: "",
 		email: "",
-		luse_id: 0,
-		names: "",
+		fname: "",
+		gender: "",
+		id_num: "",
+		id_type: "",
+		is_approved: false,
+		is_in_trust_of: false,
+		joint_partners: [],
+		lname: "",
+		luseId: -1,
+		manag_city: "",
+		manag_country: "",
+		manag_dob: "",
+		manag_email: "",
+		manag_fname: "",
+		manag_gender: "",
+		manag_id_num: "",
+		manag_id_type: "",
+		manag_lname: "",
+		manag_mstatus: "",
+		manag_nationality: "",
+		manag_phone: -1,
+		manag_street: "",
+		mstatus: "",
 		nationality: "",
-		nrc: "",
-		phone: "",
-		type: null,
+		phone: -1,
+		referral_src: "",
+		signatures: {},
+		signing_arrangement: 0,
+		street: "",
+		swift_code: "",
+		approve_date: "",
+		approved_by: "",
 	};
 
 	let activeRow = $state<TempClient>(initRow);
@@ -181,9 +220,9 @@
 		const _genMatched = (matchedData: GetPortfolioData["matched"]) => {
 			if (!matchedData.length) return undefined;
 
-			const { luse_id } = activeRow;
+			const { luseId } = activeRow;
 
-			let tradesRaw = matchedData.filter((item) => item.luse_id === luse_id);
+			let tradesRaw = matchedData.filter((item) => item.luse_id === luseId);
 
 			if (dateImatched && dateFmatched)
 				tradesRaw = tradesRaw.filter(
@@ -312,9 +351,9 @@
 		const _genScreen = (screenData: GetPortfolioData["onScreen"]) => {
 			if (!screenData.length) return undefined;
 
-			const { luse_id } = activeRow;
+			const { luseId } = activeRow;
 
-			const ordersRaw = screenData.filter((item) => item.luse_id === luse_id);
+			const ordersRaw = screenData.filter((item) => item.luse_id === luseId);
 
 			let currDate: number = ordersRaw[0].date;
 
@@ -643,7 +682,7 @@
 		try {
 			const req = await fetch("/api/admin/clients", {
 				method: "POST",
-				body: JSON.stringify({ uid: activeRow.luse_id.toString(), config }),
+				body: JSON.stringify({ uid: activeRow.luseId.toString(), config }),
 			});
 
 			const res: GetPortfolioAPIResponse = await req.json();
@@ -671,7 +710,7 @@
 	const getFile = async () => {
 		toast.info("Getting files...");
 
-		const uid = idSanitiser(activeRow.nrc);
+		const uid = idSanitiser(activeRow.id_num);
 
 		try {
 			const req = await fetch("/api/admin/clients", {
@@ -712,15 +751,15 @@
 
 		switch (cfg) {
 			case "portfolio":
-				sheetTitle = `${toTitleCase(row.names)}'s Portfolio`;
+				sheetTitle = `${toTitleCase(row.fname)}'s Portfolio`;
 				activeRow = row;
 				getPortfolio();
 				break;
 			case "file":
-				sheetTitle = `${toTitleCase(row.names)}'s File`;
+				sheetTitle = `${toTitleCase(row.fname)}'s File`;
 				activeRow = row;
 
-				if (!Object.keys($filesCacheStore).includes(idSanitiser(row.nrc))) {
+				if (!Object.keys($filesCacheStore).includes(idSanitiser(row.id_num))) {
 					getFile();
 				}
 
@@ -734,7 +773,7 @@
 
 	const columns: ColumnDef<TempClient>[] = [
 		{
-			accessorKey: "luse_id",
+			accessorKey: "luseId",
 			header: "LuSE ID",
 			cell: ({ cell }) => {
 				const renderCell = createRawSnippet<[string]>(() => {
@@ -748,11 +787,32 @@
 			},
 		},
 		{
-			accessorKey: "names",
-			header: "Names",
-			cell: ({ cell }) => {
+			accessorKey: "cv_num",
+			header: "CV",
+			cell: ({ row }) => {
 				const renderCell = createRawSnippet<[string]>(() => {
-					const value = cell.getValue() as string;
+					let value: string = "";
+
+					value = row.original.cv_num.toString();
+
+					return {
+						render: () =>
+							!value.length || value === "-1"
+								? "-"
+								: `<span class="whitespace-nowrap num">${value}</span>`,
+					};
+				});
+
+				return renderSnippet(renderCell);
+			},
+		},
+		{
+			id: "names",
+			header: "Names",
+			cell: ({ row }) => {
+				const renderCell = createRawSnippet<[string]>(() => {
+					const { fname, lname } = row.original;
+					const value = `${fname} ${lname}`;
 					return {
 						render: () => `<span class="whitespace-nowrap">${toTitleCase(value)}</span>`,
 					};
@@ -762,13 +822,14 @@
 			},
 		},
 		{
-			accessorKey: "nrc",
+			accessorKey: "id_num",
 			header: "ID",
 			cell: ({ cell }) => {
 				const renderCell = createRawSnippet<[string]>(() => {
 					const value = cell.getValue() as string;
 					return {
-						render: () => (!value.length ? "-" : `<span class="whitespace-nowrap">${value}</span>`),
+						render: () =>
+							!value.length ? "-" : `<span class="whitespace-nowrap num">${value}</span>`,
 					};
 				});
 
@@ -792,11 +853,17 @@
 		{
 			accessorKey: "phone",
 			header: "Phone",
-			cell: ({ cell }) => {
+			cell: ({ row }) => {
 				const renderCell = createRawSnippet<[string]>(() => {
-					const value = cell.getValue() as string;
+					let value: string = "";
+
+					value = row.original.phone.toString();
+
 					return {
-						render: () => (!value.length ? "-" : `<span class="whitespace-nowrap">${value}</span>`),
+						render: () =>
+							!value.length || value === "-1"
+								? "-"
+								: `<span class="whitespace-nowrap num">${value}</span>`,
 					};
 				});
 
@@ -837,11 +904,13 @@
 			const _sanitize = (value: string) => value.toLowerCase().replace(/\s+/g, "");
 			const _compare = (value: string) => _sanitize(value).includes(_sanitize(filterValue));
 
-			if (_compare(entry.luse_id.toString())) res = true;
-			if (_compare(entry.names)) res = true;
+			if (_compare(entry.luseId.toString())) res = true;
+			if (_compare(entry.cv_num.toString())) res = true;
+			if (_compare(entry.fname)) res = true;
+			if (_compare(entry.lname)) res = true;
 			if (_compare(entry.nationality)) res = true;
-			if (_compare(entry.nrc)) res = true;
-			if (_compare(entry.phone)) res = true;
+			if (_compare(entry.id_num)) res = true;
+			if (_compare(entry.phone.toString())) res = true;
 			if (_compare(entry.email)) res = true;
 
 			return res;
@@ -858,26 +927,37 @@
 
 		filtered.forEach((client) => {
 			total++;
-
-			if (client.type) {
-				switch (client.type) {
-					case "LI":
+			switch (client.acc_type) {
+				case "individual":
+					if (client.nationality === "Zambian") {
+						// LI
 						locals++;
-						individuals++;
-						break;
-					case "LC":
+					} else {
+						// FI
+						foreign++;
+					}
+					individuals++;
+					break;
+				case "joint":
+					if (client.nationality === "Zambian") {
+						// LI
 						locals++;
-						companies++;
-						break;
-					case "FI":
+					} else {
+						// FI
 						foreign++;
-						individuals++;
-					case "FC":
+					}
+					break;
+				case "institution":
+					if (client.country === "Zambian") {
+						// LC
+						locals++;
+					} else {
+						// FC
 						foreign++;
-						companies++;
-					default:
-						break;
-				}
+					}
+					companies++;
+				default:
+					break;
 			}
 		});
 
@@ -922,22 +1002,30 @@
 		const options: string[] = [];
 
 		if (
-			$filesCacheStore[idSanitiser(activeRow.nrc)] &&
-			$filesCacheStore[idSanitiser(activeRow.nrc)].length
+			$filesCacheStore[idSanitiser(activeRow.id_num)] &&
+			$filesCacheStore[idSanitiser(activeRow.id_num)].length
 		) {
-			const { url, title: tit } = $filesCacheStore[idSanitiser(activeRow.nrc)][selectedIndex];
+			const { url, title: tit } = $filesCacheStore[idSanitiser(activeRow.id_num)][selectedIndex];
 
 			src = url;
 			title = tit;
 
-			options.push(...$filesCacheStore[idSanitiser(activeRow.nrc)].map((v) => v.title));
+			options.push(...$filesCacheStore[idSanitiser(activeRow.id_num)].map((v) => v.title));
 		}
 
 		return { src, title, options };
 	});
 
+	const combineNames = (): string => {
+		if (activeRow.fname.length) {
+			return `${activeRow.fname} ${activeRow.lname}`;
+		} else {
+			return "Unknown";
+		}
+	};
+
 	const genPdf = async (id: string) => {
-		toast.info(`Generating ${toTitleCase(activeRow.names)}'s portfolio...`);
+		toast.info(`Generating ${toTitleCase(activeRow.fname)}'s portfolio...`);
 		disabled = true;
 		const html = document.getElementById(id)?.innerHTML;
 
@@ -950,14 +1038,14 @@
 			const blob = await response.blob();
 			const blobURL = URL.createObjectURL(blob);
 
-			let docTitle = `${toTitleCase(activeRow.names)}'s Portfolio - ${prettyDate(date)}.pdf`;
+			let docTitle = `${toTitleCase(combineNames())}'s Portfolio - ${prettyDate(date)}.pdf`;
 
 			switch (portfolioDisplayOption) {
 				case "matched":
-					docTitle = `SBZ ${toTitleCase(activeRow.names)}'s trade report - ${prettyDate(date)}.pdf`;
+					docTitle = `${toTitleCase(combineNames())}'s Trade Report - ${prettyDate(date)}.pdf`;
 					break;
 				case "screen":
-					docTitle = `SBZ ${toTitleCase(activeRow.names)}'s on-screen report - ${prettyDate(date)}.pdf`;
+					docTitle = `${toTitleCase(combineNames())}'s On-Ccreen Report - ${prettyDate(date)}.pdf`;
 				default:
 					break;
 			}
@@ -1014,11 +1102,11 @@
 						id: 11928,
 						market: "LUSE",
 						counterparty_name: "BRIAN MUKUBI MOONGA",
-						counterparty_luse_id: 457354,
+						counterparty_luseId: 457354,
 						counterparty_broker: "SBZL",
 						created_at: "2024-12-03T14:10:03.260515+00:00",
 						trader: "BWA",
-						luse_id: 88129,
+						luseId: 88129,
 						broker: "SBZL",
 						names: "MALOZI FELIX CHINGEZHI",
 						symbol: "CHIL",
@@ -1279,10 +1367,10 @@
 		openSheet("portfolio", {
 			created_at: "",
 			email: "test@email.com",
-			luse_id: 88129,
+			luseId: 88129,
 			names: "Malozi Felix Chingezhi",
 			nationality: "Zambian",
-			nrc: "554721/10/1",
+			id_num: "554721/10/1",
 			phone: "260776552592",
 			type: "LI",
 		});
@@ -1538,7 +1626,7 @@
 																	{prettyDate(date)}
 																</p>
 																<p class="date">
-																	{activeRow.luse_id}LI - {toTitleCase(activeRow.names)}
+																	{activeRow.luseId}LI - {toTitleCase(combineNames())}
 																</p>
 															</td>
 														</tr>
@@ -1795,7 +1883,7 @@
 															{prettyDate(date)}
 														</p>
 														<p class="date">
-															{activeRow.luse_id}LI - {toTitleCase(activeRow.names)}
+															{activeRow.luseId}LI - {toTitleCase(combineNames())}
 														</p>
 													</td>
 												</tr>
@@ -1839,7 +1927,7 @@
 															{prettyDate(date)}
 														</p>
 														<p class="date">
-															{activeRow.luse_id}LI - {toTitleCase(activeRow.names)}
+															{activeRow.luseId}LI - {toTitleCase(combineNames())}
 														</p>
 													</td>
 												</tr>
@@ -2084,7 +2172,7 @@
 															{prettyDate(date)}
 														</p>
 														<p class="date">
-															{activeRow.luse_id}LI - {toTitleCase(activeRow.names)}
+															{activeRow.luseId}LI - {toTitleCase(combineNames())}
 														</p>
 													</td>
 												</tr>
@@ -2128,7 +2216,7 @@
 															{clientPortfolio.screen.orderDates[0].label}
 														</p>
 														<p class="date">
-															{activeRow.luse_id}LI - {activeRow.names}
+															{activeRow.luseId}LI - {combineNames()}
 														</p>
 													</td>
 												</tr>
@@ -2336,7 +2424,7 @@
 															{prettyDate(date)}
 														</p>
 														<p class="date">
-															{activeRow.luse_id}LI - {toTitleCase(activeRow.names)}
+															{activeRow.luseId}LI - {toTitleCase(combineNames())}
 														</p>
 													</td>
 												</tr>
@@ -2417,7 +2505,7 @@
 								classes="loading"
 							/>
 						</div>
-					{:else if $filesCacheStore[idSanitiser(activeRow.nrc)] && $filesCacheStore[idSanitiser(activeRow.nrc)].length}
+					{:else if $filesCacheStore[idSanitiser(activeRow.id_num)] && $filesCacheStore[idSanitiser(activeRow.id_num)].length}
 						<div>
 							<iframe src={iFrameHelper.src} class="kyc-doc" title="kyc document"></iframe>
 						</div>

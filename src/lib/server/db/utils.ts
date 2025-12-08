@@ -8,6 +8,7 @@ import {
 	prettyDate,
 	fileNamifier,
 	sanitizeFname,
+	print,
 } from "$lib/utils";
 import { toTitleCase } from "@cerebrusinc/fstring";
 import manifest from "../../../../package.json";
@@ -136,7 +137,7 @@ interface AppendEmailVarsObj {
 type SocialsRow = SBZdb["public"]["Tables"]["odyn-socials"]["Row"];
 
 type SettledTradeRow = SBZdb["public"]["Tables"]["settled_trades"]["Row"];
-type TempClientName = SBZdb["public"]["Tables"]["csd-clients-temp"]["Row"];
+type TempClientName = SBZdb["public"]["Tables"]["clients"]["Row"];
 
 interface TempClientNameTwo {
 	luse_id: number;
@@ -1219,6 +1220,8 @@ const sbz = (): SBZutils => {
 			  }
 		>[] = [];
 
+		print(files);
+
 		const ids: string[] = [];
 
 		const _getFileExtension = (file: File): string | null => {
@@ -1523,6 +1526,9 @@ const sbz = (): SBZutils => {
 			}
 
 			const { error } = await sbzdb.from("clients").insert(obj);
+
+			// console.log({ obj });
+			print(obj);
 
 			if (error) {
 				await _log({ message: error.message, title: "Open Account E2" });
@@ -2277,13 +2283,13 @@ const sbz = (): SBZutils => {
 		}
 	};
 
-	// * portfolio stuff
 	const _getClients = async (): Promise<TempClientName[]> => {
 		try {
 			const { data, error } = await sbzdb
-				.from("csd-clients-temp")
+				.from("clients")
 				.select()
-				.order("luse_id", { ascending: true });
+				.order("luseId", { ascending: true })
+				.filter("luseId", "gte", 0);
 
 			if (error) {
 				await _log({ message: error.message, title: `Get Clients Error` });
@@ -2304,6 +2310,7 @@ const sbz = (): SBZutils => {
 		}
 	};
 
+	// * portfolio stuff
 	const _getPortfolio = async (
 		luseId: number,
 	): Promise<GenericResponseWData<GetPortfolioData | undefined>> => {

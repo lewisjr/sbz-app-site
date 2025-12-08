@@ -9,7 +9,7 @@
 	//types
 	import type { SBZdb } from "$lib/types";
 
-	type TempClient = SBZdb["public"]["Tables"]["csd-clients-temp"]["Row"];
+	type TempClient = SBZdb["public"]["Tables"]["clients"]["Row"];
 
 	interface Props {
 		data: TempClient;

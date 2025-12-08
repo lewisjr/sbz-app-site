@@ -947,7 +947,7 @@
 			branch_name: branchNameValue.trim(),
 			city,
 			country: toTitleCase(country),
-			dob: dobValue ?? "2099-12-03T19:06:00.000Z",
+			dob: dobValue && dobValue.length ? dobValue : "2099-12-03T19:06:00.000Z",
 			email,
 			fname,
 			gender: toTitleCase(genderValue),
@@ -966,7 +966,9 @@
 			manag_dob:
 				dobValueManager && dobValueManager.length
 					? dobValueManager
-					: (dobValue ?? "2099-12-03T19:06:00.000Z"),
+					: dobValue && dobValue.length
+						? dobValue
+						: "2099-12-03T19:06:00.000Z",
 			manag_email: emailValueManager.trim(),
 			manag_fname: fnameValueManager.trim(),
 			manag_gender: toTitleCase(genderValueManager),
