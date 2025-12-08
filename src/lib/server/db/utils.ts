@@ -1046,10 +1046,30 @@ const sbz = (): SBZutils => {
 		reason: string,
 	): Promise<GenericResponse> => {
 		try {
+			const { data: files, error: e1 } = await sbzdb.storage.from("kyc").list(idNum);
+
+			if (e1) {
+				await _log({ message: e1.message, title: "Reject Request E1" });
+				return { success: false, message: e1.message };
+			}
+
+			const paths: string[] = [];
+
+			files.forEach((f) => {
+				paths.push(`${idNum}/${f.name}`);
+			});
+
+			const { error: e2 } = await sbzdb.storage.from("kyc").remove(paths);
+
+			if (e2) {
+				await _log({ message: e2.message, title: "Reject Request E2" });
+				return { success: false, message: e2.message };
+			}
+
 			const { error } = await sbzdb.from("clients").delete().filter("luseId", "eq", luseId);
 
 			if (error) {
-				await _log({ message: error.message, title: "Reject Request Error" });
+				await _log({ message: error.message, title: "Reject Request E3" });
 				return { success: false, message: error.message };
 			}
 
