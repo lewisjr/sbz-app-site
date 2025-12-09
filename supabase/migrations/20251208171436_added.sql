@@ -206,7 +206,9 @@ alter table "public"."otps" enable row level security;
     "side" text not null,
     "currency" text not null default 'zmw'::text,
     "sec_commision" double precision not null default '0.125'::double precision,
-    "luse_comission" double precision not null default '0.375'::double precision
+    "luse_comission" double precision not null default '0.375'::double precision,
+    "trade_date" timestamp with time zone not null default now(),
+    "broker_comission" double precision not null default '0.01'::double precision
       );
 
 

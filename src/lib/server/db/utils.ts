@@ -969,7 +969,8 @@ const sbz = (): SBZutils => {
 				.from("clients")
 				.select()
 				.order("created_at", { ascending: true })
-				.filter("luseId", "lt", 0);
+				.filter("luseId", "lt", 0)
+				.filter("is_approved", "eq", false);
 
 			if (error) {
 				await _log({ message: error.message, title: "Get Requests Error" });

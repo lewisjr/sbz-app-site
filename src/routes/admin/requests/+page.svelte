@@ -461,6 +461,11 @@
 	};
 
 	const rejectMember = async () => {
+		if (udf1.length < 10) {
+			toast.error("You must provide a rejection reason.");
+			return;
+		}
+
 		loading = true;
 		toast.info("Rejecting client...");
 

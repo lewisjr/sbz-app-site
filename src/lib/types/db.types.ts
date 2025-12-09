@@ -464,6 +464,7 @@ export type Database = {
 			};
 			settled_trades: {
 				Row: {
+					broker_comission: number;
 					broker_ref: string;
 					counter_firm: string;
 					created_at: string;
@@ -479,9 +480,11 @@ export type Database = {
 					sec_commision: number;
 					side: string;
 					symbol: string;
+					trade_date: string;
 					value: number;
 				};
 				Insert: {
+					broker_comission?: number;
 					broker_ref: string;
 					counter_firm: string;
 					created_at?: string;
@@ -497,9 +500,11 @@ export type Database = {
 					sec_commision?: number;
 					side: string;
 					symbol: string;
+					trade_date?: string;
 					value: number;
 				};
 				Update: {
+					broker_comission?: number;
 					broker_ref?: string;
 					counter_firm?: string;
 					created_at?: string;
@@ -515,6 +520,7 @@ export type Database = {
 					sec_commision?: number;
 					side?: string;
 					symbol?: string;
+					trade_date?: string;
 					value?: number;
 				};
 				Relationships: [];
