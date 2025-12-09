@@ -579,7 +579,7 @@
 		<h3 class="mx-auto mt-4 text-center">No data.</h3>
 	{:else}
 		<div class="flex flex-row items-center justify-between">
-			<h1>Staff</h1>
+			<h1>Requests</h1>
 			<div class="flex w-[50%] items-center">
 				<Search class="mr-4 h-10 w-10" />
 				<Input class="w-[100%]" placeholder="Filter Requests..." type="text" disabled />
