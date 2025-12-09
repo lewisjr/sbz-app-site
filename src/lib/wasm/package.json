@@ -1,7 +1,7 @@
 {
   "name": "sbz-wasm",
   "type": "module",
-  "version": "0.5.0",
+  "version": "0.7.0",
   "files": [
     "sbz_wasm_bg.wasm",
     "sbz_wasm.js",

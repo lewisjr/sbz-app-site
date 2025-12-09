@@ -80,6 +80,8 @@
 		value: 0,
 		luse_comission: 0,
 		sec_commision: 0,
+		broker_comission: 0,
+		trade_date: "",
 	};
 
 	let openTrigger = $state<number>(0);
@@ -445,11 +447,15 @@
 	});
 
 	let dates = $derived.by(() => {
-		const d = filtered.map((row) => {
-			return { label: prettyDate(row.date), value: row.date };
-		});
+		if (filtered.length) {
+			const d = filtered.map((row) => {
+				return { label: prettyDate(row.date), value: row.date };
+			});
 
-		return d;
+			return d;
+		} else {
+			return [{ label: "", value: 0 }];
+		}
 	});
 
 	let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 200 });
@@ -693,7 +699,7 @@
 			<h1>Settlement</h1>
 			<div class="ml-5 flex flex-row gap-1.5">
 				<AnyPickerDate
-					data={dates.length ? dates : [{ label: "", value: "" }]}
+					data={dates}
 					handler={updateDate}
 					value={selectedDate}
 					pickerTitle="Date"

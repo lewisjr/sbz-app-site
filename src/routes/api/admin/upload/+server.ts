@@ -59,8 +59,8 @@ export const PUT = async (event) => {
 
 		const text = await readSettle(fileBuffer);
 
-		//console.log({ udf1 });
-		//console.log(`\n"${text}"\n`);
+		// console.log({ udf1 });
+		// console.log(`\n"${text}"\n`);
 
 		if (!text)
 			return json({
@@ -72,55 +72,95 @@ export const PUT = async (event) => {
 		const { data, date, net_val, total_buy, total_buy_clients, total_sell, total_sell_clients } =
 			wasm.settle_v1(text, udf1);
 
+		interface RustRow {
+			csd_ref: string;
+			broker_ref: string;
+			luse_id: number;
+			symbol: string;
+			price: number;
+			qty: number;
+			value: number;
+			counter_firm: string;
+			side: "buy" | "sell";
+			date: number;
+		}
+
 		if (!data.length)
 			return json({
 				success: false,
-				message: `No ${udf1.toUpperCase()} trades to settle today.`,
+				message: `No trades to settle today.`,
 				data: undefined,
 			});
 
 		const luseIds: number[] = [];
 
-		data.forEach((row: any) => {
-			if (!luseIds.includes(row.luseId)) luseIds.push(row.luseId);
+		data.forEach((row: RustRow) => {
+			if (!luseIds.includes(row.luse_id)) luseIds.push(row.luse_id);
 		});
 
 		const names = await dbs.sbz.getClientNameById(luseIds);
 
+		if (!names.length)
+			return json({
+				success: false,
+				message: "Failed to fetch client names, please contact the developer.",
+				data: undefined,
+			});
+
 		const trades: SettledTradeInsert[] = [];
 
-		data.forEach((row: any) => {
-			const name = names.filter((item) => item.luse_id === row.luseId);
+		data.forEach((row: RustRow) => {
+			const name = names.filter((item) => item.luse_id === row.luse_id);
 
-			const { brokerRef, counterFirm, csdRef, date, luseId, price, qty, side, symbol, value } = row;
+			const { broker_ref, counter_firm, csd_ref, date, luse_id, price, qty, side, symbol, value } =
+				row;
 
 			trades.push({
-				broker_ref: brokerRef,
-				counter_firm: counterFirm,
-				csd_ref: csdRef,
+				broker_ref: broker_ref,
+				counter_firm: counter_firm,
+				csd_ref: csd_ref,
 				date,
-				luse_id: luseId,
+				luse_id: luse_id,
 				names: name.length ? name[0].names : "Unkown",
 				price,
 				qty,
 				side,
 				symbol,
 				value,
-				currency: udf1,
+				currency: symbol.toLowerCase().includes("usd") ? "usd" : udf1,
+				broker_comission: name.length ? name[0].broker_comission : 0.01,
 			});
+		});
+
+		// console.log({ trades });
+
+		let totalBuy: number = 0;
+		let totalBuyUsd: number = 0;
+		let totalSell: number = 0;
+		let totalSellUsd: number = 0;
+
+		trades.forEach((t) => {
+			if (t.currency === "zmw") {
+				t.side === "buy" ? (totalBuy += t.value) : (totalSell += t.value);
+			} else {
+				t.side === "buy" ? (totalBuyUsd += t.value) : (totalSellUsd += t.value);
+			}
 		});
 
 		return json({
 			success: true,
 			message: "",
 			data: {
-				trades: data,
+				trades,
 				date,
-				netVal: net_val,
-				totalBuy: total_buy,
+				netVal: totalSell - totalBuy,
+				netValUsd: totalSellUsd - totalBuyUsd,
 				totalBuyClients: total_buy_clients,
-				totalSell: total_sell,
 				totalSellClients: total_sell_clients,
+				totalBuy,
+				totalBuyUsd,
+				totalSell,
+				totalSellUsd,
 			},
 		});
 	} catch (ex: any) {
@@ -137,7 +177,7 @@ export const POST = async (event) => {
 
 	const { obj, udf1 }: { obj: SettledTradeInsert[]; udf1: string } = await request.json();
 
-	const settleRes = await dbs.sbz.settleTrades(obj, udf1 as any);
+	const settleRes = await dbs.sbz.settleTrades(obj);
 
 	return json({ success: settleRes.success, message: settleRes.message });
 };

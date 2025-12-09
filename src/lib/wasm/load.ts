@@ -6,13 +6,19 @@ const wasmPath = path.resolve("src/lib/wasm/sbz_wasm_bg.wasm");
 
 // console.log({ wasmPath });
 
+let initialized = false;
+
 const loadWasm = async () => {
 	try {
-		const wasmBytes = fs.readFileSync(wasmPath);
-		await init(wasmBytes);
+		if (!initialized) {
+			const wasmBytes = fs.readFileSync(wasmPath);
+			await init(wasmBytes);
+			initialized = true;
+		}
+
 		return { settle_v1 };
 	} catch (ex) {
-		console.error("\n\n", ex, "\n\n");
+		console.error("\n\nWASM init failed:", ex, "\n\n");
 		return false;
 	}
 };

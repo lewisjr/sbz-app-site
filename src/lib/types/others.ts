@@ -117,9 +117,12 @@ export interface SettleTradeUploadResponse {
 	trades: SettledTradeInsert[];
 	date: number;
 	netVal: number;
+	netValUsd: number;
 	totalBuy: number;
+	totalBuyUsd: number;
 	totalBuyClients: number;
 	totalSell: number;
+	totalSellUsd: number;
 	totalSellClients: number;
 }
 

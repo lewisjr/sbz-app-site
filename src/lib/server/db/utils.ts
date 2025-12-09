@@ -143,6 +143,7 @@ interface TempClientNameTwo {
 	luse_id: number;
 	created_at: string;
 	names: string;
+	broker_comission: number;
 }
 
 interface ApiVersion {
@@ -2236,14 +2237,13 @@ const sbz = (): SBZutils => {
 		currency: "zmw" | "usd" = "zmw",
 	): Promise<GenericResponse> => {
 		try {
-			const { data, error } = await sbzdb
-				.from("settled_trades")
-				.select("date")
-				.eq("date", obj[0].date)
-				.eq("currency", currency);
+			/*
+			const { data, error } = await sbzdb.from("settled_trades").select("date");
+			// .eq("date", obj[0].date);
+			//.eq("currency", currency);
 
 			if (error) {
-				await _log({ message: error.message, title: `Settle ${currency.toUpperCase()} Error - 1` });
+				await _log({ message: error.message, title: `Settle Error - 1` });
 				return {
 					success: false,
 					message: error.message,
@@ -2253,14 +2253,15 @@ const sbz = (): SBZutils => {
 			if (data.length) {
 				return {
 					success: false,
-					message: `The ${currency.toUpperCase()} settlement has already been done for ${prettyDate(obj[0].date)}!`,
+					message: `The settlement has already been done for ${prettyDate(obj[0].date)}!`,
 				};
 			}
+			*/
 
 			const { error: e2 } = await sbzdb.from("settled_trades").insert(obj);
 
 			if (e2) {
-				await _log({ message: e2.message, title: `Settle ${currency.toUpperCase()} Error - 2` });
+				await _log({ message: e2.message, title: `Settle Error - 2` });
 				return {
 					message: e2.message,
 					success: false,
@@ -2268,7 +2269,7 @@ const sbz = (): SBZutils => {
 			}
 
 			return {
-				message: `${currency.toUpperCase()} settlement for ${prettyDate(obj[0].date)} completed!`,
+				message: `settlement for ${prettyDate(obj[0].date)} completed!`,
 				success: true,
 			};
 		} catch (ex: any) {
@@ -2279,7 +2280,7 @@ const sbz = (): SBZutils => {
 						? ex.message
 						: ex.message || JSON.stringify(ex);
 
-			_log({ message: error, title: `Settle ${currency.toUpperCase()} Exception` });
+			_log({ message: error, title: `Settle Exception` });
 			return { success: false, message: "Server error, please wait 10 minutes and try again." };
 		}
 	};
@@ -2520,13 +2521,26 @@ const sbz = (): SBZutils => {
 	const _getClientNameById = async (luseIds: number[]): Promise<TempClientNameTwo[]> => {
 		try {
 			const { data, error } = await sbzdb
-				.from("csd-clients-temp")
-				.select("luse_id,created_at,names")
-				.in("luse_id", luseIds);
+				.from("clients")
+				.select("luseId,created_at,fname,lname,broker_comission")
+				.in("luseId", luseIds);
+
+			//console.log({ data, error, luseIds });
 
 			if (error) return [];
 
-			return data;
+			const _data: TempClientNameTwo[] = [];
+
+			data.forEach((v) => {
+				_data.push({
+					broker_comission: v.broker_comission,
+					created_at: v.created_at,
+					luse_id: v.luseId,
+					names: `${v.fname} ${v.lname}`.trim(),
+				});
+			});
+
+			return _data;
 		} catch {
 			return [];
 		}

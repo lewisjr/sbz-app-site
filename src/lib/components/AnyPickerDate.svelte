@@ -47,22 +47,25 @@
 			}
 		});
 
-		if (filter === "string" && end) {
-			__data.sort((a, b) => b.value.toString().localeCompare(a.value.toString()));
-			value = __data[0].value;
-		}
-		if (filter === "string" && !end) {
-			__data.sort((a, b) => a.value.toString().localeCompare(b.value.toString()));
-			value = __data[0].value;
-		}
+		if (__data.length) {
+			if (filter === "string" && end) {
+				__data.sort((a, b) => b.value.toString().localeCompare(a.value.toString()));
+				value = __data[0].value;
+			}
+			if (filter === "string" && !end) {
+				__data.sort((a, b) => a.value.toString().localeCompare(b.value.toString()));
+				value = __data[0].value;
+			}
 
-		if (filter !== "string" && end) {
-			__data.sort((a, b) => Number(b.value.toString()) - Number(a.value.toString()));
-			value = __data[0].value;
-		}
-		if (filter !== "string" && !end) {
-			__data.sort((a, b) => Number(a.value.toString()) - Number(b.value.toString()));
-			value = __data[0].value;
+			if (filter !== "string" && end) {
+				__data.sort((a, b) => Number(b.value.toString()) - Number(a.value.toString()));
+				value = __data[0].value;
+			}
+
+			if (filter !== "string" && !end) {
+				__data.sort((a, b) => Number(a.value.toString()) - Number(b.value.toString()));
+				value = __data[0].value;
+			}
 		}
 
 		_data = __data;

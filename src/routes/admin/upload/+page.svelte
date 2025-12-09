@@ -47,6 +47,7 @@
 		let desc: string = "";
 
 		switch (dataType) {
+			/*
 			case "ZMW Settlement":
 				title = "Settle Kwacha Trades";
 				desc =
@@ -54,6 +55,12 @@
 				break;
 			case "USD Settlement":
 				title = "Settle Dollar Trades";
+				desc =
+					"Upload the LuSE final settlement report as a pdf and settle trades. It will update portfolios and generate contract notes.";
+				break;
+			*/
+			default:
+				title = "Settle Trades";
 				desc =
 					"Upload the LuSE final settlement report as a pdf and settle trades. It will update portfolios and generate contract notes.";
 				break;
@@ -74,6 +81,7 @@
 
 		if (!doc) {
 			toast.error("Please upload a valid file.");
+			tradeApiResponse = undefined;
 			return;
 		}
 
@@ -81,6 +89,7 @@
 
 		if (!docSize) {
 			toast.error("This file is empty!");
+			tradeApiResponse = undefined;
 			return;
 		}
 
@@ -150,29 +159,27 @@
 
 	const settleTrades = async () => {
 		if (tradeApiResponse) {
-			toast.info(
-				`Settling ${dataTypeUdf.toUpperCase()} ${prettyDate(tradeApiResponse.trades[0].date || "")}...`,
-			);
+			toast.info(`Settling ${prettyDate(tradeApiResponse.trades[0].date || "")}...`);
 
 			loading = true;
 
 			try {
 				const req = await fetch("/api/admin/upload", {
 					method: "POST",
-					body: JSON.stringify({ obj: tradeApiResponse.trades, udf1: dataTypeUdf }),
+					body: JSON.stringify({ obj: tradeApiResponse.trades }),
 				});
 
 				const res = await req.json();
 
 				loading = false;
+				tradeApiResponse = undefined;
 
 				if (!res.success) {
 					toast.error(res.message);
+					return;
 				}
 
 				toast.success(res.message);
-
-				tradeApiResponse = undefined;
 			} catch (ex: any) {
 				loading = false;
 
@@ -212,6 +219,7 @@
 	<div class="flex items-center">
 		<h1 class="whitespace-nowrap">Data Upload</h1>
 	</div>
+	<!--
 	<div class="flex w-[100%] items-center justify-end">
 		<Tabs.Root bind:value={dataType} class="ml-5">
 			<Tabs.List>
@@ -220,6 +228,7 @@
 			</Tabs.List>
 		</Tabs.Root>
 	</div>
+	-->
 </div>
 
 <div class="main-tainer">
@@ -253,16 +262,24 @@
 				>{numParse(tradeApiResponse.totalSellClients)} ({percentageHandler(
 					tradeApiResponse.totalSellClients / tradeApiResponse.trades.length,
 				)})</span
-			> <i>sell</i> trades.<br /><br /><b>Total Purchases</b> = {dataTypeUdf.toUpperCase()}
-			<span class="num">{numParse(tradeApiResponse.totalBuy.toFixed(2))}</span><br /><b
-				>Total Sales</b
-			>
+			> <i>sell</i> trades.<br /><br /><b>Total Purchases</b> =
+			<span class="num"
+				>ZMW {numParse(tradeApiResponse.totalBuy.toFixed(2))} • USD {numParse(
+					tradeApiResponse.totalBuyUsd.toFixed(2),
+				)}</span
+			><br /><b>Total Sales</b>
 			= {dataTypeUdf.toUpperCase()}
-			<span class="num">{numParse(tradeApiResponse.totalSell.toFixed(2))}</span><br /><b
-				>Net Obligations</b
-			>
+			<span class="num"
+				>ZMW {numParse(tradeApiResponse.totalSell.toFixed(2))} • USD {numParse(
+					tradeApiResponse.totalSellUsd.toFixed(2),
+				)}</span
+			><br /><b>Net Obligations</b>
 			= {dataTypeUdf.toUpperCase()}
-			<span class="num">{numParse(tradeApiResponse.netVal.toFixed(2))}</span>
+			<span class="num"
+				>ZMW {numParse(tradeApiResponse.netVal.toFixed(2))} • USD {numParse(
+					tradeApiResponse.netValUsd.toFixed(2),
+				)}</span
+			>
 		</p>
 
 		<Button disabled={loading} onclick={settleTrades}
