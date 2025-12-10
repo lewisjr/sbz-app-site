@@ -113,7 +113,7 @@
 
 			const a = document.createElement("a");
 			a.href = blobURL;
-			a.download = `SBZ ${toTitleCase(activeRow.names)}'s Contract Note - ${prettyDate(selectedDate)}.pdf`; // Optional: set the filename
+			a.download = `${toTitleCase(activeRow.names)}'s Contract Note - ${prettyDate(selectedDate)}.pdf`; // Optional: set the filename
 			document.body.appendChild(a);
 			a.click();
 			document.body.removeChild(a);
