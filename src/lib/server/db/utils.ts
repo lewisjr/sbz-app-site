@@ -75,7 +75,7 @@ type OdynInsert = SBZdb["public"]["Tables"]["odyn-tickets"]["Insert"];
 
 export interface FileData {
 	id: string;
-	type: "poi" | "poa" | "selfie";
+	type: "poi" | "poa" | "selfie" | "aco";
 	file: File | Blob;
 }
 
@@ -195,7 +195,11 @@ interface SBZutils {
 	// getAdmins: () => Promise<AdminRow[]>;
 	isClientCorrect: (luseId: number) => Promise<boolean>;
 	getClient: (luseId: number) => Promise<ClientRow[]>;
-	openAccount: (obj: ClientInsert) => Promise<GenericResponse>;
+	openAccount: (
+		obj: ClientInsert,
+		autoApprove?: boolean,
+		sender?: string,
+	) => Promise<GenericResponse>;
 	updateClient: (
 		obj: ClientUpdate,
 		luseId: number,
@@ -1609,7 +1613,11 @@ const sbz = (): SBZutils => {
 		}
 	};
 
-	const _openAccount = async (obj: ClientInsert): Promise<GenericResponse> => {
+	const _openAccount = async (
+		obj: ClientInsert,
+		autoApprove?: boolean,
+		sender?: string,
+	): Promise<GenericResponse> => {
 		try {
 			const tempId: number = Number(obj.id_num.replace(/\D+/g, "")) * -1;
 			obj.luseId = tempId;
@@ -1632,6 +1640,15 @@ const sbz = (): SBZutils => {
 				};
 			}
 
+			if (sender) {
+				obj.opened_by = sender;
+			}
+
+			if (autoApprove) {
+				obj.is_approved = true;
+				obj.approved_by = sender;
+			}
+
 			const { error } = await sbzdb.from("clients").insert(obj);
 
 			// console.log({ obj });
@@ -1645,18 +1662,20 @@ const sbz = (): SBZutils => {
 				};
 			}
 
-			const internalEmail = notif.email.sendLink(
-				{
-					subject: `New Account Request | ${obj.fname} ${obj.lname}`,
-					title: `Account Opening`,
-					body: `A new client <b>${obj.fname} ${obj.lname}</b> wants to open an account!. Please click below to review.`,
-					link: `https://app.sbz.com.zm/admin/aco?q=${tempId}`,
-					linkText: "View Request",
-					extra: `This is a ${obj.country === "Zambia" ? "local" : "foreign"} client (currenly residing in ${obj.country}).`,
-					cc: IS_DEV ? "sbzlewis@gmail.com" : "trading@sbz.com.zm",
-				},
-				"",
-			);
+			const internalEmail = !autoApprove
+				? notif.email.sendLink(
+						{
+							subject: `New Account Request | ${obj.fname} ${obj.lname}`,
+							title: `Account Opening`,
+							body: `A new client <b>${obj.fname} ${obj.lname}</b> wants to open an account!. Please click below to review.`,
+							link: `https://app.sbz.com.zm/admin/aco?q=${tempId}`,
+							linkText: "View Request",
+							extra: `This is a ${obj.country === "Zambia" ? "local" : "foreign"} client (currenly residing in ${obj.country}).`,
+							cc: IS_DEV ? "sbzlewis@gmail.com" : "trading@sbz.com.zm",
+						},
+						"",
+					)
+				: null;
 
 			const clientEmail = notif.email.sendUpdate(
 				{
@@ -1664,6 +1683,7 @@ const sbz = (): SBZutils => {
 					title: `Account Opening`,
 					body: `Hi ${obj.fname},<br /><br />We have received your request and are currently processing your account opening! You will be notified via email on any status updates.`,
 					extra: "Please note that we usually open accounts wihtin 24 hours on working days.",
+					cc: autoApprove ? "trading@sbz.com.zm" : undefined,
 				},
 				obj.email,
 			);

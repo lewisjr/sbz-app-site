@@ -115,12 +115,14 @@ export type Database = {
 					manag_street: string;
 					mstatus: string;
 					nationality: string;
+					opened_by: string;
 					phone: number;
 					referral_src: string;
 					signatures: Json;
 					signing_arrangement: number;
 					street: string;
 					swift_code: string;
+					wallet_details: Json;
 				};
 				Insert: {
 					acc_type: string;
@@ -164,12 +166,14 @@ export type Database = {
 					manag_street: string;
 					mstatus: string;
 					nationality: string;
+					opened_by?: string;
 					phone: number;
 					referral_src?: string;
 					signatures: Json;
 					signing_arrangement?: number;
 					street: string;
 					swift_code: string;
+					wallet_details?: Json;
 				};
 				Update: {
 					acc_type?: string;
@@ -213,12 +217,14 @@ export type Database = {
 					manag_street?: string;
 					mstatus?: string;
 					nationality?: string;
+					opened_by?: string;
 					phone?: number;
 					referral_src?: string;
 					signatures?: Json;
 					signing_arrangement?: number;
 					street?: string;
 					swift_code?: string;
+					wallet_details?: Json;
 				};
 				Relationships: [];
 			};

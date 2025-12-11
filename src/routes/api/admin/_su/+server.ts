@@ -3,13 +3,18 @@ import notif from "$lib/server/email";
 import totp from "$lib/server/totp";
 import { genOTP, print } from "$lib/utils";
 import { json } from "@sveltejs/kit";
-import Tokenise from "$lib/server/tokenise.js";
 
 import type { SBZdb, Types } from "$lib/types";
 import type { FileData } from "$lib/server/db/utils.js";
+import kratos from "$lib/server/kratos";
 
 // Set an OTP
-export const PUT = async ({ request }) => {
+export const PUT = async (event) => {
+	const sender = await kratos.admin(event);
+	if (sender instanceof Response) return sender;
+
+	const { request } = event;
+
 	const { emails, phones }: { emails: string[]; phones: string[] } = await request.json();
 
 	const otp = genOTP();
@@ -44,10 +49,13 @@ export const PUT = async ({ request }) => {
 	return json(otpReq, { status: 200 });
 };
 
-const tokenise = new Tokenise();
-
 // Confirm OTP and make account opening ticket
-export const POST = async ({ request }) => {
+export const POST = async (event) => {
+	const sender = await kratos.admin(event);
+	if (sender instanceof Response) return sender;
+
+	const { request } = event;
+
 	const formData = await request.formData();
 
 	const otp = Number(formData.get("otp")); // comes in as string → cast to number
@@ -63,6 +71,7 @@ export const POST = async ({ request }) => {
 	const secret = obj.signatures ? (obj.signatures as Types["ClientSignature"]) : undefined;
 
 	try {
+		/*
 		const [serverOtp, serverTotp] = await Promise.all([
 			dbs.sbz.checkOtp({ otp, user: emails.join(",,") }),
 			totp.validate({ val: totpVal, secret: secret ? secret.value : "" }),
@@ -88,6 +97,7 @@ export const POST = async ({ request }) => {
 				{ status: 400 },
 			);
 		}
+		*/
 
 		const files: FileData[] = [];
 
@@ -110,14 +120,18 @@ export const POST = async ({ request }) => {
 			phone: "",
 		};
 
+		const acoDoc = formData.get("aco") as Blob;
+
+		files.push({ file: acoDoc, id: obj.id_num, type: "aco" });
+
 		if (acc_type === "individual" && !is_in_trust_of) {
 			const poa = formData.get(`${obj.id_num}-poa`) as File;
 			const poi = formData.get(`${obj.id_num}-poi`) as File;
-			const selfie = formData.get(`${obj.id_num}-selfie`) as Blob;
+			// const selfie = formData.get(`${obj.id_num}-selfie`) as Blob;
 
 			files.push({ file: poa, id: obj.id_num, type: "poa" });
 			files.push({ file: poi, id: obj.id_num, type: "poi" });
-			files.push({ file: selfie, id: obj.id_num, type: "selfie" });
+			// files.push({ file: selfie, id: obj.id_num, type: "selfie" });
 
 			details.email = obj.email;
 			details.idNumber = obj.id_num;
@@ -129,11 +143,11 @@ export const POST = async ({ request }) => {
 		if (acc_type === "individual" && is_in_trust_of) {
 			const poa = formData.get(`${obj.manag_id_num}-poa`) as File;
 			const poi = formData.get(`${obj.manag_id_num}-poi`) as File;
-			const selfie = formData.get(`${obj.id_num}-selfie`) as Blob;
+			// const selfie = formData.get(`${obj.id_num}-selfie`) as Blob;
 
 			files.push({ file: poa, id: obj.manag_id_num, type: "poa" });
 			files.push({ file: poi, id: obj.manag_id_num, type: "poi" });
-			files.push({ file: selfie, id: obj.manag_id_num, type: "selfie" });
+			// files.push({ file: selfie, id: obj.manag_id_num, type: "selfie" });
 
 			details.email = obj.manag_email;
 			details.idNumber = obj.manag_id_num;
@@ -146,16 +160,14 @@ export const POST = async ({ request }) => {
 			//@ts-ignore
 			const partners: UserObj[] = obj.joint_partners;
 
-			// ! eventully change to row.idNum
-			const selfie = formData.get(`${obj.id_num}-selfie`) as Blob;
-
 			partners.forEach((row, i) => {
 				const poa = formData.get(`${row.idNum}-poa`) as File;
 				const poi = formData.get(`${row.idNum}-poi`) as File;
+				// const selfie = formData.get(`${obj.id_num}-selfie`) as Blob;
 
 				files.push({ file: poa, id: row.idNum, type: "poa" });
 				files.push({ file: poi, id: row.idNum, type: "poi" });
-				files.push({ file: selfie, id: row.idNum, type: "selfie" });
+				// files.push({ file: selfie, id: row.idNum, type: "selfie" });
 
 				if (!i) {
 					details.email = row.email;
@@ -178,16 +190,14 @@ export const POST = async ({ request }) => {
 			//@ts-ignore
 			const directors: UserObj[] = obj.comp_directors;
 
-			// ! eventully change to row.idNum
-			const selfie = formData.get(`${obj.id_num}-selfie`) as Blob;
-
 			directors.forEach((row) => {
 				const poa = formData.get(`${row.idNum}-poa`) as File;
 				const poi = formData.get(`${row.idNum}-poi`) as File;
+				// const selfie = formData.get(`${obj.id_num}-selfie`) as Blob;
 
 				files.push({ file: poa, id: row.idNum, type: "poa" });
 				files.push({ file: poi, id: row.idNum, type: "poi" });
-				files.push({ file: selfie, id: row.idNum, type: "selfie" });
+				// files.push({ file: selfie, id: row.idNum, type: "selfie" });
 
 				// queryHelper = `Requesting the ${qWord} of an institutional account for ${obj.fname}.`;
 			});
@@ -197,16 +207,14 @@ export const POST = async ({ request }) => {
 			//@ts-ignore
 			const managers: UserObj[] = obj.comp_managers;
 
-			// ! eventully change to row.idNum
-			const selfie = formData.get(`${obj.id_num}-selfie`) as Blob;
-
 			managers.forEach((row, i) => {
 				const poa = formData.get(`${row.idNum}-poa`) as File;
 				const poi = formData.get(`${row.idNum}-poi`) as File;
+				// const selfie = formData.get(`${obj.id_num}-selfie`) as Blob;
 
 				files.push({ file: poa, id: row.idNum, type: "poa" });
 				files.push({ file: poi, id: row.idNum, type: "poi" });
-				files.push({ file: selfie, id: row.idNum, type: "selfie" });
+				// files.push({ file: selfie, id: row.idNum, type: "selfie" });
 
 				if (!i) {
 					details.name = `${row.fname} ${row.lname}`;
@@ -229,7 +237,7 @@ export const POST = async ({ request }) => {
 
 		print(obj);
 
-		const res = await dbs.sbz.openAccount(obj);
+		const res = await dbs.sbz.openAccount(obj, true, sender.username);
 
 		return json(res, { status: res.success ? 201 : 400 });
 	} catch (ex) {

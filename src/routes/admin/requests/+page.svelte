@@ -25,7 +25,7 @@
 	import Textarea from "$lib/components/ui/textarea/textarea.svelte";
 
 	//icons
-	import { Search, ChevronLeft, ChevronRight, Check, X, Eye } from "@lucide/svelte";
+	import { Search, ChevronLeft, ChevronRight, Check, X, Eye, PlusCircle } from "@lucide/svelte";
 
 	//types
 	import type { PageProps } from "./$types";
@@ -105,6 +105,8 @@
 		swift_code: "",
 		approve_date: "",
 		approved_by: "",
+		opened_by: "",
+		wallet_details: {},
 	};
 
 	let activeRow = $state<ClientRow>(initClient);
@@ -511,6 +513,14 @@
 		}
 	};
 
+	const openAccount = () => {
+		window.open(
+			data.customSignUpUrl,
+			"pdfWindow",
+			"width=600,height=800,menubar=no,toolbar=no,location=no",
+		);
+	};
+
 	/*
 	onMount(() => {
 		if (filteredClients.length) {
@@ -542,6 +552,9 @@
 			<div class="flex w-[50%] items-center">
 				<Search class="mr-4 h-10 w-10" />
 				<Input class="w-[100%]" placeholder="Filter Requests..." type="text" disabled />
+				<Button variant="outline" class="ml-4" disabled
+					>Add Client<PlusCircle class="ml-2 h-4 w-4" /></Button
+				>
 			</div>
 		</div>
 
@@ -583,6 +596,9 @@
 			<div class="flex w-[50%] items-center">
 				<Search class="mr-4 h-10 w-10" />
 				<Input class="w-[100%]" placeholder="Filter Requests..." type="text" disabled />
+				<Button variant="outline" class="ml-4" disabled={loading} onclick={() => openAccount()}
+					>Add Client<PlusCircle class="ml-2 h-4 w-4" /></Button
+				>
 			</div>
 		</div>
 		<div class="main-tainer">
@@ -610,6 +626,9 @@
 				placeholder="Filter Requests..."
 				type="text"
 			/>
+			<Button variant="outline" class="ml-4" disabled={loading} onclick={() => openAccount()}
+				>Add Client<PlusCircle class="ml-2 h-4 w-4" /></Button
+			>
 		</div>
 	</div>
 
