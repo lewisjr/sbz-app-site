@@ -26,11 +26,13 @@ export const checkJwt = (token: string): string | jwt.JwtPayload | false => {
 	}
 };
 
-export interface AdminJwt {
-	data: SBZdb["public"]["Tables"]["admins"]["Row"];
+interface JWT<T> {
+	data: T;
 	iat: number;
 	exp: number;
 }
+
+export type AdminJwt = JWT<SBZdb["public"]["Tables"]["admins"]["Row"]>;
 
 export const scourgeOfClients = (event: ServerLoadEvent): AdminJwt => {
 	const user = event.cookies.get("sbz-admin");
@@ -47,11 +49,7 @@ export const scourgeOfClients = (event: ServerLoadEvent): AdminJwt => {
 	return userDetails; // or whatever is useful
 };
 
-export interface ClientJwt {
-	data: SBZdb["public"]["Tables"]["clients"]["Row"];
-	iat: number;
-	exp: number;
-}
+export type ClientJwt = JWT<SBZdb["public"]["Tables"]["clients"]["Row"]>;
 
 export const scourgeOfInvestor = (event: ServerLoadEvent): ClientJwt => {
 	const user = event.cookies.get("sbz-client");
@@ -68,14 +66,15 @@ export const scourgeOfInvestor = (event: ServerLoadEvent): ClientJwt => {
 	return userDetails; // or whatever is useful
 };
 
-export const kratosSafety = (event: ServerLoadEvent): void => {
+/**@deprecated */
+const kratosSafety = (event: ServerLoadEvent): void => {
 	const user = event.cookies.get("sbz-authed");
 
 	if (!user) {
 		event.cookies.set("sbz-authed", genJwt({ setBy: "svelte" }, "30d"), {
 			path: "/",
 			httpOnly: true,
-			maxAge: 60 * 60 * 168,
+			maxAge: 60 * 60 * 24 * 30,
 			secure: true,
 		});
 
@@ -87,10 +86,27 @@ export const kratosSafety = (event: ServerLoadEvent): void => {
 		event.cookies.set("sbz-authed", genJwt({ setBy: "svelte" }, "30d"), {
 			path: "/",
 			httpOnly: true,
-			maxAge: 60 * 60 * 168,
+			maxAge: 60 * 60 * 24 * 30,
 			secure: true,
 		});
 
 		return;
 	}
+};
+
+export type UserEmailJwt = JWT<string>;
+
+export const userEmailFinder = (event: ServerLoadEvent): UserEmailJwt | false => {
+	const user = event.cookies.get("sbz-client-mail");
+	if (!user) return false;
+
+	const details = checkJwt(user);
+	if (!details) {
+		event.cookies.delete("sbz-client-mail", { path: "/" });
+		return false;
+	}
+
+	const userDetails = details as UserEmailJwt;
+
+	return userDetails; // or whatever is useful
 };

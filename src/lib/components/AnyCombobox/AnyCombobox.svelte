@@ -64,7 +64,7 @@
 	function closeAndFocusTrigger() {
 		open = false;
 		tick().then(() => {
-			triggerRef.focus();
+			// triggerRef.focus();
 		});
 	}
 

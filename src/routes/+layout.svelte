@@ -33,6 +33,7 @@
 	main {
 		height: 100vh;
 		width: 100%;
+		background-color: var(--background);
 
 		@media screen and (max-width: 1024px) {
 			height: 100dvh;

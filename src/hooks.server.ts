@@ -13,21 +13,36 @@ export async function handle({ event, resolve }) {
 		return resolve(event);
 	}
 
+	if (DEV === "y") return resolve(event);
+
 	//print({ req: event.request.headers });
 
-	let url = DEV === "y" ? "http://localhost:5173" : "https://app.sbz.com.zm";
+	let url =
+		DEV === "y"
+			? ["http://localhost:5173", "https://192.168.1.126:5174"]
+			: ["https://app.sbz.com.zm"];
 
-	const allowedOrigins = [url];
+	const allowedOrigins = url;
+
+	console.log({ method: event.request.method });
 
 	// 2) For GET requests, check Referer
 	if (event.request.method === "GET") {
 		const referer = event.request.headers.get("referer") || "";
-		if ((referer && !referer.startsWith(allowedOrigins[0])) || !referer.length) {
+		console.log({ referer });
+
+		if (
+			(referer &&
+				!allowedOrigins.map((o) => referer === o).filter((item) => item).length &&
+				!referer.startsWith(allowedOrigins[0])) ||
+			!referer.length
+		) {
 			return new Response(`${event.request.method} method not allowed`, { status: 405 });
 		}
 	} else {
 		// 1) Check Origin (if present)
 		const origin = event.request.headers.get("origin");
+		// console.log({ url, origin });
 
 		if (origin && !allowedOrigins.includes(origin)) {
 			return new Response(`${event.request.method} method not allowed`, { status: 405 });

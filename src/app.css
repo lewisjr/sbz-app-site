@@ -187,6 +187,10 @@
 	background: #555;
 }
 
+html {
+	background-color: var(--background);
+}
+
 h1 {
 	font-size: 2.25rem;
 	line-height: 2.5rem;

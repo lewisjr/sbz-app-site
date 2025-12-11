@@ -1,7 +1,6 @@
 import { scourgeOfInvestor } from "$lib/server/jwt";
 
 import type { Types } from "$lib/types/index.js";
-import type { UserObj } from "../api/su/+server.js";
 
 export const load = (data) => {
 	const client = scourgeOfInvestor(data);
@@ -11,7 +10,7 @@ export const load = (data) => {
 	const hasSignature: boolean = Object.keys(signatures ? signatures : {}).length > 0;
 	const accountType: Types["AccountType"] = acc_type as any;
 
-	const accountHolders: UserObj[] = [];
+	const accountHolders: Types["PartnerObj"][] = [];
 
 	if (accountType === "individual") {
 		//accountHolders.push({  })

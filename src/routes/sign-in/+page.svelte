@@ -83,14 +83,7 @@
 		} catch (ex: any) {
 			loading = false;
 
-			const message =
-				typeof ex === "string"
-					? ex
-					: ex instanceof Error
-						? ex.message
-						: ex?.message || JSON.stringify(ex);
-
-			toast.error(message);
+			toast.error(String(ex));
 
 			console.error(ex);
 		}

@@ -47,6 +47,11 @@ interface OTPObj {
 	otp: number;
 }
 
+interface OTPObjTwo {
+	users: string[];
+	otp: number;
+}
+
 export interface OTPBulkObj {
 	updated_at: string;
 	id: string;
@@ -151,14 +156,24 @@ interface ApiVersion {
 	version: string;
 }
 
+type DeepStatInsert = SBZdb["public"]["Tables"]["deep-stats"]["Insert"];
+type DeepStat = SBZdb["public"]["Tables"]["deep-stats"]["Row"];
+
 type ClientInsert = SBZdb["public"]["Tables"]["clients"]["Insert"];
 type ClientUpdate = SBZdb["public"]["Tables"]["clients"]["Update"];
 
 interface SBZutils {
 	log: (obj: LogObj) => Promise<void>;
+	getAllLogs: () => Promise<LogRow[]>;
+
+	deepStat: (obj: DeepStatInsert) => Promise<void>;
+	getAllDeepStats: () => Promise<DeepStat[]>;
+
 	setOtp: (obj: OTPObj) => Promise<GenericResponse>;
 	setBulkOtp: (obj: OTPBulkObj[]) => Promise<GenericResponse>;
 	checkOtp: (obj: OTPObj) => Promise<GenericResponse>;
+	checkOtpTwo: (obj: OTPObjTwo) => Promise<GenericResponseWData<string>>;
+
 	getTicketCandidate: () => Promise<GenericResponseWData<TicketCandidateObjExt>>;
 	updateTicketCandidate: (obj: TicketCandidateObjExt) => Promise<void>;
 	createTicket: (
@@ -195,7 +210,6 @@ interface SBZutils {
 	appendHistory: (obj: AddHistoryObj) => Promise<boolean>;
 
 	// system ops
-	getAllLogs: () => Promise<LogRow[]>;
 	getAllOtps: () => Promise<OTPRow[]>;
 	getAllStaff: () => Promise<StaffRow[]>;
 	addStaffMember: (obj: StaffInsertRow) => Promise<GenericResponseWData<StaffRow | undefined>>;
@@ -257,6 +271,7 @@ interface SBZutils {
 }
 
 const sbz = (): SBZutils => {
+	// * System Stuff
 	const _log = async (obj: LogObj): Promise<void> => {
 		try {
 			const {} = await sbzdb.from("logs").insert({ title: obj.title, value: obj.message });
@@ -270,6 +285,59 @@ const sbz = (): SBZutils => {
 						: ex.message || JSON.stringify(ex);
 
 			console.error("\nomnibot._log ex\n", error);
+		}
+	};
+
+	const _getAllLogs = async (): Promise<LogRow[]> => {
+		try {
+			const { data, error } = await sbzdb
+				.from("logs")
+				.select()
+				.order("created_at", { ascending: false });
+
+			if (error) {
+				await _log({ message: error.message, title: "Get Logs Error" });
+				return [];
+			}
+
+			return data;
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Get Logs Exception" });
+			return [];
+		}
+	};
+
+	const _deepStat = async (obj: DeepStatInsert): Promise<void> => {
+		try {
+			const {} = await sbzdb.from("deep-stats").insert(obj);
+		} catch (ex: any) {
+			console.error("\nomnibot._deepStat ex\n", ex);
+		}
+	};
+
+	const _getAllDeepStats = async (): Promise<DeepStat[]> => {
+		try {
+			const { data, error } = await sbzdb
+				.from("deep-stats")
+				.select()
+				.order("created_at", { ascending: false });
+
+			if (error) {
+				await _log({ message: error.message, title: "Get Deep Stats Error" });
+				return [];
+			}
+
+			return data;
+		} catch (ex: any) {
+			_log({ message: String(ex), title: "Get Deep Stats Exception" });
+			return [];
 		}
 	};
 
@@ -342,15 +410,47 @@ const sbz = (): SBZutils => {
 			if (data[0].otp !== obj.otp) return { message: "Incorrect value entered!", success: false };
 			else return { message: "Redirecting...", success: true };
 		} catch (ex: any) {
-			const error =
-				typeof ex === "string"
-					? ex
-					: ex instanceof Error
-						? ex.message
-						: ex.message || JSON.stringify(ex);
-
-			_log({ message: error, title: "Check OTP Exception" });
+			_log({ message: String(ex), title: "Check OTP Exception" });
 			return { success: false, message: "Critical error, please try again in 5 minutes." };
+		}
+	};
+
+	const _checkOtpTwo = async (obj: OTPObjTwo): Promise<GenericResponseWData<string>> => {
+		try {
+			const { data, error } = await sbzdb.from("otps").select("id,otp").in("id", obj.users);
+
+			if (error) {
+				await _log({ message: error.message, title: "Check OTP Error" });
+				return {
+					message: "Failed to get your OTP, please wait a few minutes and try again.",
+					success: false,
+					data: "",
+				};
+			}
+
+			const correctData = {
+				email: "",
+				otp: obj.otp,
+				good: false,
+			};
+
+			data.forEach((o) => {
+				if (o.otp === correctData.otp) {
+					correctData.email = o.id;
+					correctData.good = true;
+				}
+			});
+
+			if (!correctData.good)
+				return { message: "Incorrect value entered!", success: false, data: "" };
+			else return { message: "Redirecting...", success: true, data: correctData.email };
+		} catch (ex: any) {
+			_log({ message: String(ex), title: "Check OTP Exception" });
+			return {
+				success: false,
+				message: "Critical error, please try again in 5 minutes.",
+				data: "",
+			};
 		}
 	};
 
@@ -592,12 +692,14 @@ const sbz = (): SBZutils => {
 				adminMsgId.length ? adminMsgId : undefined,
 			);
 
-			const clientMailReq = notif.email.sendNestedNoButton(
+			const clientMailReq = notif.email.sendNested(
 				{
 					subject: clientSubject.length ? clientSubject : `Ticket #${ticketId} Closed`,
 					title: `Ticket Closed!`,
 					body: `Hi <b>${names.split(" ")[0]}</b>,<br /><br /><b>${toTitleCase(admin)}</b> just closed this ticket with the following reason:`,
 					extra: `<i>${reason}</i>`,
+					link: `https://app.sbz.com.zm/track/${obj.ticketId}`,
+					linkText: "View Chat",
 				},
 				/*IS_DEV ? "privatodato@gmail.com" :*/ clientEmail,
 				clientMsgId.length ? clientMsgId : undefined,
@@ -1477,8 +1579,11 @@ const sbz = (): SBZutils => {
 
 	const _getClient = async (luseId: number): Promise<ClientRow[]> => {
 		try {
-			const { data, error } = await sbzdb.from("clients").select().filter("luseId", "eq", luseId);
-			//.filter("is_approved", "eq", true);
+			const { data, error } = await sbzdb
+				.from("clients")
+				.select()
+				.filter("luseId", "eq", luseId)
+				.filter("is_approved", "eq", true);
 
 			if (error) {
 				_log({
@@ -1663,32 +1768,6 @@ const sbz = (): SBZutils => {
 
 			_log({ message: error, title: `Get History Exception - ${ticketId}` });
 			return { data: [], message: error, success: false };
-		}
-	};
-
-	const _getAllLogs = async (): Promise<LogRow[]> => {
-		try {
-			const { data, error } = await sbzdb
-				.from("logs")
-				.select()
-				.order("created_at", { ascending: false });
-
-			if (error) {
-				await _log({ message: error.message, title: "Get Logs Error" });
-				return [];
-			}
-
-			return data;
-		} catch (ex: any) {
-			const error =
-				typeof ex === "string"
-					? ex
-					: ex instanceof Error
-						? ex.message
-						: ex.message || JSON.stringify(ex);
-
-			_log({ message: error, title: "Get Logs Exception" });
-			return [];
 		}
 	};
 
@@ -2551,6 +2630,7 @@ const sbz = (): SBZutils => {
 		setOtp: _setOtp,
 		setBulkOtp: _setBulkOtp,
 		checkOtp: _checkOtp,
+		checkOtpTwo: _checkOtpTwo,
 		getTicketCandidate: _getTicketCandidate,
 		createTicket: _createTicket,
 		createAIticket: _createAITicket,
@@ -2597,6 +2677,8 @@ const sbz = (): SBZutils => {
 		approveRequest: _approveRequest,
 		getRequests: _getRequests,
 		rejectRequest: _rejectRequest,
+		deepStat: _deepStat,
+		getAllDeepStats: _getAllDeepStats,
 	};
 };
 
@@ -2762,7 +2844,7 @@ const nf = (): NFutils => {
 		}
 	};
 
-	const _getStocks = async (date: number = 31): Promise<GetStocksReturn> => {
+	const _getStocks = async (date: number = 9): Promise<GetStocksReturn> => {
 		const oldDate = getOldDate(genDate(), date);
 
 		try {

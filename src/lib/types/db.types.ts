@@ -222,36 +222,30 @@ export type Database = {
 				};
 				Relationships: [];
 			};
-			"csd-clients-temp": {
+			"deep-stats": {
 				Row: {
 					created_at: string;
-					email: string;
-					luse_id: number;
-					names: string;
-					nationality: string;
-					nrc: string;
-					phone: string;
-					type: Database["public"]["Enums"]["account-type"] | null;
+					id: number;
+					key: string;
+					section: string;
+					sender: string;
+					value: number;
 				};
 				Insert: {
 					created_at?: string;
-					email?: string;
-					luse_id: number;
-					names: string;
-					nationality?: string;
-					nrc?: string;
-					phone?: string;
-					type?: Database["public"]["Enums"]["account-type"] | null;
+					id?: number;
+					key: string;
+					section: string;
+					sender: string;
+					value: number;
 				};
 				Update: {
 					created_at?: string;
-					email?: string;
-					luse_id?: number;
-					names?: string;
-					nationality?: string;
-					nrc?: string;
-					phone?: string;
-					type?: Database["public"]["Enums"]["account-type"] | null;
+					id?: number;
+					key?: string;
+					section?: string;
+					sender?: string;
+					value?: number;
 				};
 				Relationships: [];
 			};

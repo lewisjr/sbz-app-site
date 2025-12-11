@@ -9,22 +9,13 @@
 	//icons
 	import {
 		ChevronRight,
-		Home,
-		UserRoundCog,
-		Database,
-		RectangleEllipsis,
-		MessageCircleQuestion,
-		ChartNoAxesColumn,
-		Facebook,
+		House,
 		ChartCandlestick,
 		NotebookText,
-		Upload,
-		User,
-		ArrowRightLeft,
-		FileChartPie,
 		LogOut,
-		GitCompareArrows,
-		UserRoundCheck,
+		Wallet,
+		FolderClock,
+		Settings,
 	} from "@lucide/svelte";
 
 	//types
@@ -46,12 +37,6 @@
 	};
 
 	let path = $derived(page.url.pathname);
-
-	interface Props {
-		permissions: string[];
-	}
-
-	let { permissions }: Props = $props();
 
 	let loading = $state<boolean>(false);
 
@@ -105,107 +90,49 @@
 
 <div class={`navbar ${mode}`}>
 	<!-- Logo Part -->
-	<a class="logo" href="/admin/home">
+	<a class="logo" href="/d/home">
 		<img class="h-[60px] w-[60px]" src="/img/logo-bull.png" alt="sbz-logo" />
 	</a>
 
 	<!-- Actual Links -->
-	<a class={`link${path === "/admin/home" ? " current" : ""}`} href="/admin/home">
-		<Home class="h-8 w-8" />
+	<a class={`link${path === "/d/home" ? " current" : ""}`} href="/d/home">
+		<House class="h-8 w-8" />
 		<p>Home</p>
-	</a>
-
-	<!-- Odyn -->
-	<div class="titl">
-		<p>Odyn</p>
-	</div>
-
-	<a class={`link${path === "/admin/tickets" ? " current" : ""}`} href="/admin/tickets">
-		<MessageCircleQuestion class="h-8 w-8" />
-		<p>Tickets</p>
-	</a>
-
-	<a class={`link${path === "/admin/analytics" ? " current" : ""}`} href="/admin/analytics">
-		<ChartNoAxesColumn class="h-8 w-8" />
-		<p>Analytics</p>
-	</a>
-
-	<a class={`link${path === "/admin/socials" ? " current" : ""}`} href="/admin/socials">
-		<Facebook class="h-8 w-8" />
-		<p>Socials</p>
 	</a>
 
 	<!-- Market -->
 	<div class="titl">
-		<p>Market</p>
+		<p>Stocks</p>
 	</div>
 
-	<a class={`link${path === "/admin/data" ? " current" : ""}`} href="/admin/data">
+	<a class={`link${path === "/d/market" ? " current" : ""}`} href="/d/market">
 		<ChartCandlestick class="h-8 w-8" />
-		<p>Data</p>
+		<p>Market</p>
 	</a>
 
-	<a class={`link${path === "/admin/news" ? " current" : ""}`} href="/admin/news">
+	<a class={`link${path === "/d/news" ? " current" : ""}`} href="/d/news">
 		<NotebookText class="h-8 w-8" />
 		<p>News</p>
 	</a>
 
 	<!-- SBZ Specific -->
 	<div class="titl">
-		<p>Company</p>
+		<p>Account</p>
 	</div>
 
-	<a class={`link${path === "/admin/clients" ? " current" : ""}`} href="/admin/clients">
-		<User class="h-8 w-8" />
-		<p>Clients</p>
+	<a class={`link${path === "/d/clients" ? " current" : ""}`} href="/d/clients">
+		<Wallet class="h-8 w-8" />
+		<p>Wallet</p>
 	</a>
 
-	<a class={`link${path === "/admin/requests" ? " current" : ""}`} href="/admin/requests">
-		<UserRoundCheck class="h-8 w-8" />
-		<p>Requests</p>
+	<a class={`link${path === "/d/requests" ? " current" : ""}`} href="/d/requests">
+		<FolderClock class="h-8 w-8" />
+		<p>History</p>
 	</a>
 
-	<a class={`link${path === "/admin/trades" ? " current" : ""}`} href="/admin/trades">
-		<ArrowRightLeft class="h-8 w-8" />
-		<p>Trades</p>
-	</a>
-
-	<a class={`link${path === "/admin/settle" ? " current" : ""}`} href="/admin/settle">
-		<GitCompareArrows class="h-8 w-8" />
-		<p>Settle</p>
-	</a>
-
-	<a class={`link${path === "/admin/upload" ? " current" : ""}`} href="/admin/upload">
-		<Upload class="h-8 w-8" />
-		<p>Upload</p>
-	</a>
-
-	<!--
-	<a class={`link${path === "/admin/reports" ? " current" : ""}`} href="/admin/reports">
-		<FileChartPie class="h-8 w-8" />
-		<!-- e.g DMR 
-		<p>Reports</p>
-	</a>
-	-->
-
-	<!-- System -->
-	<div class="titl">
-		<p>System</p>
-	</div>
-
-	<a class={`link${path === "/admin/staff" ? " current" : ""}`} href="/admin/staff">
-		<UserRoundCog class="h-8 w-8" />
-		<p>Staff</p>
-	</a>
-
-	<a class={`link${path === "/admin/otps" ? " current" : ""}`} href="/admin/otps">
-		<RectangleEllipsis class="h-8 w-8" />
-		<p>OTPs</p>
-	</a>
-
-	<a class={`link${path === "/admin/logs" ? " current" : ""}`} href="/admin/logs">
-		<Database class="h-8 w-8" />
-		<p>Logs</p>
+	<a class={`link${path === "/d/trades" ? " current" : ""}`} href="/d/trades">
+		<Settings class="h-8 w-8" />
+		<p>Settings</p>
 	</a>
 
 	<button class="battan link" onclick={signOut} disabled={loading}>
