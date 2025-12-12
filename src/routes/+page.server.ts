@@ -1,10 +1,15 @@
-import { kratosSafety } from "$lib/server/jwt.js";
 import { redirect } from "@sveltejs/kit";
+import { DEV } from "$env/static/private";
 
 export const load = (data) => {
 	// kratosSafety(data);
 
 	const { cookies } = data;
+
+	if (DEV !== "y") {
+		cookies.delete("sbz-client", { path: "/" });
+		cookies.delete("sbz-client-mail", { path: "/" });
+	}
 
 	const admin = cookies.get("sbz-admin");
 

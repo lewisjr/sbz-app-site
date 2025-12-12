@@ -1,6 +1,7 @@
 import { json } from "@sveltejs/kit";
 import dbs from "$lib/server/db";
 import notif from "$lib/server/email";
+import { DEV } from "$env/static/private";
 
 import { devLog, genDbTimestamp, genOTP } from "$lib/utils";
 import { genJwt } from "$lib/server/jwt";
@@ -13,6 +14,15 @@ export const PUT = async ({ request }) => {
 	const { id, label }: { label: "Admin Username" | "LuSE ID"; id: string } = await request.json();
 
 	console.log({ id, label });
+
+	if (label === "LuSE ID" && DEV !== "y")
+		return json(
+			{
+				success: false,
+				message: "This feature is almost ready, stay in touch on Whatsapp and Facebook!",
+			},
+			{ status: 400 },
+		);
 
 	const emails: string[] = [];
 
