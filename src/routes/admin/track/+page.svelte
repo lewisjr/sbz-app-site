@@ -242,7 +242,7 @@
 					expndedCfg = "unkown";
 			}
 
-			console.log(kycDocsMng);
+			// console.log(kycDocsMng);
 
 			if (kycDocsMng) {
 				const doc = kycDocsMng[idNum].find((item) => item.title.includes(toTitleCase(expndedCfg)));
