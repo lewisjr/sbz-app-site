@@ -257,7 +257,7 @@ interface SBZutils {
 	getClientNameById: (luseIds: number[]) => Promise<TempClientNameTwo[]>;
 
 	// requests
-	getRequests: () => Promise<ClientRow[]>;
+	getRequests: (tracking?: boolean) => Promise<ClientRow[]>;
 	approveRequest: (
 		idNum: string,
 		fname: string,
@@ -1070,21 +1070,36 @@ const sbz = (): SBZutils => {
 
 	// ? requests
 
-	const _getRequests = async (): Promise<ClientRow[]> => {
+	const _getRequests = async (tracking?: boolean): Promise<ClientRow[]> => {
 		try {
-			const { data, error } = await sbzdb
-				.from("clients")
-				.select()
-				.order("created_at", { ascending: true })
-				.filter("luseId", "lt", 0)
-				.filter("is_approved", "eq", false);
+			if (tracking) {
+				const { data, error } = await sbzdb
+					.from("clients")
+					.select()
+					.order("created_at", { ascending: false })
+					.filter("created_at", "gt", "2025-11-30T02:00.000Z");
 
-			if (error) {
-				await _log({ message: error.message, title: "Get Requests Error" });
-				return [];
+				if (error) {
+					await _log({ message: error.message, title: "Get Requests Error" });
+					return [];
+				}
+
+				return data;
+			} else {
+				const { data, error } = await sbzdb
+					.from("clients")
+					.select()
+					.order("created_at", { ascending: true })
+					.filter("luseId", "lt", 0)
+					.filter("is_approved", "eq", false);
+
+				if (error) {
+					await _log({ message: error.message, title: "Get Requests Error" });
+					return [];
+				}
+
+				return data;
 			}
-
-			return data;
 		} catch (ex: any) {
 			const error =
 				typeof ex === "string"

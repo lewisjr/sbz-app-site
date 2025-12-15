@@ -25,6 +25,7 @@
 		LogOut,
 		GitCompareArrows,
 		UserRoundCheck,
+		ScanEye,
 	} from "@lucide/svelte";
 
 	//types
@@ -163,6 +164,11 @@
 	<a class={`link${path === "/admin/requests" ? " current" : ""}`} href="/admin/requests">
 		<UserRoundCheck class="h-8 w-8" />
 		<p>Requests</p>
+	</a>
+
+	<a class={`link${path === "/admin/track" ? " current" : ""}`} href="/admin/track">
+		<ScanEye class="h-8 w-8" />
+		<p>Track</p>
 	</a>
 
 	<a class={`link${path === "/admin/trades" ? " current" : ""}`} href="/admin/trades">
