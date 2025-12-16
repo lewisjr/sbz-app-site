@@ -26,6 +26,7 @@
 		GitCompareArrows,
 		UserRoundCheck,
 		ScanEye,
+		HelpingHand,
 	} from "@lucide/svelte";
 
 	//types
@@ -171,6 +172,16 @@
 		<p>Track</p>
 	</a>
 
+	{#if permissions.includes("master")}
+		<a
+			class={`link${path === "/admin/_sign-up-extra" ? " current" : ""}`}
+			href="/admin/_sign-up-extra"
+		>
+			<HelpingHand class="h-8 w-8" />
+			<p>Support</p>
+		</a>
+	{/if}
+
 	<a class={`link${path === "/admin/trades" ? " current" : ""}`} href="/admin/trades">
 		<ArrowRightLeft class="h-8 w-8" />
 		<p>Trades</p>
@@ -209,10 +220,12 @@
 		<p>OTPs</p>
 	</a>
 
-	<a class={`link${path === "/admin/logs" ? " current" : ""}`} href="/admin/logs">
-		<Database class="h-8 w-8" />
-		<p>Logs</p>
-	</a>
+	{#if permissions.includes("master")}
+		<a class={`link${path === "/admin/logs" ? " current" : ""}`} href="/admin/logs">
+			<Database class="h-8 w-8" />
+			<p>Logs</p>
+		</a>
+	{/if}
 
 	<button class="battan link" onclick={signOut} disabled={loading}>
 		<LogOut class="h-8 w-8" />
