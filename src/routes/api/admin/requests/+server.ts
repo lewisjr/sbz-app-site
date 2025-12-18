@@ -39,7 +39,7 @@ export const POST = async (event) => {
 			);
 		case "reject":
 			const rejectClient = await dbs.sbz.rejectRequest(
-				obj.idName,
+				obj.idNum,
 				obj.luseId,
 				obj.fname,
 				sender.username,
