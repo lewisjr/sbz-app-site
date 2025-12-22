@@ -2105,13 +2105,17 @@ const sbz = (): SBZutils => {
 						? `Hi ${notifCongif.name}<br /><br /><b>${toTitleCase(obj.sender.split(" ")[0])}</b> has just responded to your message with a file(s):<br /><i>${names.join(", ")}</i>`
 						: `Hi ${notifCongif.name}<br /><br /><b>${toTitleCase(obj.sender.split(" ")[0])}</b> has just responded to your message with:<br /><i>${oldBody}</i>`;
 
+				const link = notifCongif.email.includes("@sbz")
+					? `https://app.sbz.com.zm/admin/tickets?q=${obj.ticket_no}&chat=true`
+					: `https://app.sbz.com.zm/track/${obj.ticket_no}`;
+
 				await notif.email.sendNested(
 					{
 						subject: notifCongif.subject,
 						title: "New Response!",
 						body: msg,
 						extra: `Click the button above to respond!`,
-						link: `https://app.sbz.com.zm/track/${obj.ticket_no}`,
+						link,
 						linkText: "Open Chat",
 					},
 					notifCongif.email,

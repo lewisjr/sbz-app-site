@@ -903,6 +903,18 @@
 		const q = page.url.searchParams.get("q");
 
 		if (q) globalFilterValue = q;
+
+		const chat = page.url.searchParams.get("chat");
+
+		if (chat) {
+			setTimeout(() => {
+				const ticket = ticketData.find((item) => (item.id === q ? q.trim() : ""));
+
+				if (ticket) {
+					openSheet("chat", ticket);
+				}
+			}, 500);
+		}
 	});
 
 	/*
