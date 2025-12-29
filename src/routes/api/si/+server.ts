@@ -15,6 +15,7 @@ export const PUT = async ({ request }) => {
 
 	console.log({ id, label });
 
+	/*
 	if (label === "LuSE ID" && DEV !== "y")
 		return json(
 			{
@@ -23,6 +24,7 @@ export const PUT = async ({ request }) => {
 			},
 			{ status: 400 },
 		);
+	*/
 
 	const emails: string[] = [];
 
