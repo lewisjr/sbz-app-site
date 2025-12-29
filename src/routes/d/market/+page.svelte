@@ -718,7 +718,7 @@
 					returnData.incomeData.push(["Total Compr. Income", row.tot_comp_inc]);
 					returnData.incomeData.push(["space"]);
 					returnData.incomeData.push(["Issued Shares", row.issued_shares]);
-					returnData.incomeData.push(["EPS", row.eps]);
+					returnData.incomeData.push(["EPS", row.eps * 1_000_000]);
 				} else {
 					returnData.incomeData.push(["Revenue", row.revenue]);
 					returnData.incomeData.push(["Cost of Goods Sold", row.cogs]);
@@ -739,7 +739,7 @@
 					returnData.incomeData.push(["Total Comprehensive Income", row.tot_comp_inc]);
 					returnData.incomeData.push(["space"]);
 					returnData.incomeData.push(["Issued Shares", row.issued_shares]);
-					returnData.incomeData.push(["EPS", row.eps]);
+					returnData.incomeData.push(["EPS", row.eps * 1_000_000]);
 				}
 			} else {
 				returnData.incomeData[0].push(row.revenue);
@@ -756,7 +756,7 @@
 				returnData.incomeData[14].push(row.other_inc_exp);
 				returnData.incomeData[16].push(row.tot_comp_inc);
 				returnData.incomeData[18].push(row.issued_shares);
-				returnData.incomeData[19].push(row.eps);
+				returnData.incomeData[19].push(row.eps * 1_000_000);
 			}
 		});
 

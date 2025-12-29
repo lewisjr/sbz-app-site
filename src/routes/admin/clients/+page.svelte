@@ -123,6 +123,8 @@
 		swift_code: "",
 		approve_date: "",
 		approved_by: "",
+		opened_by: "",
+		wallet_details: {},
 	};
 
 	let activeRow = $state<TempClient>(initRow);

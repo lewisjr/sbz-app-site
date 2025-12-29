@@ -120,20 +120,24 @@
 		<p>Account</p>
 	</div>
 
-	<a class={`link${path === "/d/clients" ? " current" : ""}`} href="/d/clients">
+	<!--
+
+	<a class={`link${path === "/d/wallet" ? " current" : ""}`} href="/d/wallet">
 		<Wallet class="h-8 w-8" />
 		<p>Wallet</p>
 	</a>
 
-	<a class={`link${path === "/d/requests" ? " current" : ""}`} href="/d/requests">
+	<a class={`link${path === "/d/history" ? " current" : ""}`} href="/d/history">
 		<FolderClock class="h-8 w-8" />
 		<p>History</p>
 	</a>
 
-	<a class={`link${path === "/d/trades" ? " current" : ""}`} href="/d/trades">
+	<a class={`link${path === "/d/settings" ? " current" : ""}`} href="/d/settings">
 		<Settings class="h-8 w-8" />
 		<p>Settings</p>
 	</a>
+
+	-->
 
 	<button class="battan link" onclick={signOut} disabled={loading}>
 		<LogOut class="h-8 w-8" />

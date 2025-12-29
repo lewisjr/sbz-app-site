@@ -1,0 +1,1 @@
+cmd /k "cd /d C:\pt && adb devices && adb reverse tcp:5173 tcp:5173"
