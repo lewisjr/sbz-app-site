@@ -480,20 +480,20 @@
 	let openTrigger = $state<number>(0);
 
 	const collateSymbol = (symbolData: NFHelp["ExpandedSymbolReturn"]): ExpandedSymbol => {
-		const _setOpinion = (
-			s: string,
-		): "Accumulate" | "Reduce" | "Hold" | "Sell" | "Buy" | "N/A" | "Error" => {
-			if (opinions.length) {
-				try {
-					// @ts-ignore
-					return opinions[0].data[selectedSymbol];
-				} catch {
-					return "N/A";
-				}
-			} else {
-				return "Error";
-			}
-		};
+		const _opinions = JSON.parse(JSON.stringify(opinions));
+
+		const opinionatedSymbols = Object.keys(_opinions[0].data);
+
+		/* Console Log
+		console.log({
+			_opinions,
+			selectedSymbol,
+			op0: _opinions[0],
+			opSymbs: opinionatedSymbols,
+			// @ts-ignore
+			val: opinionatedSymbols.includes(selectedSymbol) ? _opinions[0].data[selectedSymbol] : "N/A",
+		});
+		*/
 
 		const returnData: ExpandedSymbol = initExpandedSymbol;
 
@@ -538,7 +538,11 @@
 		}
 
 		// set sentiment
-		const opinion = _setOpinion(selectedSymbol);
+		const opinion = opinionatedSymbols.includes(selectedSymbol)
+			? _opinions[0].data[selectedSymbol]
+			: "N/A";
+
+		returnData.sentiment.value = opinion;
 
 		switch (opinion) {
 			case "Accumulate":
@@ -622,14 +626,25 @@
 				const cYear = Number(prettyDate(row.date).split(" ")[2]);
 				returnData.cashFlowYear = cYear;
 
-				returnData.cashFlowData.push(["Net Operating Activities", row.op_act]);
-				returnData.cashFlowData.push(["Net Investing Activities", row.inv_act]);
-				returnData.cashFlowData.push(["Cap Ex", row.capex]);
-				returnData.cashFlowData.push(["Preferred Dividend", row.pref_div_paid]);
-				returnData.cashFlowData.push(["Net Financing Activities", row.fin_act]);
-				returnData.cashFlowData.push(["space"]);
-				returnData.cashFlowData.push(["Beginning of Period Balance", row.open_bal]);
-				returnData.cashFlowData.push(["End of Period Balance", row.per_cash]);
+				if (isMobile) {
+					returnData.cashFlowData.push(["Net Op. Act.", row.op_act]);
+					returnData.cashFlowData.push(["Net Inv. Act.", row.inv_act]);
+					returnData.cashFlowData.push(["Cap Ex", row.capex]);
+					returnData.cashFlowData.push(["Pref. Div.", row.pref_div_paid]);
+					returnData.cashFlowData.push(["Net Fin. Act.", row.fin_act]);
+					returnData.cashFlowData.push(["space"]);
+					returnData.cashFlowData.push(["Beginning Balance", row.open_bal]);
+					returnData.cashFlowData.push(["End Balance", row.per_cash]);
+				} else {
+					returnData.cashFlowData.push(["Net Operating Activities", row.op_act]);
+					returnData.cashFlowData.push(["Net Investing Activities", row.inv_act]);
+					returnData.cashFlowData.push(["Cap Ex", row.capex]);
+					returnData.cashFlowData.push(["Preferred Dividend", row.pref_div_paid]);
+					returnData.cashFlowData.push(["Net Financing Activities", row.fin_act]);
+					returnData.cashFlowData.push(["space"]);
+					returnData.cashFlowData.push(["Beginning of Period Balance", row.open_bal]);
+					returnData.cashFlowData.push(["End of Period Balance", row.per_cash]);
+				}
 			} else {
 				returnData.cashFlowData[0].push(row.op_act);
 				returnData.cashFlowData[1].push(row.inv_act);
@@ -683,26 +698,49 @@
 				const icYear = Number(prettyDate(row.date).split(" ")[2]);
 				returnData.incomeYear = icYear;
 
-				returnData.incomeData.push(["Revenue", row.revenue]);
-				returnData.incomeData.push(["Cost of Goods Sold", row.cogs]);
-				returnData.incomeData.push(["Gross Profit", row.g_prof]);
-				returnData.incomeData.push(["space"]);
-				returnData.incomeData.push(["Administrative Expenses", row.admin_exp]);
-				returnData.incomeData.push(["Other Operating Income/Expenses", row.other_op_exp]);
-				returnData.incomeData.push(["PBIT", row.pbit]);
-				returnData.incomeData.push(["space"]);
-				returnData.incomeData.push(["Finance Expenses", row.fin_exp]);
-				returnData.incomeData.push(["Other Finance Income/Expenses", row.other_fin_exp]);
-				returnData.incomeData.push(["PBT", row.pbt]);
-				returnData.incomeData.push(["space"]);
-				returnData.incomeData.push(["Tax Expenses", row.tax_exp]);
-				returnData.incomeData.push(["Other Income/Expenses", row.other_inc_exp]);
-				returnData.incomeData.push(["Net Income", row.other_inc_exp]);
-				returnData.incomeData.push(["space"]);
-				returnData.incomeData.push(["Total Comprehensive Income", row.tot_comp_inc]);
-				returnData.incomeData.push(["space"]);
-				returnData.incomeData.push(["Issued Shares", row.issued_shares]);
-				returnData.incomeData.push(["EPS", row.eps]);
+				if (isMobile) {
+					returnData.incomeData.push(["Revenue", row.revenue]);
+					returnData.incomeData.push(["COGS", row.cogs]);
+					returnData.incomeData.push(["Gross Profit", row.g_prof]);
+					returnData.incomeData.push(["space"]);
+					returnData.incomeData.push(["Admin Expenses", row.admin_exp]);
+					returnData.incomeData.push(["Other Income/Expenses", row.other_op_exp]);
+					returnData.incomeData.push(["PBIT", row.pbit]);
+					returnData.incomeData.push(["space"]);
+					returnData.incomeData.push(["Fin Expenses", row.fin_exp]);
+					returnData.incomeData.push(["Other Income/Expenses", row.other_fin_exp]);
+					returnData.incomeData.push(["PBT", row.pbt]);
+					returnData.incomeData.push(["space"]);
+					returnData.incomeData.push(["Tax", row.tax_exp]);
+					returnData.incomeData.push(["Other Income/Expenses", row.other_inc_exp]);
+					returnData.incomeData.push(["Net Income", row.other_inc_exp]);
+					returnData.incomeData.push(["space"]);
+					returnData.incomeData.push(["Total Compr. Income", row.tot_comp_inc]);
+					returnData.incomeData.push(["space"]);
+					returnData.incomeData.push(["Issued Shares", row.issued_shares]);
+					returnData.incomeData.push(["EPS", row.eps]);
+				} else {
+					returnData.incomeData.push(["Revenue", row.revenue]);
+					returnData.incomeData.push(["Cost of Goods Sold", row.cogs]);
+					returnData.incomeData.push(["Gross Profit", row.g_prof]);
+					returnData.incomeData.push(["space"]);
+					returnData.incomeData.push(["Administrative Expenses", row.admin_exp]);
+					returnData.incomeData.push(["Other Operating Income/Expenses", row.other_op_exp]);
+					returnData.incomeData.push(["PBIT", row.pbit]);
+					returnData.incomeData.push(["space"]);
+					returnData.incomeData.push(["Finance Expenses", row.fin_exp]);
+					returnData.incomeData.push(["Other Finance Income/Expenses", row.other_fin_exp]);
+					returnData.incomeData.push(["PBT", row.pbt]);
+					returnData.incomeData.push(["space"]);
+					returnData.incomeData.push(["Tax Expenses", row.tax_exp]);
+					returnData.incomeData.push(["Other Income/Expenses", row.other_inc_exp]);
+					returnData.incomeData.push(["Net Income", row.other_inc_exp]);
+					returnData.incomeData.push(["space"]);
+					returnData.incomeData.push(["Total Comprehensive Income", row.tot_comp_inc]);
+					returnData.incomeData.push(["space"]);
+					returnData.incomeData.push(["Issued Shares", row.issued_shares]);
+					returnData.incomeData.push(["EPS", row.eps]);
+				}
 			} else {
 				returnData.incomeData[0].push(row.revenue);
 				returnData.incomeData[1].push(row.cogs);
@@ -796,35 +834,67 @@
 				const bYear = Number(prettyDate(row.date).split(" ")[2]);
 				returnData.balanceYear = bYear;
 
-				returnData.balanceData.push(["Property, Plant, and Equipment", row.ppe]);
-				returnData.balanceData.push(["Other Non Current Assets", row.oth_nonc_ass]);
-				returnData.balanceData.push(["Total Non Current Assets", row.tot_nonc_ass]);
-				returnData.balanceData.push(["space"]);
-				returnData.balanceData.push(["Cash and Cash Equivalents", row.cce]);
-				returnData.balanceData.push(["Inventories", row.inv]);
-				returnData.balanceData.push(["Receivables", row.recvbl]);
-				returnData.balanceData.push(["Other Current Assets", row.oth_cur_ass]);
-				returnData.balanceData.push(["Total Current Assets", row.tot_cur_ass]);
-				returnData.balanceData.push(["space"]);
-				returnData.balanceData.push(["Total Assets", row.tot_ass]);
-				returnData.balanceData.push(["space"]);
-				returnData.balanceData.push(["space"]);
-				returnData.balanceData.push(["Total Equity", row.tot_eq]);
-				returnData.balanceData.push(["space"]);
-				returnData.balanceData.push(["space"]);
-				returnData.balanceData.push(["Long Term Debt", row.lon_trm_dbt]);
-				returnData.balanceData.push(["Other Non Current Liabilities", row.oth_nonc_liab]);
-				returnData.balanceData.push(["Total Non Current Liabilities", row.tot_nonc_liab]);
-				returnData.balanceData.push(["space"]);
-				returnData.balanceData.push(["Short Term Debt", row.shr_trm_dbt]);
-				returnData.balanceData.push(["Payables", row.payables]);
-				returnData.balanceData.push(["Other Current Liabilities", row.oth_cur_liab]);
-				returnData.balanceData.push(["Total Current Liabilities", row.tot_cur_liab]);
-				returnData.balanceData.push(["space"]);
-				returnData.balanceData.push(["Total Liabilities", row.tot_liab]);
-				returnData.balanceData.push(["space"]);
-				returnData.balanceData.push(["space"]);
-				returnData.balanceData.push(["Total Equity and Liabilities", row.tot_eq_liab]);
+				if (isMobile) {
+					returnData.balanceData.push(["PPE", row.ppe]);
+					returnData.balanceData.push(["Other Nonc. Assets", row.oth_nonc_ass]);
+					returnData.balanceData.push(["Total Nonc Assets", row.tot_nonc_ass]);
+					returnData.balanceData.push(["space"]);
+					returnData.balanceData.push(["Cash and Bank", row.cce]);
+					returnData.balanceData.push(["Inventories", row.inv]);
+					returnData.balanceData.push(["Receivables", row.recvbl]);
+					returnData.balanceData.push(["Other Current Assets", row.oth_cur_ass]);
+					returnData.balanceData.push(["Total Current Assets", row.tot_cur_ass]);
+					returnData.balanceData.push(["space"]);
+					returnData.balanceData.push(["Total Assets", row.tot_ass]);
+					returnData.balanceData.push(["space"]);
+					returnData.balanceData.push(["space"]);
+					returnData.balanceData.push(["Total Equity", row.tot_eq]);
+					returnData.balanceData.push(["space"]);
+					returnData.balanceData.push(["space"]);
+					returnData.balanceData.push(["Long Term Debt", row.lon_trm_dbt]);
+					returnData.balanceData.push(["Other Nonc Liab.", row.oth_nonc_liab]);
+					returnData.balanceData.push(["Total Nonc Liab.", row.tot_nonc_liab]);
+					returnData.balanceData.push(["space"]);
+					returnData.balanceData.push(["Short Term Debt", row.shr_trm_dbt]);
+					returnData.balanceData.push(["Payables", row.payables]);
+					returnData.balanceData.push(["Other Current Liab.", row.oth_cur_liab]);
+					returnData.balanceData.push(["Total Current Liab.", row.tot_cur_liab]);
+					returnData.balanceData.push(["space"]);
+					returnData.balanceData.push(["Total Liab.", row.tot_liab]);
+					returnData.balanceData.push(["space"]);
+					returnData.balanceData.push(["space"]);
+					returnData.balanceData.push(["Total Equity and Liab.", row.tot_eq_liab]);
+				} else {
+					returnData.balanceData.push(["Property, Plant, and Equipment", row.ppe]);
+					returnData.balanceData.push(["Other Non Current Assets", row.oth_nonc_ass]);
+					returnData.balanceData.push(["Total Non Current Assets", row.tot_nonc_ass]);
+					returnData.balanceData.push(["space"]);
+					returnData.balanceData.push(["Cash and Cash Equivalents", row.cce]);
+					returnData.balanceData.push(["Inventories", row.inv]);
+					returnData.balanceData.push(["Receivables", row.recvbl]);
+					returnData.balanceData.push(["Other Current Assets", row.oth_cur_ass]);
+					returnData.balanceData.push(["Total Current Assets", row.tot_cur_ass]);
+					returnData.balanceData.push(["space"]);
+					returnData.balanceData.push(["Total Assets", row.tot_ass]);
+					returnData.balanceData.push(["space"]);
+					returnData.balanceData.push(["space"]);
+					returnData.balanceData.push(["Total Equity", row.tot_eq]);
+					returnData.balanceData.push(["space"]);
+					returnData.balanceData.push(["space"]);
+					returnData.balanceData.push(["Long Term Debt", row.lon_trm_dbt]);
+					returnData.balanceData.push(["Other Non Current Liabilities", row.oth_nonc_liab]);
+					returnData.balanceData.push(["Total Non Current Liabilities", row.tot_nonc_liab]);
+					returnData.balanceData.push(["space"]);
+					returnData.balanceData.push(["Short Term Debt", row.shr_trm_dbt]);
+					returnData.balanceData.push(["Payables", row.payables]);
+					returnData.balanceData.push(["Other Current Liabilities", row.oth_cur_liab]);
+					returnData.balanceData.push(["Total Current Liabilities", row.tot_cur_liab]);
+					returnData.balanceData.push(["space"]);
+					returnData.balanceData.push(["Total Liabilities", row.tot_liab]);
+					returnData.balanceData.push(["space"]);
+					returnData.balanceData.push(["space"]);
+					returnData.balanceData.push(["Total Equity and Liabilities", row.tot_eq_liab]);
+				}
 			} else {
 				returnData.balanceData[0].push(row.ppe);
 				returnData.balanceData[1].push(row.oth_nonc_ass);
@@ -939,8 +1009,8 @@
 				body: JSON.stringify({ symbol: selectedSymbol }),
 			});
 
-			toast.info(req.status.toString());
-			toast.info(req.url);
+			// toast.info(req.status.toString());
+			// toast.info(req.url);
 
 			const res: GenericResponseWData<NFHelp["ExpandedSymbolReturn"] | undefined> =
 				await req.json();
@@ -959,7 +1029,7 @@
 
 			expandedLoading = false;
 		} catch (ex) {
-			toast.error(String(ex));
+			// toast.error(String(ex));
 			expandedLoading = false;
 		}
 	};
@@ -972,8 +1042,9 @@
 			expandedSymbol = isAvailable;
 		} else {
 			expandedLoading = true;
-			// expandedSymbol = initExpandedSymbol;
-			// fetchExpandedSymbol();
+			expandedSymbol = initExpandedSymbol;
+			fetchExpandedSymbol();
+			/*
 			const obj: NFHelp["ExpandedSymbolReturn"] = {
 				balance: [
 					{
@@ -1093,10 +1164,15 @@
 				],
 			};
 			expandedSymbol = collateSymbol(obj);
+			*/
 		}
 
 		openTrigger = Date.now();
 	};
+
+	$effect(() => {
+		console.log(expandedSymbol);
+	});
 </script>
 
 <Head
@@ -1304,6 +1380,7 @@
 		{openTrigger}
 		width={undefined}
 		big
+		wImg={{ src: `${data.PHOTO_BASE}/img/${selectedSymbol}.png`, alt: selectedSymbol }}
 	>
 		{#snippet main()}
 			<div class="holder">
@@ -1311,7 +1388,7 @@
 					<h2 class="loading no-padding mb-5 w-fit">Market Data</h2>
 					<div class="flex flex-row">
 						<!-- Price Information -->
-						<table class="loading no-padding table-fixed">
+						<table class="loading no-padding w-full">
 							<thead>
 								<tr><th colspan="6">Price Information</th></tr>
 								<tr>
@@ -1448,9 +1525,9 @@
 					<p>No data.</p>
 				{:else}
 					<h2 class="mb-5">Market Data</h2>
-					<div class="flex flex-row">
+					<div class="flex flex-col items-center">
 						<!-- Price Information -->
-						<table class="summary-table table-fixed">
+						<table class="summary-table w-full">
 							<thead>
 								<tr><th colspan="6">Price Information</th></tr>
 								<tr>
@@ -1458,8 +1535,6 @@
 									<th>Change</th>
 									<th>% Change</th>
 									<th>YTD</th>
-									<th>Trail 52 High</th>
-									<th>Trail 52 Low</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -1494,10 +1569,20 @@
 												: percentageHandler(expandedSymbol.price.ytd)}</span
 										></td
 									>
-									<td class="num text-center"
+								</tr>
+							</tbody>
+							<thead>
+								<tr>
+									<th colspan="2">52 High</th>
+									<th colspan="2">52 Low</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td colspan="2" class="num text-center"
 										>{numParse(expandedSymbol.price.trail52H.toFixed(2))}</td
 									>
-									<td class="num text-center"
+									<td colspan="2" class="num text-center"
 										>{numParse(expandedSymbol.price.trail52L.toFixed(2))}</td
 									>
 								</tr>
@@ -1505,7 +1590,7 @@
 						</table>
 
 						<!-- Bid Ask -->
-						<table class="summary-table ml-10 table-fixed">
+						<table class="summary-table mt-10 w-full">
 							<thead>
 								<tr><th colspan="4">Bid/Ask</th></tr>
 								<tr>
@@ -1541,16 +1626,8 @@
 							</tbody>
 						</table>
 
-						<h3 class="ml-10 text-center">
-							Recommendation<br /><span class={expandedSymbol.sentiment.class}
-								>{expandedSymbol.sentiment.value}</span
-							>
-						</h3>
-					</div>
-
-					<div class="mt-10 flex flex-row items-center">
 						<!-- Trading Activity -->
-						<table class="summary-table table-fixed">
+						<table class="summary-table mt-10 w-full">
 							<thead>
 								<tr><th colspan="3">Trading Activity</th></tr>
 								<tr>
@@ -1579,7 +1656,7 @@
 						</table>
 
 						<!-- Market Cap -->
-						<table class="summary-table ml-10 table-fixed">
+						<table class="summary-table mt-10 w-full">
 							<thead>
 								<tr><th colspan="2">Market Cap</th></tr>
 								<tr>
@@ -1594,6 +1671,12 @@
 								</tr>
 							</tbody>
 						</table>
+
+						<h3 class="mt-10 text-center">
+							Recommendation<br /><span class={expandedSymbol.sentiment.class}
+								>{expandedSymbol.sentiment.value}</span
+							>
+						</h3>
 					</div>
 
 					<!-- Cash Flow -->
@@ -2161,5 +2244,17 @@
 
 	.blu {
 		color: #037ffc;
+	}
+
+	@media screen and (max-width: 767px) {
+		.holder {
+			border-radius: 1px solid red;
+		}
+
+		.summary-table {
+			&* {
+				font-size: 0.9em;
+			}
+		}
 	}
 </style>

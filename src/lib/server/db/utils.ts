@@ -2883,6 +2883,7 @@ const nf = (): NFutils => {
 		}
 	};
 
+	// ! change to 31 days
 	const _getStocks = async (date: number = 9): Promise<GetStocksReturn> => {
 		const oldDate = getOldDate(genDate(), date);
 

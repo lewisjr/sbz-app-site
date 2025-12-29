@@ -24,18 +24,11 @@
 		main: Snippet<[]>;
 		/**E.g submit*/
 		actionButton: Snippet<[]>;
+		wImg?: { src: string; alt: string };
 	}
 
-	let {
-		openTrigger,
-		forceClose,
-		title,
-		description,
-		main,
-		actionButton,
-		width = 400,
-		big,
-	}: Props = $props();
+	let { openTrigger, forceClose, title, description, main, actionButton, width, big, wImg }: Props =
+		$props();
 
 	let open = $state<boolean>(false);
 
@@ -60,7 +53,11 @@
 	{#if big}
 		<Drawer.Content class="h-[97%]">
 			<Drawer.Header>
-				<Drawer.Title>{title}</Drawer.Title>
+				<Drawer.Title
+					><div class="title">
+						{#if wImg}<img src={wImg.src} alt={wImg.alt} />{/if}{title}
+					</div></Drawer.Title
+				>
 				{#if description}
 					<Drawer.Description>
 						{description}
@@ -86,7 +83,11 @@
 	{:else if width}
 		<Drawer.Content class={width ? `h-[${width}px]` : "h-3/4"}>
 			<Drawer.Header>
-				<Drawer.Title>{title}</Drawer.Title>
+				<Drawer.Title
+					><div class="title">
+						{#if wImg}<img src={wImg.src} alt={wImg.alt} />{/if}{title}
+					</div></Drawer.Title
+				>
 				{#if description}
 					<Drawer.Description>
 						{description}
@@ -112,7 +113,11 @@
 	{:else}
 		<Drawer.Content class={"h-3/4"}>
 			<Drawer.Header>
-				<Drawer.Title>{title}</Drawer.Title>
+				<Drawer.Title
+					><div class="title">
+						{#if wImg}<img src={wImg.src} alt={wImg.alt} />{/if}{title}
+					</div></Drawer.Title
+				>
 				{#if description}
 					<Drawer.Description>
 						{description}
@@ -144,5 +149,19 @@
 		padding: 0px 16px;
 		height: 100%;
 		overflow-y: auto;
+	}
+
+	.title {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+
+		img {
+			width: 30px;
+			height: auto;
+			// border: 1px solid red;
+			border-radius: 50%;
+			margin-right: 5px;
+		}
 	}
 </style>
