@@ -438,6 +438,8 @@ const sbz = (): SBZutils => {
 				good: false,
 			};
 
+			console.log({ data, obj });
+
 			data.forEach((o) => {
 				if (o.otp === correctData.otp) {
 					correctData.email = o.id;

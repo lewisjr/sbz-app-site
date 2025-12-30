@@ -169,9 +169,11 @@ export const POST = async ({ request, cookies }) => {
 	const { id, label, otp }: { label: "Admin Username" | "LuSE ID"; id: string; otp: number } =
 		await request.json();
 
+	console.log({ id, label, otp });
+
 	const emails: string[] = [];
 
-	switch (label) {
+	switch (label.trim()) {
 		case "Admin Username":
 			const isApprovedAdmin = await dbs.sbz.getAdmin(id);
 
@@ -192,7 +194,10 @@ export const POST = async ({ request, cookies }) => {
 					{ status: 400 },
 				);
 
-			if (isApprovedClient[0].acc_type === "individual" && !isApprovedClient[0].is_in_trust_of) {
+			if (
+				isApprovedClient[0].acc_type === "individual" &&
+				isApprovedClient[0].is_in_trust_of === false
+			) {
 				emails.push(isApprovedClient[0].email);
 			}
 
@@ -213,6 +218,8 @@ export const POST = async ({ request, cookies }) => {
 					emails.push(row.email);
 				});
 			}
+
+			if (emails.length === 0) emails.push(isApprovedClient[0].email);
 			break;
 		default:
 			return json(
