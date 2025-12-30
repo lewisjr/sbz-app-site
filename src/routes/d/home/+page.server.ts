@@ -1,6 +1,7 @@
 import dbs from "$lib/server/db";
 import { scourgeOfInvestor } from "$lib/server/jwt";
 import { redirect } from "@sveltejs/kit";
+import { print } from "$lib/utils";
 
 export const load = async (data) => {
 	const client = scourgeOfInvestor(data);
@@ -19,13 +20,23 @@ export const load = async (data) => {
 			if (cn.currency.toLowerCase() === "usd") {
 				const currentPrice = pdata.dmr.find((item) => item.symbol === cn.symbol);
 
-				if (currentPrice) portfolioValueUSD += cn.qty * currentPrice.market_price;
-				investmentValueUSD += cn.value;
+				if (cn.side === "buy") {
+					if (currentPrice) portfolioValueUSD += cn.qty * currentPrice.market_price;
+					investmentValueUSD += cn.value;
+				} else {
+					if (currentPrice) portfolioValueUSD -= cn.qty * currentPrice.market_price;
+					investmentValueUSD -= cn.value;
+				}
 			} else {
 				const currentPrice = pdata.dmr.find((item) => item.symbol === cn.symbol);
 
-				if (currentPrice) portfolioValueZMW += cn.qty * currentPrice.market_price;
-				investmentValueZMW += cn.price * cn.qty;
+				if (cn.side === "buy") {
+					if (currentPrice) portfolioValueZMW += cn.qty * currentPrice.market_price;
+					investmentValueZMW += cn.value;
+				} else {
+					if (currentPrice) portfolioValueZMW -= cn.qty * currentPrice.market_price;
+					investmentValueZMW -= cn.value;
+				}
 			}
 		});
 
@@ -33,6 +44,9 @@ export const load = async (data) => {
 
 		const overallPfolio = portfolioValueZMW + fxUsd * portfolioValueUSD;
 		const overalInv = investmentValueZMW + fxUsd * investmentValueUSD;
+
+		if (investmentValueUSD < 0) investmentValueUSD = 0;
+		if (investmentValueZMW < 0) investmentValueZMW = 0;
 
 		return {
 			portfolio: pdata,
