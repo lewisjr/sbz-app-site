@@ -535,7 +535,7 @@
 </div>
 
 <p class="mt-5 text-[0.8em] opacity-70">Current Portfolio Value</p>
-<h1 class="num -mb-2">ZMW {numParse(data.overallPfolio)}</h1>
+<h1 class="num -mb-2">ZMW {numParse(data.overallPfolio.toFixed(2))}</h1>
 
 <p
 	class={data.pDelta > 0
@@ -562,7 +562,9 @@
 <table class="summary-table mt-5 w-full">
 	<thead>
 		<tr>
-			<th colspan="5">Kwacha Holdings: <span>{numParse(data.portfolioValueZMW)}</span></th>
+			<th colspan="5"
+				>Kwacha Holdings: <span>{numParse(portfolio.portfolioTotalZmw.toFixed(2))}</span></th
+			>
 		</tr>
 		<tr>
 			<th>Stock</th>
@@ -610,7 +612,8 @@
 	<thead>
 		<tr>
 			<th colspan="5"
-				>Dollar Holdings: <span class="num">{numParse(data.portfolioValueUSD.toFixed(2))}</span></th
+				>Dollar Holdings: <span class="num">{numParse(portfolio.portfolioTotalUsd.toFixed(2))}</span
+				></th
 			>
 		</tr>
 		<tr>

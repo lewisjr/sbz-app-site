@@ -31,6 +31,8 @@ const _getName = (obj: SBZdb["public"]["Tables"]["clients"]["Row"], email: strin
 		});
 	}
 
+	if (name === "Unknown") name = `${obj.fname} ${obj.lname}`;
+
 	return name;
 };
 
