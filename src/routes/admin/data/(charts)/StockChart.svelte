@@ -89,7 +89,7 @@
 							else return val.toString();
 						},
 						style: {
-							fontWeight: 800,
+							fontWeight: 600,
 							colors: mode.current === "dark" ? "#8a8a8a" : "black",
 						},
 					},
@@ -97,7 +97,7 @@
 				xaxis: {
 					labels: {
 						style: {
-							fontWeight: 800,
+							fontWeight: 600,
 							colors: mode.current === "dark" ? "#8a8a8a" : "black",
 						},
 					},

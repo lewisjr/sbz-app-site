@@ -12,6 +12,7 @@ import type {
 	NFHelp,
 	ExpandedSymbol,
 	GetPortfolioData,
+	ApexDataPresets,
 } from "./others";
 
 import type { ApexOptions } from "apexcharts";
@@ -31,4 +32,5 @@ export type {
 	NFHelp,
 	ExpandedSymbol,
 	GetPortfolioData,
+	ApexDataPresets,
 };

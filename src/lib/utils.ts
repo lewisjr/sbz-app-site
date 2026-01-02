@@ -151,6 +151,66 @@ export const getOldDate = (d: number, diff: number) => {
 };
 
 /**Minify numbers to include the "k", "M", "B", and "T" */
+export const numberMinifier = (_value: number, decimals?: boolean): string => {
+	const array: string[] = [];
+	const isNegative = _value < 0 ? true : false;
+	const [value, dec] = isNegative
+		? (_value * -1).toString().split(".")
+		: _value.toString().split(".");
+	//decimal count
+	let x = decimals ? 2 : 0;
+
+	// values between 1,000,000,000,000 and 999,999,999,999,999 | trillions
+	if (value.length > 12) {
+		const tempVal = numParse(value, "comma");
+		const splitTemp = tempVal.split(",");
+		const decVal =
+			splitTemp[1][0] === "0" && splitTemp[1][1] === "0"
+				? ""
+				: `.${splitTemp[1][0]}${Number(splitTemp[1][2]) > 4 ? Number(splitTemp[1][1]) + 1 : Number(splitTemp[1][1])}`;
+		return `${isNegative ? "-" : ""}${splitTemp[0]}${decVal}T`;
+	}
+
+	// values between 1,000,000,000 and 999,999,999,999 | billions
+	if (value.length > 9) {
+		const tempVal = numParse(value, "comma");
+		const splitTemp = tempVal.split(",");
+		const decVal =
+			splitTemp[1][0] === "0" && splitTemp[1][1] === "0"
+				? ""
+				: `.${splitTemp[1][0]}${Number(splitTemp[1][2]) > 4 ? Number(splitTemp[1][1]) + 1 : Number(splitTemp[1][1])}`;
+		return `${isNegative ? "-" : ""}${splitTemp[0]}${decVal}B`;
+	}
+
+	// values between 1,000,000 and 999,999,999 | millions
+	if (value.length > 6) {
+		const tempVal = numParse(value, "comma");
+		const splitTemp = tempVal.split(",");
+		const decVal =
+			splitTemp[1][0] === "0" && splitTemp[1][1] === "0"
+				? ""
+				: `.${splitTemp[1][0]}${Number(splitTemp[1][2]) > 4 ? Number(splitTemp[1][1]) + 1 : Number(splitTemp[1][1])}`;
+		return `${isNegative ? "-" : ""}${splitTemp[0]}${decVal}M`;
+	}
+
+	// values between 1,000 and 999,999 | thousands
+	if (value.length > 3) {
+		const tempVal = numParse(value, "comma");
+		const splitTemp = tempVal.split(",");
+		const decVal =
+			splitTemp[1][0] === "0" && splitTemp[1][1] === "0"
+				? ""
+				: `.${splitTemp[1][0]}${Number(splitTemp[1][2]) > 4 ? Number(splitTemp[1][1]) + 1 : Number(splitTemp[1][1])}`;
+		return `${isNegative ? "-" : ""}${splitTemp[0]}${decVal}k`;
+	}
+
+	// in case decimals are allowed but the decimals are zero, make the decimal parameter 0
+	if (Number(_value.toFixed(2).split(".")[1]) === 0) x = 0;
+
+	return numParse(_value.toFixed(x), "comma");
+};
+
+/**Minify numbers to include the "M", "B", and "T" */
 export const mrMateNumMinifier = (_value: number, decimals?: boolean): string => {
 	const array: string[] = [];
 	const isNegative = _value < 0 ? true : false;

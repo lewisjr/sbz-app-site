@@ -2770,10 +2770,12 @@ interface NFutils {
 	getArticleJson: (id: number) => Promise<GenericResponseWData<any | undefined>>;
 	/**Get the DMR from the db */
 	getStocks: (date?: number) => Promise<GetStocksReturn>;
+	/**Get the first day of the year DMR from the db */
+	getFirstStocks: (date?: number) => Promise<GetStocksReturn>;
 	expandStock: (
 		symbol: string,
 	) => Promise<GenericResponseWData<NFHelp["ExpandedSymbolReturn"] | undefined>>;
-	getLastFxData: () => Promise<GetFxReturn>;
+	getLastFxData: (d?: number, diff?: number) => Promise<GetFxReturn>;
 	getRecommendations: () => Promise<GetRecommendationsReturn>;
 }
 
@@ -2885,7 +2887,6 @@ const nf = (): NFutils => {
 		}
 	};
 
-	// ! change to 31 days
 	const _getStocks = async (date: number = 31): Promise<GetStocksReturn> => {
 		const oldDate = getOldDate(genDate(), date);
 
@@ -2905,6 +2906,30 @@ const nf = (): NFutils => {
 			return { market: data };
 		} catch (ex: any) {
 			console.error("\n\n=== Get stocks exception\n", ex, "\n\n");
+			return { market: [] };
+		}
+	};
+
+	const _getFirstStocks = async (): Promise<GetStocksReturn> => {
+		try {
+			const { data, error } = await nfdb
+				.from("sbz-dmb")
+				.select()
+				.filter("is_first", "eq", true)
+				.limit(80)
+				.eq("source", "luse")
+				.order("date", { ascending: false });
+
+			if (error) {
+				console.error("\n\n=== Get First Stocks Error\n", error.message, "\n\n");
+				return { market: [] };
+			}
+
+			const market = data.filter((item) => item.date === data[0].date);
+
+			return { market };
+		} catch (ex: any) {
+			console.error("\n\n=== Get First Stocks exception\n", ex, "\n\n");
 			return { market: [] };
 		}
 	};
@@ -3002,8 +3027,8 @@ const nf = (): NFutils => {
 	};
 
 	/**Get the BOZ Fx from the db for a specific period. Needs to be updated to include date filtering */
-	const _getLastFxData = async (): Promise<GetFxReturn> => {
-		const oldDate = getOldDate(genDate(), 10);
+	const _getLastFxData = async (d?: number, diff: number = 10): Promise<GetFxReturn> => {
+		const oldDate = getOldDate(d ? d : genDate(), diff);
 		const currentDate = genDate();
 
 		try {
@@ -3055,6 +3080,7 @@ const nf = (): NFutils => {
 		getNewsLean: _getNewsLean,
 		getArticleJson: _getArticleJson,
 		getStocks: _getStocks,
+		getFirstStocks: _getFirstStocks,
 		expandStock: _expandStock,
 		getLastFxData: _getLastFxData,
 		getRecommendations: _getRecommendations,

@@ -266,3 +266,19 @@ export interface GetPortfolioData {
 	dmr: NFdb["public"]["Tables"]["sbz-dmb"]["Row"][];
 	fxUsd: NFdb["public"]["Tables"]["fx"]["Row"];
 }
+
+interface ChartData<T> {
+	x: string;
+	y: T;
+	fillColor?: string;
+	strokeColor?: string;
+}
+
+export interface ApexDataPresets {
+	/**for a column, set ```plotOptions.bar.horizontal``` to **false** */
+	Column: ChartData<number>[];
+	RangeColumn: ChartData<[number, number]>[];
+	TreeMap: ChartData<number>[];
+	/**This assumes that the chart data points are represented as percentages instead, this will not affect the labels but rather the colour ranges */
+	TreeMapPercent: ChartData<number>[];
+}

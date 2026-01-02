@@ -1,12 +1,17 @@
 <script lang="ts">
+	//functions
 	import { numParse } from "@cerebrusinc/qol";
-	import type { PageProps } from "./$types";
 	import { toTitleCase } from "@cerebrusinc/fstring";
 	import { prettyDate, percentageHandler, mrMateSymbols, chunkArray } from "$lib/utils";
-
 	import { TrendingUp, TrendingDown, Minus, ArrowUp, ArrowDown } from "@lucide/svelte";
 	import { toast } from "svelte-sonner";
 
+	//components - custom
+	import Head from "$lib/components/Head.svelte";
+	import AnyChart from "$lib/components/AnyChart";
+
+	//types
+	import type { PageProps } from "./$types";
 	import type { GetPortfolioData, NFHelp, Types } from "$lib/types";
 
 	let { data }: PageProps = $props();
@@ -523,6 +528,13 @@
 	});
 </script>
 
+<Head
+	title="Home | SBZ Digital"
+	ogTitle="Home"
+	description="Take a look at neurally aided portfolio insights and much more!"
+	ogDescription="Take a look at neurally aided portfolio insights and much more!"
+/>
+
 <div class="flex flex-row items-center justify-between">
 	<h3>Hi <u>{data.names.split(" ")[0]}</u>!</h3>
 	<p class="text-[0.9em] italic opacity-70">
@@ -535,21 +547,23 @@
 </div>
 
 <p class="mt-5 text-[0.8em] opacity-70">Current Portfolio Value</p>
-<h1 class="num -mb-2">ZMW {numParse(data.overallPfolio.toFixed(2))}</h1>
+<h1 class="num -mb-2">ZMW {numParse(data.quickStats.overallPfolio.toFixed(2))}</h1>
 
 <p
-	class={data.pDelta > 0
+	class={data.quickStats.pDelta > 0
 		? "gren flex flex-row items-center"
-		: data.pDelta === 0
+		: data.quickStats.pDelta === 0
 			? "flex flex-row items-center"
 			: "rd flex flex-row items-center"}
 >
-	{#if data.pDelta === 0}
+	{#if data.quickStats.pDelta === 0}
 		<Minus class="h-3 w-3" />
-	{:else if data.pDelta < 0}
+	{:else if data.quickStats.pDelta < 0}
 		<TrendingDown class="h-3 w-3" />{:else}<TrendingUp class="h-3 w-3" />
 	{/if}<span class="num ml-1 text-[0.9em]"
-		>{numParse(percentageHandler(data.pDelta).replace("%", ""))}%</span
+		>{numParse(
+			percentageHandler(data.quickStats.pDelta / data.quickStats.overalInv).replace("%", ""),
+		)}%</span
 	>
 </p>
 <p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
@@ -602,7 +616,9 @@
 	</tbody>
 </table>
 <p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
-	You invested a total of <span class="num">{numParse(data.investmentValueZMW.toFixed(2))}</span>
+	You invested a total of <span class="num"
+		>{numParse(data.quickStats.investmentValueZMW.toFixed(2))}</span
+	>
 	into your kwacha holdings. The above and below values are as at {prettyDate(
 		data.portfolio.dmr[0].date,
 	)}.
@@ -653,17 +669,70 @@
 </table>
 <p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
 	You invested a total of <span class="num"
-		>{numParse(data.investmentValueUSD.toFixed(2))} (K {numParse(
-			(data.investmentValueUSD * data.portfolio.fxUsd.buy).toFixed(2),
+		>{numParse(data.quickStats.investmentValueUSD.toFixed(2))} (K {numParse(
+			(data.quickStats.investmentValueUSD * data.portfolio.fxUsd.buy).toFixed(2),
 		)})</span
 	>
 	into your dollar holdings. Your portfolio has an estimated kwacha value of
 	<span class="num"
-		>{numParse((data.portfolioValueUSD / data.portfolio.fxUsd.sell).toFixed(2))}</span
+		>{numParse((data.quickStats.portfolioValueUSD / data.portfolio.fxUsd.sell).toFixed(2))}</span
 	>
 	at a <i>Bank of Zambia</i> average sell rate of
 	<span class="num">{numParse(data.portfolio.fxUsd.sell.toFixed(2))}</span>.
 </p>
+
+<p class="mt-5 text-[0.8em] opacity-70">Portfolio Analysis</p>
+
+<p class="text-justify text-[0.8em] opacity-90">
+	{#each data["macroAnalysis"]["ytd"]["summary"] as txt}
+		{#if txt.substring(0, 2) === "--"}
+			<span class={txt.split("--")[1]}>{txt.replace(`--${txt.split("--")[1]}--`, "")}</span>
+		{:else if txt.substring(0, 2) === "=="}
+			<span class={txt.split("==")[1]}>{txt.replace(`==${txt.split("==")[1]}==`, "")}</span>
+		{:else}
+			{txt}
+		{/if}
+	{/each}
+</p>
+<AnyChart data={data.macroAnalysis.ytd.chart} tipo="RangeColumn" h={300} minifyY />
+
+<p class="mb-2 text-justify text-[0.8em] opacity-90">
+	{#each data["macroAnalysis"]["perf"]["summary"] as txt}
+		{#if txt.substring(0, 2) === "--"}
+			<span class={txt.split("--")[1]}>{txt.replace(`--${txt.split("--")[1]}--`, "")}</span>
+		{:else if txt.substring(0, 2) === "=="}
+			<span class={txt.split("==")[1]}>{txt.replace(`==${txt.split("==")[1]}==`, "")}</span>
+		{:else}
+			{txt}
+		{/if}
+	{/each}
+</p>
+<AnyChart
+	data={data.macroAnalysis.comp.stock.chart}
+	tipo="TreeMapPercent"
+	h={400}
+	title="Portfolio Composition"
+	wRandomColours
+	isPercent
+/>
+
+<p class="mb-2 text-justify text-[0.8em] opacity-90">
+	{#each data["macroAnalysis"]["comp"]["stock"]["summary"] as txt}
+		{#if txt.substring(0, 2) === "--"}
+			<span class={txt.split("--")[1]}>{txt.replace(`--${txt.split("--")[1]}--`, "")}</span>
+		{:else if txt.substring(0, 2) === "=="}
+			<span class={txt.split("==")[1]}>{txt.replace(`==${txt.split("==")[1]}==`, "")}</span>
+		{:else}
+			{txt}
+		{/if}
+	{/each}
+</p>
+
+<!--
+<p class="mt-2 text-justify text-[0.7em] text-muted-foreground underline">VS Market</p>
+<p class="mt-2 text-justify text-[0.7em] text-muted-foreground underline">VS FX</p>
+<p class="mt-2 text-justify text-[0.7em] text-muted-foreground underline">VS Inflation</p>
+-->
 
 <style lang="scss">
 	h1 {
