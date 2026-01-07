@@ -246,7 +246,10 @@ interface SBZutils {
 
 	// portfolio
 	getClients: () => Promise<TempClientName[]>;
-	getPortfolio: (luseId: number) => Promise<GenericResponseWData<GetPortfolioData | undefined>>;
+	getPortfolio: (
+		luseId: number,
+		ytd?: number,
+	) => Promise<GenericResponseWData<GetPortfolioData | undefined>>;
 
 	// files
 	getFiles: (id: string) => Promise<GenericResponseWData<Types["ClientKyc"][]>>;
@@ -2435,10 +2438,121 @@ const sbz = (): SBZutils => {
 	// * portfolio stuff
 	const _getPortfolio = async (
 		luseId: number,
+		ytd?: number,
 	): Promise<GenericResponseWData<GetPortfolioData | undefined>> => {
 		const oldDate = getOldDate(genDate(), 5);
 
 		try {
+			if (ytd) {
+				const settledReq = sbzdb
+					.from("settled_trades")
+					.select()
+					.filter("luse_id", "eq", luseId)
+					.filter("date", "lte", `${ytd}1231`)
+					.order("date", { ascending: true });
+				const matchedReq = nfdb
+					.from("sbz-matched-trades")
+					.select()
+					.filter("luse_id", "eq", luseId)
+					.filter("trade_date", "lte", `${ytd}1231`)
+					.order("trade_date", { ascending: false });
+				const onScreenReq = nfdb
+					.from("on-screen-orders")
+					.select()
+					.filter("luse_id", "eq", luseId)
+					.filter("date", "lte", `${ytd}1231`)
+					.order("date", { ascending: false });
+				const dmrReq = nfdb
+					.from("sbz-dmb")
+					.select()
+					//.filter("date", "gte", oldDate)
+					.filter("source", "eq", "luse")
+					.filter("date", "lte", `${ytd}1231`)
+					.limit(150)
+					.order("date", { ascending: false });
+				const fxUsdReq = nfdb
+					.from("fx")
+					.select()
+					//.filter("date", "gte", oldDate)
+					.filter("source", "eq", "BOZ")
+					.filter("currency", "eq", "USD/ZMW")
+					.filter("date", "lte", `${ytd}1231`)
+					.limit(30)
+					.order("date", { ascending: false });
+
+				const [settledRes, matchedRes, onScreenRes, dmrRes, fxUsdRes] = await Promise.all([
+					settledReq,
+					matchedReq,
+					onScreenReq,
+					dmrReq,
+					fxUsdReq,
+				]);
+
+				if (settledRes.error) {
+					await _log({ message: settledRes.error.message, title: `Get ${luseId}LI Holdings - E1` });
+					return {
+						data: undefined,
+						message: "Failed to get this portfolio, please try again in a few minutes.",
+						success: false,
+					};
+				}
+
+				if (matchedRes.error) {
+					await _log({ message: matchedRes.error.message, title: `Get ${luseId}LI Holdings - E2` });
+					return {
+						data: undefined,
+						message: "Failed to get trade history, please try again in a few minutes.",
+						success: false,
+					};
+				}
+
+				if (onScreenRes.error) {
+					await _log({
+						message: onScreenRes.error.message,
+						title: `Get ${luseId}LI Holdings - E3`,
+					});
+					return {
+						data: undefined,
+						message: "Failed to get on screen orders, please try again in a few minutes.",
+						success: false,
+					};
+				}
+
+				if (dmrRes.error) {
+					await _log({ message: dmrRes.error.message, title: `Get ${luseId}LI Holdings - E4` });
+					return {
+						data: undefined,
+						message: "Failed to get recent stock prices, please try again in a few minutes.",
+						success: false,
+					};
+				}
+
+				if (fxUsdRes.error) {
+					await _log({ message: fxUsdRes.error.message, title: `Get ${luseId}LI Holdings - E5` });
+					return {
+						data: undefined,
+						message: "Failed to get recent fx rates, please try again in a few minutes.",
+						success: false,
+					};
+				}
+
+				const fxUsd = fxUsdRes.data[0];
+				const _date = dmrRes.data[0].date;
+				const dmr = dmrRes.data.filter((item) => item.date === _date);
+
+				return {
+					data: {
+						dmr,
+						fxUsd,
+						onScreen: onScreenRes.data,
+						matched: matchedRes.data,
+						settled: settledRes.data,
+					},
+					message: "",
+					success: true,
+				};
+			}
+
 			const settledReq = sbzdb
 				.from("settled_trades")
 				.select()

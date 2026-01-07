@@ -2,9 +2,11 @@ import postmark from "postmark";
 import templates from "./templates";
 import dbs from "$lib/server/db";
 
-import type { GenericEmailObj, OtpEmailObj, ButtonEmailObj } from "./templates";
+import type { GenericEmailObj, OtpEmailObj, ButtonEmailObj, PortfolioEmailObj } from "./templates";
 
 import { POSTMARK_CLIENT } from "$env/static/private";
+
+import { DEV } from "$env/static/private";
 
 var client = new postmark.ServerClient(POSTMARK_CLIENT);
 
@@ -17,7 +19,7 @@ const sendOtp = async (
 	try {
 		const res = await client.sendEmail({
 			From: "app@sbz.com.zm",
-			To: recipient,
+			To: DEV === "y" ? "privatodato@gmail.com" : recipient,
 			Cc: cc,
 			Subject: subject,
 			HtmlBody: html,
@@ -203,6 +205,35 @@ const sendNestedNoButton = async (
 	}
 };
 
+const sendPortfolio = async (body: PortfolioEmailObj, recipient: string): Promise<boolean> => {
+	const { html, plain } = templates.portfolio(body);
+
+	const { cc, year } = body;
+
+	try {
+		const res = await client.sendEmail({
+			From: "app@sbz.com.zm",
+			To: DEV === "y" ? "privatodato@gmail.com" : recipient,
+			Cc: cc,
+			Subject: `YTD ${year} Portfolio Valuation`,
+			HtmlBody: html,
+			TextBody: plain,
+			MessageStream: "outbound",
+		});
+
+		if (res.ErrorCode) {
+			await dbs.sbz.log({
+				title: "Send Portfolio Error: Email",
+				message: `Failed to send email to ${recipient}. Code ${res.ErrorCode}`,
+			});
+			return false;
+		} else return true;
+	} catch (ex: any) {
+		await dbs.sbz.log({ title: "Send Portfolio Exception: Email", message: String(ex) });
+		return false;
+	}
+};
+
 export const email = {
 	sendOtp,
 	sendUpdate,
@@ -210,4 +241,6 @@ export const email = {
 	/**Keeps the emails all in one chain... theoretically */
 	sendNested,
 	sendNestedNoButton,
+	/**Only for one portfolio to one person */
+	sendPortfolio,
 };

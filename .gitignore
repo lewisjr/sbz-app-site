@@ -25,3 +25,6 @@ vite.config.ts.timestamp-*
 # Rust
 rust/target
 Cargo.lock
+
+types/
+contracts/

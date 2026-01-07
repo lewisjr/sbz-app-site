@@ -13,6 +13,7 @@ import type {
 	ExpandedSymbol,
 	GetPortfolioData,
 	ApexDataPresets,
+	PortfolioStandards,
 } from "./others";
 
 import type { ApexOptions } from "apexcharts";
@@ -33,4 +34,5 @@ export type {
 	ExpandedSymbol,
 	GetPortfolioData,
 	ApexDataPresets,
+	PortfolioStandards,
 };

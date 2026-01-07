@@ -282,3 +282,113 @@ export interface ApexDataPresets {
 	/**This assumes that the chart data points are represented as percentages instead, this will not affect the labels but rather the colour ranges */
 	TreeMapPercent: ChartData<number>[];
 }
+
+interface SectionAnalysis<T> {
+	summary: string[];
+	chart: T;
+}
+
+interface QuickStats {
+	portfolioValueUSD: number;
+	portfolioValueZMW: number;
+	investmentValueUSD: number;
+	investmentValueZMW: number;
+	overallPfolio: number;
+	overalInv: number;
+	pDelta: number;
+}
+
+interface PortfolioMacroAnalysis {
+	ytd: SectionAnalysis<ApexDataPresets["RangeColumn"]>;
+	comp: {
+		stock: SectionAnalysis<ApexDataPresets["TreeMapPercent"]>;
+		sector: SectionAnalysis<undefined>;
+	};
+	perf: SectionAnalysis<undefined>;
+	vMarket: SectionAnalysis<undefined>;
+	vFx: SectionAnalysis<undefined>;
+	vInflation: SectionAnalysis<undefined>;
+}
+
+type CN = SBZdb["public"]["Tables"]["settled_trades"]["Row"][];
+type DMR = NFdb["public"]["Tables"]["sbz-dmb"]["Row"][];
+
+interface Portfolio {
+	symbol: string;
+	price: number;
+	volume: number;
+	value: number;
+}
+
+interface AnalysisObj {
+	symbol: string;
+	value: number;
+}
+
+interface Analysis {
+	best: AnalysisObj;
+	worst: AnalysisObj;
+	heaviest: AnalysisObj;
+	lightest: AnalysisObj;
+	totalGrowthZmw: number;
+	totalInvestmentZmw: number;
+	totalGrowthUsd: number;
+	totalInvestmentUsd: number;
+	chart: {
+		symbols: string[];
+		turnovers: number[];
+		pfolio: Types["Folio"][];
+	};
+}
+
+interface Matched {
+	zmwTotal: number;
+	zmwTotalBuy: number;
+	zmwTotalSell: number;
+	usdTotal: number;
+	usdTotalBuy: number;
+	usdTotalSell: number;
+	tradesZmw: NFHelp["SimpleTrade"][][];
+	tradesUsd: NFHelp["SimpleTrade"][][];
+	tradesRaw: NFHelp["MatchedTrade"][];
+	tradeDates: Types["AnyPickerObj"][];
+}
+
+interface Screen {
+	zmwTotal: number;
+	zmwTotalBuy: number;
+	zmwTotalSell: number;
+	usdTotal: number;
+	usdTotalBuy: number;
+	usdTotalSell: number;
+	ordersZmw: NFHelp["SimpleOrder"][][];
+	ordersUsd: NFHelp["SimpleOrder"][][];
+	ordersRaw: NFHelp["OnScreenOrder"][];
+	orderDates: Types["AnyPickerObj"][];
+}
+
+interface ClientTradeHistory {
+	portfolioZmw: Portfolio[][];
+	portfolioUsd: Portfolio[][];
+	portfolioTotalZmw: number;
+	portfolioTotalUsd: number;
+	usdBuy: number;
+	usdSell: number;
+	analysis: Analysis;
+	matched: Matched | undefined;
+	screen: Screen | undefined;
+}
+
+export interface PortfolioStandards {
+	// SectionAnalysis: SectionAnalysis<SectionT>;
+	QuickStats: QuickStats;
+	PortfolioMacroAnalysis: PortfolioMacroAnalysis;
+	CN: CN;
+	DMR: DMR;
+	Portfolio: Portfolio;
+	AnalysisObj: AnalysisObj;
+	Analysis: Analysis;
+	Matched: Matched;
+	Screen: Screen;
+	ClientTradeHistory: ClientTradeHistory;
+}

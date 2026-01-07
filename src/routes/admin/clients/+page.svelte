@@ -1743,8 +1743,9 @@
 									{/each}
 
 									<section class="page ui-sp">
-										<p style="font-size: 2em; font-weight: 700;">Portfolio Highlights</p>
+										<p style="font-size: 2em; font-weight: 700;">Portfolio Composition</p>
 
+										<!--
 										<table style="width: 100%;">
 											<tbody>
 												<tr>
@@ -1841,6 +1842,7 @@
 												</tr>
 											</tbody>
 										</table>
+										-->
 
 										<table style="width: 100%; position: absolute;">
 											<tbody>
