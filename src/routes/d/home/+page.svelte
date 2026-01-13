@@ -145,7 +145,7 @@
 				? "flex flex-row items-center"
 				: "rd flex flex-row items-center"}
 	>
-		{#if $portfolioCacheStore[year.toString()].quickStats.pDelta === 0 || Number.isNaN($portfolioCacheStore[year.toString()].quickStats.pDelta)}
+		{#if $portfolioCacheStore[year.toString()].quickStats.pDelta === 0}
 			<Minus class="h-3 w-3" />
 		{:else if $portfolioCacheStore[year.toString()].quickStats.pDelta < 0}
 			<TrendingDown class="h-3 w-3" />{:else}<TrendingUp class="h-3 w-3" />

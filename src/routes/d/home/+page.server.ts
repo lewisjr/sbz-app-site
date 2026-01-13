@@ -1,6 +1,6 @@
 import dbs from "$lib/server/db";
 import { scourgeOfInvestor } from "$lib/server/jwt";
-import { redirect } from "@sveltejs/kit";
+import { redirect, text } from "@sveltejs/kit";
 import { chunkArray, mrMateSymbols, percentageHandler, prettyDate, print } from "$lib/utils";
 
 import type { NFdb, SBZdb, ApexDataPresets, GetPortfolioData, NFHelp, Types } from "$lib/types";
@@ -14,10 +14,10 @@ export const load = async (data) => {
 	const folio = await genYtdFolio({ luseId: client.data.luseId });
 	const d = new Date();
 
-	// @ts-ignore
-	folio["year"] = d.getFullYear();
-
 	if (folio) {
+		// @ts-ignore
+		folio["year"] = d.getFullYear();
+
 		return folio;
 	} else throw redirect(307, "/contact");
 };

@@ -945,6 +945,10 @@ export const genYtdFolio = async ({
 
 		quickStats.pDelta = (pfolio.overall - quickStats.overalInv) / quickStats.overalInv;
 
+		macroAnalysis.perf.summary.forEach((text, i) => {
+			macroAnalysis.perf.summary[i] = text.replaceAll("In,fin,ity", "100.00");
+		});
+
 		return {
 			portfolio: pfolio,
 			quickStats,

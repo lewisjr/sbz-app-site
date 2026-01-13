@@ -11,6 +11,8 @@
 	import Input from "$lib/components/ui/input/input.svelte";
 	import Label from "$lib/components/ui/label/label.svelte";
 	import Button from "$lib/components/ui/button/button.svelte";
+	import { onMount } from "svelte";
+	import { portfolioCacheStore } from "$lib/stores";
 
 	let label = $state<"Admin Username" | "LuSE ID">("LuSE ID");
 	let placeholder = $state<"466932" | "bwalya">("466932");
@@ -140,6 +142,11 @@
 	});
 
 	let year = new Date().getFullYear();
+
+	// cleanup all caches
+	onMount(() => {
+		portfolioCacheStore.set({});
+	});
 </script>
 
 <Head
