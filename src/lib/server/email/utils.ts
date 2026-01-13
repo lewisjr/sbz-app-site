@@ -208,17 +208,18 @@ const sendNestedNoButton = async (
 const sendPortfolio = async (body: PortfolioEmailObj, recipient: string): Promise<boolean> => {
 	const { html, plain } = templates.portfolio(body);
 
-	const { cc, year } = body;
+	const { cc, year, bcc } = body;
 
 	try {
 		const res = await client.sendEmail({
 			From: "app@sbz.com.zm",
-			To: DEV === "y" ? "privatodato@gmail.com" : recipient,
+			To: /*DEV === "y" ? "privatodato@gmail.com" :*/ recipient,
 			Cc: cc,
 			Subject: `YTD ${year} Portfolio Valuation`,
 			HtmlBody: html,
 			TextBody: plain,
 			MessageStream: "outbound",
+			Bcc: bcc,
 		});
 
 		if (res.ErrorCode) {

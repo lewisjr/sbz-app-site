@@ -12,6 +12,7 @@ interface EmailObj {
 	title: string;
 	subject: string;
 	cc?: string;
+	bcc?: string;
 }
 
 export interface GenericEmailObj extends EmailObj {
@@ -75,6 +76,8 @@ export interface PortfolioEmailObj extends EmailObj {
 	macroAnalysis: PortfolioStandards["PortfolioMacroAnalysis"];
 	year: number;
 	usd: { sell: number; buy: number };
+	luseId: number;
+	fname: string;
 }
 
 export const portfolio = ({
@@ -82,18 +85,20 @@ export const portfolio = ({
 	macroAnalysis,
 	year,
 	usd,
+	luseId,
+	fname,
 }: PortfolioEmailObj): TemplateResponse => {
 	const tx = genTimestamp();
 
 	const link = "https://app.sbz.com.zm/sign-in";
 	const linkText = "Sign In";
-	const extra = "Click the button above in order to sign in and interact with your account!";
+	const extra = `Click the button above in order to sign in and interact with your account! Your LuSE ID is <span class="num">${luseId}</span>.`;
 
 	const title = `YTD ${year} Portfolio Valuation`;
 
 	print({ sum: macroAnalysis.ytd.summary });
 
-	let body = "";
+	let body = `Hi ${fname}!<br /><br />`;
 
 	macroAnalysis.ytd.summary.forEach((txt) => {
 		if (txt.substring(0, 2) === "--") {
@@ -122,7 +127,7 @@ export const portfolio = ({
 	}${
 		!folio.portfolioUsd.length
 			? ""
-			: `<table class="folio" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse;width: fit-content;max-width: 100%; table-layout: fixed; direction: ltr; background-color: transparent; font-family: 'Trebuchet MS', 'Lucida Grande', 'Lucida Sans Unicode', 'Lucida Sans', Tahoma, sans-serif; font-weight: 400; color: #000000; text-align: center; letter-spacing: 0px;margin-top: 30px;" width="100%"><thead style="vertical-align: top; background-color: #EAEAEA; color: #505659; font-size: 14px; line-height: 1.2; mso-line-height-alt: 17px;"><tr><th colspan="4" style="padding: 10px; word-break: break-word; font-weight: 400; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd; text-align: center;">USD Holdings: K ${numParse(folio.portfolioTotalUsd.toFixed(2))} | $ ${numParse((folio.portfolioTotalUsd / usd.buy).toFixed(2))}</th></tr><tr><th width="25%" style="padding: 10px; word-break: break-word; font-weight: 400; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd; text-align: center;"><strong>Symbol</strong></th><th width="25%" style="padding: 10px; word-break: break-word; font-weight: 400; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd; text-align: center;"><strong>Price</strong></th><th width="25%" style="padding: 10px; word-break: break-word; font-weight: 400; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd; text-align: center;"><strong>Volume</strong></th><th width="25%" style="padding: 10px; word-break: break-word; font-weight: 400; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd; text-align: center;"><strong>Total</strong></th></tr></thead><tbody style="vertical-align: top; font-size: 14px; line-height: 1.2; mso-line-height-alt: 17px;">${_genFolioTable(folio.portfolioUsd[0])}</tbody></table>`
+			: `<table class="folio" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse;width: fit-content;max-width: 100%; table-layout: fixed; direction: ltr; background-color: transparent; font-family: 'Trebuchet MS', 'Lucida Grande', 'Lucida Sans Unicode', 'Lucida Sans', Tahoma, sans-serif; font-weight: 400; color: #000000; text-align: center; letter-spacing: 0px;margin-top: 30px;" width="100%"><thead style="vertical-align: top; background-color: #EAEAEA; color: #505659; font-size: 14px; line-height: 1.2; mso-line-height-alt: 17px;"><tr><th colspan="4" style="padding: 10px; word-break: break-word; font-weight: 400; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd; text-align: center;">USD Holdings: K ${numParse((folio.portfolioTotalUsd * usd.buy).toFixed(2))} | $ ${numParse(folio.portfolioTotalUsd.toFixed(2))}</th></tr><tr><th width="25%" style="padding: 10px; word-break: break-word; font-weight: 400; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd; text-align: center;"><strong>Symbol</strong></th><th width="25%" style="padding: 10px; word-break: break-word; font-weight: 400; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd; text-align: center;"><strong>Price</strong></th><th width="25%" style="padding: 10px; word-break: break-word; font-weight: 400; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd; text-align: center;"><strong>Volume</strong></th><th width="25%" style="padding: 10px; word-break: break-word; font-weight: 400; border-top: 1px solid #dddddd; border-right: 1px solid #dddddd; border-bottom: 1px solid #dddddd; border-left: 1px solid #dddddd; text-align: center;"><strong>Total</strong></th></tr></thead><tbody style="vertical-align: top; font-size: 14px; line-height: 1.2; mso-line-height-alt: 17px;">${_genFolioTable(folio.portfolioUsd[0])}</tbody></table>`
 	}<p style="padding-bottom: 16px"><a href="${link}" target="__blank" style="padding: 12px 24px; border-radius: 4px; color: #FFF; background: #34a853;display: inline-block;margin: 0.5rem 0;">${linkText}</a></p><p style="padding-bottom: 16px">${extra}</p><p style="padding-bottom: 16px">Thanks,<br>Stockbrokers Zambia</p></div></div><div style="padding-top: 20px; color: rgb(153, 153, 153); text-align: center;"><p style="padding-bottom: 16px">Built by <a href="https://www.neos.finance" target="__blank" style="color: rgba(228, 68, 39, 0.979)">Neos Finance</a><br>Sent from SBZ Digital<br>${tx}</p></div></td></tr></tbody></table></td></tr></tbody></table></body></html>`;
 
 	const plain = ``;

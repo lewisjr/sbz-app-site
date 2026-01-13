@@ -751,14 +751,16 @@
 			return;
 		}
 
+		/*
 		if (!signatures) {
 			toast.info("You are required to create a signature!");
 			loading = false;
 			return;
 		}
+		*/
 
 		if (!imgBlob) {
-			toast.info("You are required to create a signature!");
+			toast.info("You are required to add a selfie!");
 			loading = false;
 			return;
 		}
@@ -1220,6 +1222,7 @@
 				<OTP handler={otpValueHandler} bind:disabled={loading} />
 			</div>
 
+			<!--
 			<h3 class="tmid mt-10 mb-2">Enter Your Signature</h3>
 			<p class="tmid mb-3">
 				Please check your <b>authenticator app</b> for your <b>six digit code</b>.
@@ -1227,6 +1230,7 @@
 			<div class="mx-auto mt-3">
 				<OTP handler={totpValueHandler} bind:disabled={loading} />
 			</div>
+			-->
 		{:else if endLayout}
 			<h3 class="tmid mb-2">Request Submitted!</h3>
 			<p class="tmid mb-3">
@@ -3196,6 +3200,7 @@
 				</div>
 			</section>
 
+			<!--
 			<h3 class="mt-7 mb-4">Signature</h3>
 			<section class="inputs mb-5">
 				<div class="items tp flex">
@@ -3280,6 +3285,7 @@
 					{/if}
 				</div>
 			</section>
+			-->
 
 			<h3 class="mt-7 mb-4">Questionnaire</h3>
 			<section class="inputs mb-5">

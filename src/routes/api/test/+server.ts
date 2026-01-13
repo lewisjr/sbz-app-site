@@ -862,9 +862,10 @@ export const POST = async ({ request }) => {
 	try {
 		const { luseId, all }: { luseId: number; all?: boolean } = await request.json();
 
-		const [portfolio, firstDmr] = await Promise.all([
+		const [portfolio, firstDmr, _client] = await Promise.all([
 			dbs.sbz.getPortfolio(luseId, 2025),
 			dbs.nf.getFirstStocks(),
+			dbs.sbz.getClient(luseId),
 		]);
 
 		const initFx = (await dbs.nf.getLastFxData(firstDmr.market[0].date)).fx;
@@ -872,7 +873,9 @@ export const POST = async ({ request }) => {
 		const pdata = portfolio.data;
 		const initUsd = initFx.find((item) => item.currency.toLowerCase() === "usd/zmw");
 
-		if (pdata && initUsd && firstDmr.market.length) {
+		const client = _client[0];
+
+		if (pdata && initUsd && firstDmr.market.length && client) {
 			// const quickStats = genQuickStats(pdata);
 			const macroAnalysis = genAnalysis(pdata.settled, firstDmr.market, pdata.dmr, {
 				buy: {
@@ -887,8 +890,24 @@ export const POST = async ({ request }) => {
 
 			const siteFolio = genPortfolio(pdata, luseId);
 
-			// await notif.email.sendPortfolio()
+			const res = await notif.email.sendPortfolio(
+				{
+					folio: siteFolio,
+					macroAnalysis,
+					year: 2025,
+					usd: { buy: pdata.fxUsd.buy, sell: pdata.fxUsd.sell },
+					subject: "",
+					title: "",
+					luseId: luseId,
+					fname: client.fname.split(" ")[0],
+					// bcc: "jkanyanga@sbz.com.zm",
+				},
+				client.email,
+			);
 
+			return json({ success: true, message: "Process ran.", data: res }, { status: 201 });
+
+			/*
 			const data = templates.portfolio({
 				folio: siteFolio,
 				macroAnalysis,
@@ -896,9 +915,13 @@ export const POST = async ({ request }) => {
 				usd: { buy: pdata.fxUsd.buy, sell: pdata.fxUsd.sell },
 				subject: "",
 				title: "",
+				luseId: luseId,
+				fname: client.fname.split(" ")[0],
+				bcc: "jkanyanga@sbz.com.zm",
 			});
 
 			return new Response(data.html);
+			*/
 		}
 
 		return json({ success: true, message: "Process failed.", data: undefined }, { status: 400 });
