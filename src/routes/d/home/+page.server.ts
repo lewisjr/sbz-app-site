@@ -1,10 +1,12 @@
 import dbs from "$lib/server/db";
 import { scourgeOfInvestor } from "$lib/server/jwt";
 import { redirect } from "@sveltejs/kit";
-import { percentageHandler, print } from "$lib/utils";
+import { chunkArray, mrMateSymbols, percentageHandler, prettyDate, print } from "$lib/utils";
 
-import type { NFdb, SBZdb, ApexDataPresets, GetPortfolioData } from "$lib/types";
-import { numParse } from "@cerebrusinc/qol";
+import type { NFdb, SBZdb, ApexDataPresets, GetPortfolioData, NFHelp, Types } from "$lib/types";
+import { numParse, randomColour } from "@cerebrusinc/qol";
+import { toTitleCase } from "@cerebrusinc/fstring";
+import { portfolio } from "$lib/server/email/templates.js";
 
 /** docutypeRichTextIfier
 const docutypeRichTextIfier = (ogText: string[], selection: string, modifier: string): string[] => {
@@ -23,8 +25,6 @@ b.splice(1, 0, modifier + _)
 return b
 }
 */
-
-type ChartType = keyof ApexDataPresets | undefined;
 
 interface SectionAnalysis<T> {
 	summary: string[];
@@ -118,7 +118,522 @@ const genQuickStats = (pdata: GetPortfolioData): QuickStats => {
 	};
 };
 
+interface Portfolio {
+	symbol: string;
+	price: number;
+	volume: number;
+	value: number;
+}
+
+interface AnalysisObj {
+	symbol: string;
+	value: number;
+}
+
+interface Analysis {
+	best: AnalysisObj;
+	worst: AnalysisObj;
+	heaviest: AnalysisObj;
+	lightest: AnalysisObj;
+	totalGrowthZmw: number;
+	totalInvestmentZmw: number;
+	totalGrowthUsd: number;
+	totalInvestmentUsd: number;
+	chart: {
+		symbols: string[];
+		turnovers: number[];
+		pfolio: Types["Folio"][];
+	};
+}
+
+interface Matched {
+	zmwTotal: number;
+	zmwTotalBuy: number;
+	zmwTotalSell: number;
+	usdTotal: number;
+	usdTotalBuy: number;
+	usdTotalSell: number;
+	tradesZmw: NFHelp["SimpleTrade"][][];
+	tradesUsd: NFHelp["SimpleTrade"][][];
+	tradesRaw: NFHelp["MatchedTrade"][];
+	tradeDates: Types["AnyPickerObj"][];
+}
+
+interface Screen {
+	zmwTotal: number;
+	zmwTotalBuy: number;
+	zmwTotalSell: number;
+	usdTotal: number;
+	usdTotalBuy: number;
+	usdTotalSell: number;
+	ordersZmw: NFHelp["SimpleOrder"][][];
+	ordersUsd: NFHelp["SimpleOrder"][][];
+	ordersRaw: NFHelp["OnScreenOrder"][];
+	orderDates: Types["AnyPickerObj"][];
+}
+
+interface ClientTradeHistory {
+	portfolioZmw: Portfolio[][];
+	portfolioUsd: Portfolio[][];
+	portfolioTotalZmw: number;
+	portfolioTotalUsd: number;
+	usdBuy: number;
+	usdSell: number;
+	analysis: Analysis;
+	matched: Matched | undefined;
+	screen: Screen | undefined;
+	overall: number;
+}
+
+const genPortfolio = (rawData: GetPortfolioData, luseId: number): ClientTradeHistory => {
+	const _genMatched = (matchedData: GetPortfolioData["matched"]) => {
+		if (!matchedData.length) return undefined;
+
+		let tradesRaw = matchedData.filter((item) => item.luse_id === luseId);
+
+		let zmwTotal: number = 0;
+		let zmwTotalBuy: number = 0;
+		let zmwTotalSell: number = 0;
+
+		let usdTotal: number = 0;
+		let usdTotalBuy: number = 0;
+		let usdTotalSell: number = 0;
+
+		const tradesObjZmw: {
+			[key: string]: NFHelp["SimpleTrade"];
+		} = {};
+		const tradesObjUsd: {
+			[key: string]: NFHelp["SimpleTrade"];
+		} = {};
+
+		if (tradesRaw.length) {
+			tradesRaw.forEach((trade) => {
+				let symbol = mrMateSymbols(trade.symbol) + trade.price.toString();
+
+				symbol = symbol + trade.trade_date;
+
+				if (trade.symbol.includes("USD")) {
+					const usdConsidertaion = trade.price * trade.qty;
+					usdTotal = usdTotal + usdConsidertaion;
+
+					switch (trade.trade_side) {
+						case "buy":
+							usdTotalBuy += usdConsidertaion;
+							break;
+						case "sell":
+							usdTotalSell += usdConsidertaion;
+							break;
+					}
+
+					if (tradesObjUsd[symbol]) {
+						const nQty = tradesObjUsd[symbol].qty + trade.qty;
+
+						tradesObjUsd[symbol].qty = nQty;
+						tradesObjUsd[symbol].total = nQty * trade.price;
+					} else {
+						tradesObjUsd[symbol] = {
+							price: trade.price,
+							qty: trade.qty,
+							symbol: mrMateSymbols(trade.symbol),
+							total: trade.price * trade.qty,
+							side: toTitleCase(trade.trade_side),
+							date: prettyDate(trade.trade_date),
+						};
+					}
+					// end
+				} else {
+					// begin
+					const zmwConsideration = trade.price * trade.qty;
+					zmwTotal = zmwTotal + zmwConsideration;
+
+					switch (trade.trade_side) {
+						case "buy":
+							zmwTotalBuy += zmwConsideration;
+							break;
+						case "sell":
+							zmwTotalSell += zmwConsideration;
+							break;
+					}
+
+					if (tradesObjZmw[symbol]) {
+						const nQty = tradesObjZmw[symbol].qty + trade.qty;
+
+						tradesObjZmw[symbol].qty = nQty;
+						tradesObjZmw[symbol].total = nQty * trade.price;
+					} else {
+						tradesObjZmw[symbol] = {
+							price: trade.price,
+							qty: trade.qty,
+							symbol: trade.symbol,
+							total: trade.price * trade.qty,
+							side: toTitleCase(trade.trade_side),
+							date: prettyDate(trade.trade_date),
+						};
+					}
+				}
+			});
+		}
+
+		const tradesZmw = chunkArray<NFHelp["SimpleTrade"]>(
+			Object.values(tradesObjZmw).sort((a, b) => a.symbol.localeCompare(b.symbol)),
+		);
+		const tradesUsd = chunkArray<NFHelp["SimpleTrade"]>(
+			Object.values(tradesObjUsd).sort((a, b) => a.symbol.localeCompare(b.symbol)),
+		);
+
+		const tradeDates = tradesRaw.map((trade) => {
+			return { label: prettyDate(trade.trade_date), value: trade.trade_date };
+		});
+
+		return {
+			zmwTotal,
+			usdTotal,
+			tradesZmw,
+			tradesUsd,
+			tradesRaw,
+			tradeDates,
+			zmwTotalBuy,
+			zmwTotalSell,
+			usdTotalBuy,
+			usdTotalSell,
+		};
+	};
+
+	const _genScreen = (screenData: GetPortfolioData["onScreen"]) => {
+		if (!screenData.length) return undefined;
+
+		const ordersRaw = screenData.filter((item) => item.luse_id === luseId);
+
+		let currDate: number = ordersRaw[0].date;
+
+		const ordersRawDated = ordersRaw.filter((item) => item.date === currDate);
+
+		let zmwTotal: number = 0;
+		let zmwTotalBuy: number = 0;
+		let zmwTotalSell: number = 0;
+
+		let usdTotal: number = 0;
+		let usdTotalBuy: number = 0;
+		let usdTotalSell: number = 0;
+
+		const ordersObjZmw: {
+			[key: string]: NFHelp["SimpleOrder"];
+		} = {};
+		const ordersObjUsd: {
+			[key: string]: NFHelp["SimpleOrder"];
+		} = {};
+
+		if (ordersRawDated.length) {
+			ordersRawDated.forEach((trade) => {
+				let symbol = mrMateSymbols(trade.symbol) + trade.price.toString();
+
+				if (trade.symbol.includes("USD")) {
+					const usdConsidertaion = trade.price * trade.qty;
+					usdTotal = usdTotal + usdConsidertaion;
+
+					switch (trade.order_side) {
+						case "buy":
+							usdTotalBuy += usdConsidertaion;
+							break;
+						case "sell":
+							usdTotalSell += usdConsidertaion;
+							break;
+					}
+
+					if (ordersObjUsd[symbol]) {
+						const nQty = ordersObjUsd[symbol].qty + trade.qty;
+
+						ordersObjUsd[symbol].qty = nQty;
+						ordersObjUsd[symbol].total = nQty * trade.price;
+					} else {
+						ordersObjUsd[symbol] = {
+							price: trade.price,
+							qty: trade.qty,
+							symbol: mrMateSymbols(trade.symbol),
+							total: trade.price * trade.qty,
+							side: toTitleCase(trade.order_side),
+							date: prettyDate(trade.date),
+						};
+					}
+					// end
+				} else {
+					// begin
+					const zmwConsideration = trade.price * trade.qty;
+					zmwTotal = zmwTotal + zmwConsideration;
+
+					switch (trade.order_side) {
+						case "buy":
+							zmwTotalBuy += zmwConsideration;
+							break;
+						case "sell":
+							zmwTotalSell += zmwConsideration;
+							break;
+					}
+
+					if (ordersObjZmw[symbol]) {
+						const nQty = ordersObjZmw[symbol].qty + trade.qty;
+
+						ordersObjZmw[symbol].qty = nQty;
+						ordersObjZmw[symbol].total = nQty * trade.price;
+					} else {
+						ordersObjZmw[symbol] = {
+							price: trade.price,
+							qty: trade.qty,
+							symbol: trade.symbol,
+							total: trade.price * trade.qty,
+							side: toTitleCase(trade.order_side),
+							date: prettyDate(trade.date),
+						};
+					}
+				}
+			});
+		}
+
+		const ordersZmw = chunkArray<NFHelp["SimpleOrder"]>(
+			Object.values(ordersObjZmw).sort((a, b) => a.symbol.localeCompare(b.symbol)),
+		);
+		const ordersUsd = chunkArray<NFHelp["SimpleOrder"]>(
+			Object.values(ordersObjUsd).sort((a, b) => a.symbol.localeCompare(b.symbol)),
+		);
+
+		const orderDates = ordersRaw.map((trade) => {
+			return { label: prettyDate(trade.date), value: trade.date };
+		});
+
+		return {
+			zmwTotal,
+			usdTotal,
+			ordersZmw,
+			ordersUsd,
+			ordersRaw,
+			orderDates,
+			zmwTotalBuy,
+			zmwTotalSell,
+			usdTotalBuy,
+			usdTotalSell,
+		};
+	};
+
+	const matched = _genMatched(rawData.matched);
+	const screen = _genScreen(rawData.onScreen);
+
+	let zmwTotal: number = 0;
+	let usdTotal: number = 0;
+
+	const portfolioCodexZmw: { [key: string]: Portfolio } = {};
+	const portfolioCodexUsd: { [key: string]: Portfolio } = {};
+
+	// invSum is the initial invested amount; It's a sum because we sum the values at their prices based on settlement
+	const analysisCodex: {
+		[key: string]: {
+			symbol: string;
+			invSum: number;
+			currentVal: number;
+			weight: number;
+			growth: number;
+		};
+	} = {};
+
+	const usdBuy = rawData.fxUsd.buy;
+	const usdSell = rawData.fxUsd.sell;
+
+	const currentPricesCodex: { [key: string]: number } = {};
+
+	rawData.dmr.forEach((stock) => {
+		currentPricesCodex[stock.symbol] = stock.market_price;
+	});
+
+	let totalInvestmentZmw: number = 0;
+	let totalInvestmentUsd: number = 0;
+
+	rawData.settled.forEach((row) => {
+		const { symbol, qty, side } = row;
+		const currentPrice = currentPricesCodex[symbol] ? currentPricesCodex[symbol] : 0;
+		const computedValue = qty * currentPrice;
+
+		// only work with listed symbols; One that is not listed will not have a price
+		if (currentPrice) {
+			// analysis first
+			if (!analysisCodex[symbol]) {
+				analysisCodex[symbol] = { currentVal: 0, invSum: 0, symbol, weight: 0, growth: 0 };
+			}
+
+			if (side === "buy") {
+				analysisCodex[symbol].invSum += row.value;
+				analysisCodex[symbol].currentVal += computedValue;
+			} else {
+				analysisCodex[symbol].invSum -= row.value;
+				analysisCodex[symbol].currentVal -= computedValue;
+			}
+
+			// portfolio
+			if (!symbol.includes("USD")) {
+				if (!portfolioCodexZmw[symbol]) {
+					portfolioCodexZmw[symbol] = { price: currentPrice, symbol, value: 0, volume: 0 };
+				}
+
+				if (side === "buy") {
+					zmwTotal += computedValue;
+					portfolioCodexZmw[symbol].value += computedValue;
+					portfolioCodexZmw[symbol].volume += qty;
+				} else {
+					zmwTotal -= computedValue;
+					portfolioCodexZmw[symbol].value -= computedValue;
+					portfolioCodexZmw[symbol].volume -= qty;
+				}
+			}
+
+			if (symbol.includes("USD")) {
+				if (!portfolioCodexUsd[symbol]) {
+					portfolioCodexUsd[symbol] = { price: currentPrice, symbol, value: 0, volume: 0 };
+				}
+
+				if (side === "buy") {
+					usdTotal += computedValue;
+					portfolioCodexUsd[symbol].value += computedValue;
+					portfolioCodexUsd[symbol].volume += qty;
+				} else {
+					usdTotal -= computedValue;
+					portfolioCodexUsd[symbol].value -= computedValue;
+					portfolioCodexUsd[symbol].volume -= qty;
+				}
+			}
+		}
+	});
+
+	// filter by item.value (e.g !== 0) to remove stocks that have been sold off
+	const portfolioZmw: Portfolio[][] = chunkArray<Portfolio>(
+		Object.values(portfolioCodexZmw)
+			.filter((item) => item.value > 0 && item.volume)
+			.sort((a, b) => a.symbol.localeCompare(b.symbol)),
+		100,
+	);
+	const portfolioUsd: Portfolio[][] = chunkArray<Portfolio>(
+		Object.values(portfolioCodexUsd)
+			.filter((item) => item.value)
+			.sort((a, b) => a.symbol.localeCompare(b.symbol)),
+		100,
+	);
+
+	zmwTotal = Object.values(portfolioCodexZmw)
+		.filter((item) => item.value > 0 && item.volume)
+		.reduce((accumulator, currentValue) => accumulator + currentValue.value, 0);
+
+	usdTotal = Object.values(portfolioCodexUsd)
+		.filter((item) => item.value > 0 && item.volume)
+		.reduce((accumulator, currentValue) => accumulator + currentValue.value, 0);
+
+	const grandTotal = usdTotal * usdBuy + zmwTotal;
+
+	Object.values(analysisCodex).forEach((row) => {
+		const { symbol, currentVal, invSum } = row;
+
+		// modifier to change value to ZMW if the stock is usd denominated
+		let k = 1;
+
+		if (symbol.includes("USD")) k = usdBuy;
+
+		const sanitisedCurrentValue = currentVal * k;
+		const weight = sanitisedCurrentValue / grandTotal;
+
+		const sanitisedInvestmentValue = invSum * k;
+		const growth = (sanitisedCurrentValue - sanitisedInvestmentValue) / sanitisedInvestmentValue;
+
+		if (symbol.includes("USD")) totalInvestmentUsd += invSum;
+		else totalInvestmentZmw += invSum;
+
+		analysisCodex[symbol].weight = weight;
+		analysisCodex[symbol].growth = growth;
+	});
+
+	const analyticsArr = Object.values(analysisCodex);
+
+	const initBest = {
+		symbol: "",
+		invSum: 0,
+		currentVal: 0,
+		weight: 0,
+		growth: 0,
+	};
+
+	const initHeaviest = {
+		symbol: "",
+		invSum: 0,
+		currentVal: 0,
+		weight: 0,
+		growth: 0,
+	};
+
+	const best = analyticsArr.sort((a, b) => b.growth - a.growth)[0] ?? initBest;
+	const worst = analyticsArr.sort((a, b) => a.growth - b.growth)[0] ?? initBest;
+	const heaviest = analyticsArr.sort((a, b) => b.weight - a.weight)[0] ?? initHeaviest;
+	const lightest = analyticsArr.sort((a, b) => a.weight - b.weight)[0] ?? initHeaviest;
+
+	const chartArr = [
+		...Object.values(portfolioCodexZmw).filter((item) => item.value && item.volume),
+		...Object.values(portfolioCodexUsd).filter((item) => item.value),
+	];
+
+	chartArr.sort((a, b) => b.value - a.value);
+
+	const pfolio: Types["Folio"][] = [];
+	const symbols: string[] = [];
+	const turnovers: number[] = [];
+
+	chartArr.forEach((stock) => {
+		const { symbol, volume, value } = stock;
+
+		let k = 1;
+
+		if (symbol.includes("USD")) k = usdBuy;
+
+		const sanitisedValue = value * k;
+
+		pfolio.push({ symbol, volume, value: sanitisedValue });
+	});
+
+	pfolio.sort((a, b) => b.value - a.value);
+
+	pfolio.forEach((row) => {
+		const { symbol, value } = row;
+
+		symbols.push(symbol);
+		turnovers.push(value);
+	});
+
+	const analysis: Analysis = {
+		best: { symbol: best.symbol, value: best.growth },
+		worst: { symbol: worst.symbol, value: worst.growth },
+		heaviest: { symbol: heaviest.symbol, value: heaviest.weight },
+		lightest: { symbol: lightest.symbol, value: lightest.weight },
+		totalInvestmentZmw,
+		totalInvestmentUsd,
+		totalGrowthZmw: (zmwTotal - totalInvestmentZmw) / totalInvestmentZmw,
+		totalGrowthUsd: (usdTotal - totalInvestmentUsd) / totalInvestmentUsd,
+		chart: {
+			pfolio,
+			symbols,
+			turnovers,
+		},
+	};
+
+	return {
+		matched,
+		screen,
+		portfolioTotalZmw: zmwTotal,
+		portfolioTotalUsd: usdTotal,
+		portfolioZmw,
+		portfolioUsd,
+		analysis,
+		usdBuy,
+		usdSell,
+		overall: grandTotal,
+	};
+};
+
 const genAnalysis = (
+	quickStats: QuickStats,
+	pfolio: ClientTradeHistory,
 	cns: CN,
 	firstDmr: DMR,
 	currentDmr: DMR,
@@ -162,6 +677,8 @@ const genAnalysis = (
 	// ? init and current portfolio calcs
 	const year = Number(firstDmr[0].date.toString().substring(0, 4));
 	const ytdFolio = cns.filter((item) => item.date <= firstDmr[0].date);
+
+	// console.log({ year, ytdFolio });
 
 	const symbols: string[] = [];
 
@@ -241,10 +758,12 @@ const genAnalysis = (
 		const cv = portfolio[s].current.vol * portfolio[s].current.price;
 
 		portfolio[s].initial.val = iv;
-		initPvalue += iv * ik;
+		if (iv >= 0) initPvalue += iv * ik;
+
+		// console.log({ initPvalue, initVal: iv, s });
 
 		portfolio[s].current.val = cv;
-		currentPvalue += cv * ck;
+		if (cv >= 0) currentPvalue += cv * ck;
 	});
 
 	const _colifier = (val: number): "--rd--" | "--gren--" | "" => {
@@ -272,10 +791,6 @@ const genAnalysis = (
 
 	const folios = Object.values(portfolio);
 
-	// ? YTD
-	const ytdDelta = currentPvalue - initPvalue;
-	const ytd = ytdDelta / initPvalue;
-
 	const zkFolios = folios.filter((item) => !item.initial.symbol.includes("usd"));
 	const zeroDInitInvZk = zkFolios.reduce((acc, obj) => acc + obj.initial.inv, 0);
 	const currentInvZk = zkFolios.reduce((acc, obj) => acc + obj.current.inv, 0);
@@ -283,6 +798,21 @@ const genAnalysis = (
 	const usdFolios = folios.filter((item) => item.initial.symbol.includes("usd"));
 	const zeroDInitInvUs = usdFolios.reduce((acc, obj) => acc + obj.initial.inv, 0);
 	const currentInvUs = usdFolios.reduce((acc, obj) => acc + obj.current.inv, 0);
+
+	const zkVal = zkFolios
+		.filter((item) => item.current.val > 0)
+		.reduce((acc, obj) => acc + obj.current.val, 0);
+	const usdVal = usdFolios
+		.filter((item) => item.current.val > 0)
+		.reduce((acc, obj) => acc + obj.current.val, 0);
+	const compTotal = zkVal + fxUsd.buy.current * usdVal;
+	currentPvalue = pfolio.overall;
+
+	// console.log({ initPvalue, compTotal });
+
+	// ? YTD
+	const ytdDelta = compTotal - initPvalue;
+	const ytd = ytdDelta / initPvalue;
 
 	// print({ zkFolios, usdFolios });
 
@@ -295,7 +825,9 @@ const genAnalysis = (
 	const realYtdDelta = ytdDelta - investmentTotal;
 
 	const _ytdEndEnder = (): string => {
-		if (realYtdDelta !== 0)
+		if (Number.isFinite(realYtdDelta))
+			return _fStringifier("numeric") + numParse(percentageHandler(0).replace("%", "")) + "%";
+		else if (realYtdDelta !== 0)
 			return (
 				_fStringifier("numeric") +
 				numParse(percentageHandler(realYtdDelta / investmentTotal).replace("%", "")) +
@@ -330,13 +862,18 @@ const genAnalysis = (
 	// console.log(data.ytd.summary);
 
 	// ? Best & worst
-	const _folios = JSON.parse(JSON.stringify(folios)) as typeof folios;
+	const _folios = JSON.parse(
+		JSON.stringify(folios.filter((item) => item.current.val > 0)),
+	) as typeof folios;
 	_folios.sort((a, b) => {
 		const vb = (b.current.val - b.initial.val) / b.initial.val;
 		const va = (a.current.val - a.initial.val) / a.initial.val;
 
 		return vb - va;
 	});
+
+	// print({ _folios });
+
 	const best = JSON.parse(JSON.stringify(_folios[0])) as (typeof _folios)[0];
 	const worst = JSON.parse(JSON.stringify(_folios[_folios.length - 1])) as (typeof _folios)[0];
 
@@ -371,9 +908,6 @@ const genAnalysis = (
 	];
 
 	// ? Composition
-	const zkVal = zkFolios.reduce((acc, obj) => acc + obj.current.val, 0);
-	const usdVal = usdFolios.reduce((acc, obj) => acc + obj.current.val, 0);
-	const compTotal = zkVal + fxUsd.buy.current * usdVal;
 
 	const reasonableHeavy = _folios.filter((item) => {
 		const weight = item.current.val / compTotal;
@@ -425,19 +959,22 @@ const genAnalysis = (
 	// * Charts
 
 	folios.forEach((stock) => {
-		const delta = stock.current.val - stock.initial.val;
-		// ? YTD
-		data.ytd.chart.push({
-			x: stock.initial.symbol,
-			y: [stock.initial.val, stock.current.val],
-			fillColor: delta > 0 ? "var(--sbz-green)" : delta < 0 ? "var(--sbz-red)" : undefined,
-		});
+		if (stock.current.val >= 0) {
+			// ? Composition
+			data.comp.stock.chart.push({
+				x: stock.initial.symbol,
+				y: stock.current.val / compTotal,
+				fillColor: randomColour(),
+			});
 
-		// ? Composition
-		data.comp.stock.chart.push({
-			x: stock.initial.symbol,
-			y: stock.current.val / compTotal,
-		});
+			// ? YTD
+			const delta = stock.current.val - stock.initial.val;
+			data.ytd.chart.push({
+				x: stock.initial.symbol,
+				y: [stock.initial.val, stock.current.val],
+				fillColor: delta > 0 ? "var(--sbz-green)" : delta < 0 ? "var(--sbz-red)" : undefined,
+			});
+		}
 	});
 
 	return data;
@@ -457,23 +994,34 @@ export const load = async (data) => {
 
 	if (pdata && initUsd) {
 		const quickStats = genQuickStats(pdata);
-		const macroAnalysis = genAnalysis(pdata.settled, firstDmr.market, pdata.dmr, {
-			buy: {
-				init: initUsd.buy,
-				current: pdata.fxUsd.buy,
-			},
-			sell: {
-				init: initUsd.sell,
-				current: pdata.fxUsd.sell,
-			},
-		});
 
-		//
+		const pfolio = genPortfolio(pdata, client.data.luseId);
+
+		const macroAnalysis = genAnalysis(
+			quickStats,
+			pfolio,
+			pdata.settled,
+			firstDmr.market,
+			pdata.dmr,
+			{
+				buy: {
+					init: initUsd.buy,
+					current: pdata.fxUsd.buy,
+				},
+				sell: {
+					init: initUsd.sell,
+					current: pdata.fxUsd.sell,
+				},
+			},
+		);
+
+		quickStats.pDelta = (pfolio.overall - quickStats.overalInv) / quickStats.overalInv;
 
 		return {
 			portfolio: pdata,
 			quickStats,
 			macroAnalysis,
+			pfolio,
 		};
 	} else throw redirect(307, "/contact");
 };
