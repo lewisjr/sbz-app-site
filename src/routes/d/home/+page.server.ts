@@ -157,6 +157,8 @@ const genAnalysis = (
 		},
 	};
 
+	if (!cns.length) return data;
+
 	// ? init and current portfolio calcs
 	const year = Number(firstDmr[0].date.toString().substring(0, 4));
 	const ytdFolio = cns.filter((item) => item.date <= firstDmr[0].date);

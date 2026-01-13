@@ -526,6 +526,10 @@
 	let portfolio = $derived.by(() => {
 		return genPortfolio(data.portfolio);
 	});
+
+	$effect(() =>
+		console.log({ pDelta: data.quickStats.pDelta, overallInv: data.quickStats.overalInv }),
+	);
 </script>
 
 <Head
@@ -556,13 +560,17 @@
 			? "flex flex-row items-center"
 			: "rd flex flex-row items-center"}
 >
-	{#if data.quickStats.pDelta === 0}
+	{#if data.quickStats.pDelta === 0 || Number.isNaN(data.quickStats.pDelta)}
 		<Minus class="h-3 w-3" />
 	{:else if data.quickStats.pDelta < 0}
 		<TrendingDown class="h-3 w-3" />{:else}<TrendingUp class="h-3 w-3" />
 	{/if}<span class="num ml-1 text-[0.9em]"
 		>{numParse(
-			percentageHandler(data.quickStats.pDelta / data.quickStats.overalInv).replace("%", ""),
+			percentageHandler(
+				Number.isNaN(data.quickStats.pDelta)
+					? 0
+					: data.quickStats.pDelta / data.quickStats.overalInv,
+			).replace("%", ""),
 		)}%</span
 	>
 </p>
@@ -615,14 +623,16 @@
 		{/each}
 	</tbody>
 </table>
-<p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
-	You invested a total of <span class="num"
-		>{numParse(data.quickStats.investmentValueZMW.toFixed(2))}</span
-	>
-	into your kwacha holdings. The above and below values are as at {prettyDate(
-		data.portfolio.dmr[0].date,
-	)}.
-</p>
+{#if !Number.isNaN(data.quickStats.pDelta)}
+	<p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
+		You invested a total of <span class="num"
+			>{numParse(data.quickStats.investmentValueZMW.toFixed(2))}</span
+		>
+		into your kwacha holdings. The above and below values are as at {prettyDate(
+			data.portfolio.dmr[0].date,
+		)}.
+	</p>
+{/if}
 
 <table class="summary-table mt-5 w-full">
 	<thead>
@@ -667,66 +677,75 @@
 		{/each}
 	</tbody>
 </table>
-<p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
-	You invested a total of <span class="num"
-		>{numParse(data.quickStats.investmentValueUSD.toFixed(2))} (K {numParse(
-			(data.quickStats.investmentValueUSD * data.portfolio.fxUsd.buy).toFixed(2),
-		)})</span
-	>
-	into your dollar holdings. Your portfolio has an estimated kwacha value of
-	<span class="num"
-		>{numParse((data.quickStats.portfolioValueUSD / data.portfolio.fxUsd.sell).toFixed(2))}</span
-	>
-	at a <i>Bank of Zambia</i> average sell rate of
-	<span class="num">{numParse(data.portfolio.fxUsd.sell.toFixed(2))}</span>.
-</p>
+{#if !Number.isNaN(data.quickStats.pDelta)}
+	<p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
+		You invested a total of <span class="num"
+			>{numParse(data.quickStats.investmentValueUSD.toFixed(2))} (K {numParse(
+				(data.quickStats.investmentValueUSD * data.portfolio.fxUsd.buy).toFixed(2),
+			)})</span
+		>
+		into your dollar holdings. Your portfolio has an estimated kwacha value of
+		<span class="num"
+			>{numParse((data.quickStats.portfolioValueUSD / data.portfolio.fxUsd.sell).toFixed(2))}</span
+		>
+		at a <i>Bank of Zambia</i> average sell rate of
+		<span class="num">{numParse(data.portfolio.fxUsd.sell.toFixed(2))}</span>.
+	</p>
 
-<p class="mt-5 text-[0.8em] opacity-70">Portfolio Analysis</p>
+	<p class="mt-5 text-[0.8em] opacity-70">Portfolio Analysis</p>
 
-<p class="text-justify text-[0.8em] opacity-90">
-	{#each data["macroAnalysis"]["ytd"]["summary"] as txt}
-		{#if txt.substring(0, 2) === "--"}
-			<span class={txt.split("--")[1]}>{txt.replace(`--${txt.split("--")[1]}--`, "")}</span>
-		{:else if txt.substring(0, 2) === "=="}
-			<span class={txt.split("==")[1]}>{txt.replace(`==${txt.split("==")[1]}==`, "")}</span>
-		{:else}
-			{txt}
-		{/if}
-	{/each}
-</p>
-<AnyChart data={data.macroAnalysis.ytd.chart} tipo="RangeColumn" h={300} minifyY />
+	<p class="text-justify text-[0.8em] opacity-90">
+		{#each data["macroAnalysis"]["ytd"]["summary"] as txt}
+			{#if txt.substring(0, 2) === "--"}
+				<span class={txt.split("--")[1]}>{txt.replace(`--${txt.split("--")[1]}--`, "")}</span>
+			{:else if txt.substring(0, 2) === "=="}
+				<span class={txt.split("==")[1]}>{txt.replace(`==${txt.split("==")[1]}==`, "")}</span>
+			{:else}
+				{txt}
+			{/if}
+		{/each}
+	</p>
+	<AnyChart data={data.macroAnalysis.ytd.chart} tipo="RangeColumn" h={300} minifyY />
 
-<p class="mb-2 text-justify text-[0.8em] opacity-90">
-	{#each data["macroAnalysis"]["perf"]["summary"] as txt}
-		{#if txt.substring(0, 2) === "--"}
-			<span class={txt.split("--")[1]}>{txt.replace(`--${txt.split("--")[1]}--`, "")}</span>
-		{:else if txt.substring(0, 2) === "=="}
-			<span class={txt.split("==")[1]}>{txt.replace(`==${txt.split("==")[1]}==`, "")}</span>
-		{:else}
-			{txt}
-		{/if}
-	{/each}
-</p>
-<AnyChart
-	data={data.macroAnalysis.comp.stock.chart}
-	tipo="TreeMapPercent"
-	h={400}
-	title="Portfolio Composition"
-	wRandomColours
-	isPercent
-/>
+	<p class="mb-2 text-justify text-[0.8em] opacity-90">
+		{#each data["macroAnalysis"]["perf"]["summary"] as txt}
+			{#if txt.substring(0, 2) === "--"}
+				<span class={txt.split("--")[1]}>{txt.replace(`--${txt.split("--")[1]}--`, "")}</span>
+			{:else if txt.substring(0, 2) === "=="}
+				<span class={txt.split("==")[1]}>{txt.replace(`==${txt.split("==")[1]}==`, "")}</span>
+			{:else}
+				{txt}
+			{/if}
+		{/each}
+	</p>
+	<AnyChart
+		data={data.macroAnalysis.comp.stock.chart}
+		tipo="TreeMapPercent"
+		h={400}
+		title="Portfolio Composition"
+		wRandomColours
+		isPercent
+	/>
 
-<p class="mb-2 text-justify text-[0.8em] opacity-90">
-	{#each data["macroAnalysis"]["comp"]["stock"]["summary"] as txt}
-		{#if txt.substring(0, 2) === "--"}
-			<span class={txt.split("--")[1]}>{txt.replace(`--${txt.split("--")[1]}--`, "")}</span>
-		{:else if txt.substring(0, 2) === "=="}
-			<span class={txt.split("==")[1]}>{txt.replace(`==${txt.split("==")[1]}==`, "")}</span>
-		{:else}
-			{txt}
-		{/if}
-	{/each}
-</p>
+	<p class="mb-2 text-justify text-[0.8em] opacity-90">
+		{#each data["macroAnalysis"]["comp"]["stock"]["summary"] as txt}
+			{#if txt.substring(0, 2) === "--"}
+				<span class={txt.split("--")[1]}>{txt.replace(`--${txt.split("--")[1]}--`, "")}</span>
+			{:else if txt.substring(0, 2) === "=="}
+				<span class={txt.split("==")[1]}>{txt.replace(`==${txt.split("==")[1]}==`, "")}</span>
+			{:else}
+				{txt}
+			{/if}
+		{/each}
+	</p>
+{/if}
+
+{#if Number.isNaN(data.quickStats.pDelta)}
+	<p class="mb-2 text-justify text-[0.8em] opacity-90">
+		To begin, please use the menu button with a <span class="num">{'">"'}</span> on the left to read
+		market data and begin submitting trades (soon).
+	</p>
+{/if}
 
 <!--
 <p class="mt-2 text-justify text-[0.7em] text-muted-foreground underline">VS Market</p>
