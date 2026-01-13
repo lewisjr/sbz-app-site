@@ -3024,15 +3024,24 @@ const nf = (): NFutils => {
 		}
 	};
 
-	const _getFirstStocks = async (): Promise<GetStocksReturn> => {
+	const _getFirstStocks = async (date?: number): Promise<GetStocksReturn> => {
 		try {
-			const { data, error } = await nfdb
-				.from("sbz-dmb")
-				.select()
-				.filter("is_first", "eq", true)
-				.limit(80)
-				.eq("source", "luse")
-				.order("date", { ascending: false });
+			const { data, error } = date
+				? await nfdb
+						.from("sbz-dmb")
+						.select()
+						.filter("is_first", "eq", true)
+						.filter("date", "lt", date)
+						.limit(80)
+						.eq("source", "luse")
+						.order("date", { ascending: false })
+				: await nfdb
+						.from("sbz-dmb")
+						.select()
+						.filter("is_first", "eq", true)
+						.limit(80)
+						.eq("source", "luse")
+						.order("date", { ascending: false });
 
 			if (error) {
 				console.error("\n\n=== Get First Stocks Error\n", error.message, "\n\n");

@@ -47,6 +47,80 @@ interface PartnerObj {
 	idNum: string;
 }
 
+interface Portfolio {
+	symbol: string;
+	price: number;
+	volume: number;
+	value: number;
+}
+
+interface AnalysisObj {
+	symbol: string;
+	value: number;
+}
+
+interface Analysis {
+	best: AnalysisObj;
+	worst: AnalysisObj;
+	heaviest: AnalysisObj;
+	lightest: AnalysisObj;
+	totalGrowthZmw: number;
+	totalInvestmentZmw: number;
+	totalGrowthUsd: number;
+	totalInvestmentUsd: number;
+	chart: {
+		symbols: string[];
+		turnovers: number[];
+		pfolio: Types["Folio"][];
+	};
+}
+
+interface Matched {
+	zmwTotal: number;
+	zmwTotalBuy: number;
+	zmwTotalSell: number;
+	usdTotal: number;
+	usdTotalBuy: number;
+	usdTotalSell: number;
+	tradesZmw: NFHelp["SimpleTrade"][][];
+	tradesUsd: NFHelp["SimpleTrade"][][];
+	tradesRaw: NFHelp["MatchedTrade"][];
+	tradeDates: Types["AnyPickerObj"][];
+}
+
+interface Screen {
+	zmwTotal: number;
+	zmwTotalBuy: number;
+	zmwTotalSell: number;
+	usdTotal: number;
+	usdTotalBuy: number;
+	usdTotalSell: number;
+	ordersZmw: NFHelp["SimpleOrder"][][];
+	ordersUsd: NFHelp["SimpleOrder"][][];
+	ordersRaw: NFHelp["OnScreenOrder"][];
+	orderDates: Types["AnyPickerObj"][];
+}
+
+interface ClientTradeHistory {
+	portfolioZmw: Portfolio[][];
+	portfolioUsd: Portfolio[][];
+	portfolioTotalZmw: number;
+	portfolioTotalUsd: number;
+	usdBuy: number;
+	usdSell: number;
+	analysis: Analysis;
+	matched: Matched | undefined;
+	screen: Screen | undefined;
+	overall: number;
+}
+
+interface YTDFolio {
+	pdata: GetPortfolioData;
+	quickStats: QuickStats;
+	macroAnalysis: PortfolioMacroAnalysis;
+	portfolio: ClientTradeHistory;
+}
+
 export interface Types {
 	/**For tickets */
 	ReferralSource: ReferralSource;
@@ -70,6 +144,7 @@ export interface Types {
 		key: string;
 	}>;
 	ClientSignature: { value: string; backups: { [key: string]: string[] } };
+	YTDFolio: YTDFolio;
 }
 
 export interface GenericResponse {
@@ -312,72 +387,6 @@ interface PortfolioMacroAnalysis {
 
 type CN = SBZdb["public"]["Tables"]["settled_trades"]["Row"][];
 type DMR = NFdb["public"]["Tables"]["sbz-dmb"]["Row"][];
-
-interface Portfolio {
-	symbol: string;
-	price: number;
-	volume: number;
-	value: number;
-}
-
-interface AnalysisObj {
-	symbol: string;
-	value: number;
-}
-
-interface Analysis {
-	best: AnalysisObj;
-	worst: AnalysisObj;
-	heaviest: AnalysisObj;
-	lightest: AnalysisObj;
-	totalGrowthZmw: number;
-	totalInvestmentZmw: number;
-	totalGrowthUsd: number;
-	totalInvestmentUsd: number;
-	chart: {
-		symbols: string[];
-		turnovers: number[];
-		pfolio: Types["Folio"][];
-	};
-}
-
-interface Matched {
-	zmwTotal: number;
-	zmwTotalBuy: number;
-	zmwTotalSell: number;
-	usdTotal: number;
-	usdTotalBuy: number;
-	usdTotalSell: number;
-	tradesZmw: NFHelp["SimpleTrade"][][];
-	tradesUsd: NFHelp["SimpleTrade"][][];
-	tradesRaw: NFHelp["MatchedTrade"][];
-	tradeDates: Types["AnyPickerObj"][];
-}
-
-interface Screen {
-	zmwTotal: number;
-	zmwTotalBuy: number;
-	zmwTotalSell: number;
-	usdTotal: number;
-	usdTotalBuy: number;
-	usdTotalSell: number;
-	ordersZmw: NFHelp["SimpleOrder"][][];
-	ordersUsd: NFHelp["SimpleOrder"][][];
-	ordersRaw: NFHelp["OnScreenOrder"][];
-	orderDates: Types["AnyPickerObj"][];
-}
-
-interface ClientTradeHistory {
-	portfolioZmw: Portfolio[][];
-	portfolioUsd: Portfolio[][];
-	portfolioTotalZmw: number;
-	portfolioTotalUsd: number;
-	usdBuy: number;
-	usdSell: number;
-	analysis: Analysis;
-	matched: Matched | undefined;
-	screen: Screen | undefined;
-}
 
 export interface PortfolioStandards {
 	// SectionAnalysis: SectionAnalysis<SectionT>;

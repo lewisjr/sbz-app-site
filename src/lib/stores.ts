@@ -10,7 +10,7 @@ interface NewsJsonCache {
 
 export const newsJsonCacheStore = writable<NewsJsonCache[]>([]);
 
-type DataCache<DataType> = { [key: string]: DataType };
+type DataCache<T> = { [key: string]: T };
 
 export const stocksCacheStore = writable<DataCache<NFHelp["StockData"][]>>({});
 export const fxCacheStore = writable<DataCache<NFHelp["FxData"][]>>({});
@@ -19,3 +19,5 @@ export const econCacheStore = writable<DataCache<NFHelp["EconData"][]>>({});
 export const expandedStockCacheStore = writable<DataCache<ExpandedSymbol>>({});
 
 export const filesCacheStore = writable<DataCache<Types["ClientKyc"][]>>({});
+
+export const portfolioCacheStore = writable<DataCache<Types["YTDFolio"]>>({});

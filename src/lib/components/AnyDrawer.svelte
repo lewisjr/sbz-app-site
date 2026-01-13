@@ -23,7 +23,7 @@
 		// snippet or old slots
 		main: Snippet<[]>;
 		/**E.g submit*/
-		actionButton: Snippet<[]>;
+		actionButton?: Snippet<[]>;
 		wImg?: { src: string; alt: string };
 	}
 
