@@ -1132,7 +1132,13 @@
 	};
 
 	$effect(() => {
+		/*
 		if (otpValue.length === 6 && totpValue.length === 6) {
+			openAccount();
+		}
+		*/
+
+		if (otpValue.length === 6) {
 			openAccount();
 		}
 	});
