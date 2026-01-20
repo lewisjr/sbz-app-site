@@ -481,6 +481,7 @@ export type Database = {
 					side: string;
 					symbol: string;
 					trade_date: string;
+					type: string;
 					value: number;
 				};
 				Insert: {
@@ -501,6 +502,7 @@ export type Database = {
 					side: string;
 					symbol: string;
 					trade_date?: string;
+					type?: string;
 					value: number;
 				};
 				Update: {
@@ -521,6 +523,7 @@ export type Database = {
 					side?: string;
 					symbol?: string;
 					trade_date?: string;
+					type?: string;
 					value?: number;
 				};
 				Relationships: [];

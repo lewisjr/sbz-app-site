@@ -309,6 +309,55 @@
 			>.
 		</p>
 
+		<!--
+		<p class="mt-5 text-[0.8em] opacity-70">Trade History</p>
+		<table class="summary-table mt-5 w-full">
+			<thead>
+				<tr>
+					<th>Date</th>
+					<th>Symbol</th>
+					<th>Price</th>
+					<th>Vol.</th>
+					<th>Qty</th>
+				</tr>
+			</thead>
+			{#if $portfolioCacheStore[year.toString()].portfolio.matched}
+			<tbody>
+				{#each $portfolioCacheStore[year.toString()].portfolio.matched?.tradesRaw as entry}
+					<tr>
+						<td class="text-center">{prettyDate(entry.trade_date)}</td>
+						<td class="text-center">{entry.symbol}</td>
+						<td class="text-center">{numParse(entry.price.toFixed(2))}</td>
+						<td class="num text-center">{numParse(entry.price.toFixed(2))}</td>
+						<td class="num text-center">{numParse(entry.qty)}</td>
+						<td class="num text-center">{numParse((entry.price * entry.qty).toFixed(2))}</td>
+						<td class="text-center"
+							><span
+								class={$portfolioCacheStore[year.toString()].pdata.dmr.filter(
+									(item) => item.symbol === entry.symbol,
+								)[0].delta > 0
+									? "gren"
+									: $portfolioCacheStore[year.toString()].pdata.dmr.filter(
+												(item) => item.symbol === entry.symbol,
+										  )[0].delta < 0
+										? "rd"
+										: undefined}
+								>{#if $portfolioCacheStore[year.toString()].pdata.dmr.filter((item) => item.symbol === entry.symbol)[0].delta > 0}
+									<ArrowUp class="h-4 w-4" />
+								{:else if $portfolioCacheStore[year.toString()].pdata.dmr.filter((item) => item.symbol === entry.symbol)[0].delta < 0}
+									<ArrowDown class="h-4 w-4" />
+								{:else}
+									<Minus class="h-4 w-4" />
+								{/if}</span
+							></td
+						>
+					</tr>
+				{/each}
+			</tbody>
+			{/if}
+		</table>
+		-->
+
 		<p class="mt-5 text-[0.8em] opacity-70">Portfolio Analysis</p>
 
 		<p class="text-justify text-[0.8em] opacity-90">

@@ -1063,7 +1063,7 @@
 	});
 
 	let videoEl = $state<HTMLVideoElement | undefined>(undefined);
-	let kycBegin = $state<boolean>(false);
+	let kycBegin = $state<boolean>(true);
 
 	const handleSelfieUpload = (e: Event) => {
 		const target = e.target as HTMLInputElement;
@@ -3157,7 +3157,13 @@
 								<b>Tip:</b> Press the button below to add the photo.
 							</p>
 
-							<Input type="file" onchange={handleSelfieUpload} accept="image/*" />
+							<Input
+								class="w-max"
+								type="file"
+								placeholder="Upload the Client's live selfie"
+								onchange={handleSelfieUpload}
+								accept="image/*"
+							/>
 						{/if}
 
 						{#if kycBegin && imgBlob}

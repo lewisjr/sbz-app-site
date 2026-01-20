@@ -17,5 +17,5 @@ export const load = (data) => {
 
 	const client = cookies.get("sbz-client");
 
-	if (client) redirect(307, "/dashboard/home");
+	if (client) redirect(307, "/d/home");
 };

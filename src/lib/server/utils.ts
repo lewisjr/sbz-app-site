@@ -12,6 +12,7 @@ import type {
 } from "$lib/types";
 import { numParse, randomColour } from "@cerebrusinc/qol";
 import { toTitleCase } from "@cerebrusinc/fstring";
+import { Item } from "$lib/components/ui/command";
 
 /** docutypeRichTextIfier
 const docutypeRichTextIfier = (ogText: string[], selection: string, modifier: string): string[] => {
@@ -711,6 +712,8 @@ const genAnalysis = (
 	const zeroDInitInvZk = zkFolios.reduce((acc, obj) => acc + obj.initial.inv, 0);
 	const currentInvZk = zkFolios.reduce((acc, obj) => acc + obj.current.inv, 0);
 
+	// print({ currentInvZk, zeroDInitInvZk });
+
 	const usdFolios = folios.filter((item) => item.initial.symbol.includes("usd"));
 	const zeroDInitInvUs = usdFolios.reduce((acc, obj) => acc + obj.initial.inv, 0);
 	const currentInvUs = usdFolios.reduce((acc, obj) => acc + obj.current.inv, 0);
@@ -730,6 +733,51 @@ const genAnalysis = (
 	const ytdDelta = compTotal - initPvalue;
 	const ytd = ytdDelta / initPvalue;
 
+	// * EMERGENCY HELP START
+	const thisYearInvestments = cns.filter(
+		(item) =>
+			item.date >= Number(`${year}0101`) &&
+			item.date <= Number(`${year}1231`) &&
+			item.side === "buy",
+	);
+
+	/**Invested total this year zambian kwacha */
+	const izk = thisYearInvestments
+		.filter((item) => !item.symbol.toLowerCase().includes("usd"))
+		.reduce((acc, obj) => acc + obj.price * obj.qty, 0);
+
+	/**Invested total this year usd */
+	const ius = thisYearInvestments
+		.filter((item) => item.symbol.toLowerCase().includes("usd"))
+		.reduce((acc, obj) => acc + obj.price * obj.qty, 0);
+
+	/**invested only for this year */
+	const invToday = izk + ius * fxUsd.buy.current;
+
+	const thisYearSales = cns.filter(
+		(item) =>
+			item.date >= Number(`${year}0101`) &&
+			item.date <= Number(`${year}1231`) &&
+			item.side !== "buy",
+	);
+
+	// print({ thisYearSales, thisYearInvestments });
+
+	/**Invested total this year zambian kwacha */
+	const szk = thisYearSales
+		.filter((item) => !item.symbol.toLowerCase().includes("usd"))
+		.reduce((acc, obj) => acc + obj.price * obj.qty, 0);
+
+	/**Invested total this year usd */
+	const sus = thisYearSales
+		.filter((item) => item.symbol.toLowerCase().includes("usd"))
+		.reduce((acc, obj) => acc + obj.price * obj.qty, 0);
+
+	/**invested only for this year */
+	const sellToday = szk + sus * fxUsd.buy.current;
+
+	// * EMERGENCY HELP END
+
 	// print({ zkFolios, usdFolios });
 
 	const zeroDInitInv = zeroDInitInvZk + zeroDInitInvUs * fxUsd.buy.init;
@@ -740,7 +788,24 @@ const genAnalysis = (
 	/**ROI numerator */
 	const realYtdDelta = ytdDelta - investmentTotal;
 
-	const _ytdEndEnder = (): string => {
+	/*
+	print({
+		realYtdDelta,
+		ytdDelta,
+		investmentTotal,
+		currentInv,
+		zeroDInitInv,
+		compTotal,
+		initPvalue,
+	});
+	*/
+
+	/**
+	 * Old version of this is whack! This one actually calculates your ROI for that year.
+	 * @returns Pure heat
+	 */
+	const _ytdEndEnder = (params?: { usd?: boolean; sells?: boolean }): string => {
+		/*
 		if (Number.isFinite(realYtdDelta))
 			return _fStringifier("numeric") + numParse(percentageHandler(0).replace("%", "")) + "%";
 		else if (realYtdDelta !== 0)
@@ -751,6 +816,32 @@ const genAnalysis = (
 			);
 
 		return "0.00";
+		*/
+
+		if (params) {
+			const { usd, sells } = params;
+
+			// console.log({ usd, sells, invToday, sellToday });
+
+			if (usd && sells)
+				return (
+					_fStringifier("numeric") +
+					"$ " +
+					numParse((sellToday / fxUsd.sell.current).toFixed(2), "comma")
+				);
+
+			if (usd && !sells)
+				return (
+					_fStringifier("numeric") +
+					"$ " +
+					numParse((invToday / fxUsd.sell.current).toFixed(2), "comma")
+				);
+
+			if (sells && !usd)
+				return _fStringifier("numeric") + "K " + numParse(sellToday.toFixed(2), "comma");
+		}
+
+		return _fStringifier("numeric") + "K " + numParse(invToday.toFixed(2), "comma");
 	};
 
 	data.ytd.summary = [
@@ -767,12 +858,22 @@ const genAnalysis = (
 		" (",
 		_fStringifier("numeric") + "$ " + numParse((currentPvalue / fxUsd.sell.current).toFixed(2)),
 		"). Based on your trading activity, you invested a total of ",
+		_ytdEndEnder(),
+		" (",
+		_ytdEndEnder({ usd: true }),
+		"), and sold a total of ",
+		_ytdEndEnder({ sells: true }),
+		" (",
+		_ytdEndEnder({ usd: true, sells: true }),
+		") during this period.",
+		/*
 		_fStringifier("numeric") + "K " + numParse(investmentTotal.toFixed(2)),
 		" (",
 		_fStringifier("numeric") + "$ " + numParse((investmentTotal / fxUsd.sell.init).toFixed(2)),
 		") which gives you an ROI of ",
 		_ytdEndEnder(),
 		".",
+		*/
 	];
 
 	// console.log(data.ytd.summary);

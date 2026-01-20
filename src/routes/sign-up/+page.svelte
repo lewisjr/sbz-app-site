@@ -1207,8 +1207,19 @@
 		<p class="mt-8 text-justify text-sm">
 			Already have an account? <span class="font-bold italic"><a href="/sign-in">Sign In.</a></span>
 		</p>
-		<p class="mt-8 text-justify text-sm">
+		<p class="mt-8 mb-3 text-justify text-sm">
 			Got Questions? <span class="font-bold italic"><a href="/contact">Contact Us.</a></span>
+		</p>
+
+		<h3>Our Locations</h3>
+
+		<p class="my-2 text-center text-sm">
+			<strong>Lusaka Office</strong><br />36 Mwapona Road, Woodlands<br />P.O Box 38956<br />Lusaka,
+			Zambia<br /><i>Tel:</i>{" "}+260 211 232456
+		</p>
+		<p class="text-center text-sm">
+			<strong>Kitwe Office</strong><br />Ebenezer Centre, Plot 33 – C2<br />Cnr. Kabengele Road &
+			Independence Avenue<br />Kitwe, Zambia<br /><i>Tel:</i>{" "}+260-212-225984
 		</p>
 	</div>
 
@@ -3389,6 +3400,17 @@
 		{/if}
 
 		<div class="footer my-10">
+			<h3>Our Locations</h3>
+
+			<p class="my-2 text-center text-sm">
+				<strong>Lusaka Office</strong><br />36 Mwapona Road, Woodlands<br />P.O Box 38956<br
+				/>Lusaka, Zambia<br /><i>Tel:</i>{" "}+260 211 232456
+			</p>
+			<p class="text-center text-sm">
+				<strong>Kitwe Office</strong><br />Ebenezer Centre, Plot 33 – C2<br />Cnr. Kabengele Road &
+				Independence Avenue<br />Kitwe, Zambia<br /><i>Tel:</i>{" "}+260-212-225984
+			</p>
+
 			<p>Built by <a href="https://www.neos.finance" target="_blank">Neos FinTech</a></p>
 			<p class="mb-10">© {year} OmniBot, All Rights Reserved</p>
 		</div>
@@ -3525,6 +3547,8 @@
 			h2 {
 				margin-top: 30px;
 			}
+
+			overflow-y: auto;
 
 			@media screen and (max-width: 1024px) {
 				width: 100%;
