@@ -2,7 +2,7 @@
 	//functions
 	import { numParse } from "@cerebrusinc/qol";
 	import { toTitleCase } from "@cerebrusinc/fstring";
-	import { prettyDate, percentageHandler } from "$lib/utils";
+	import { prettyDate, percentageHandler, miniDate } from "$lib/utils";
 	import { TrendingUp, TrendingDown, Minus, ArrowUp, ArrowDown } from "@lucide/svelte";
 	import { toast } from "svelte-sonner";
 	import { onMount } from "svelte";
@@ -223,9 +223,14 @@
 	{#if !Number.isNaN($portfolioCacheStore[year.toString()].quickStats.pDelta)}
 		<p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
 			You invested a total of <span class="num"
-				>{numParse(
+				>K {numParse(
 					$portfolioCacheStore[year.toString()].quickStats.investmentValueZMW.toFixed(2),
-				)}</span
+				)} ($ {numParse(
+					(
+						$portfolioCacheStore[year.toString()].quickStats.investmentValueZMW /
+						$portfolioCacheStore[year.toString()].pdata["fxUsd"]["sell"]
+					).toFixed(2),
+				)})</span
 			>
 			into your kwacha holdings. The above and below values are as at {prettyDate(
 				$portfolioCacheStore[year.toString()].pdata.dmr[0].date,
@@ -286,21 +291,20 @@
 	{#if !Number.isNaN($portfolioCacheStore[year.toString()].quickStats.pDelta)}
 		<p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
 			You invested a total of <span class="num"
-				>{numParse($portfolioCacheStore[year.toString()].quickStats.investmentValueUSD.toFixed(2))} (K
+				>K {numParse(
+					$portfolioCacheStore[year.toString()].quickStats.investmentValueUSD.toFixed(2),
+				)} ($
 				{numParse(
 					(
-						$portfolioCacheStore[year.toString()].quickStats.investmentValueUSD *
-						$portfolioCacheStore[year.toString()].pdata.fxUsd.buy
+						$portfolioCacheStore[year.toString()].quickStats.investmentValueUSD /
+						$portfolioCacheStore[year.toString()].pdata["fxUsd"]["buy"]
 					).toFixed(2),
 				)})</span
 			>
 			into your dollar holdings. Your portfolio has an estimated kwacha value of
 			<span class="num"
 				>{numParse(
-					(
-						$portfolioCacheStore[year.toString()].portfolio["portfolioTotalUsd"] *
-						$portfolioCacheStore[year.toString()].pdata.fxUsd.buy
-					).toFixed(2),
+					$portfolioCacheStore[year.toString()].portfolio["portfolioTotalUsd"].toFixed(2),
 				)}</span
 			>
 			at a <i>Bank of Zambia</i> average sell rate of
@@ -309,54 +313,85 @@
 			>.
 		</p>
 
-		<!--
-		<p class="mt-5 text-[0.8em] opacity-70">Trade History</p>
-		<table class="summary-table mt-5 w-full">
-			<thead>
-				<tr>
-					<th>Date</th>
-					<th>Symbol</th>
-					<th>Price</th>
-					<th>Vol.</th>
-					<th>Qty</th>
-				</tr>
-			</thead>
-			{#if $portfolioCacheStore[year.toString()].portfolio.matched}
-			<tbody>
-				{#each $portfolioCacheStore[year.toString()].portfolio.matched?.tradesRaw as entry}
+		<p class="mt-5 -mb-5 text-[0.8em] opacity-70">Trade History</p>
+		<div class="hisory-table">
+			<table class="summary-table mt-5 w-full">
+				<thead>
 					<tr>
-						<td class="text-center">{prettyDate(entry.trade_date)}</td>
-						<td class="text-center">{entry.symbol}</td>
-						<td class="text-center">{numParse(entry.price.toFixed(2))}</td>
-						<td class="num text-center">{numParse(entry.price.toFixed(2))}</td>
-						<td class="num text-center">{numParse(entry.qty)}</td>
-						<td class="num text-center">{numParse((entry.price * entry.qty).toFixed(2))}</td>
-						<td class="text-center"
-							><span
-								class={$portfolioCacheStore[year.toString()].pdata.dmr.filter(
-									(item) => item.symbol === entry.symbol,
-								)[0].delta > 0
-									? "gren"
-									: $portfolioCacheStore[year.toString()].pdata.dmr.filter(
-												(item) => item.symbol === entry.symbol,
-										  )[0].delta < 0
-										? "rd"
-										: undefined}
-								>{#if $portfolioCacheStore[year.toString()].pdata.dmr.filter((item) => item.symbol === entry.symbol)[0].delta > 0}
-									<ArrowUp class="h-4 w-4" />
-								{:else if $portfolioCacheStore[year.toString()].pdata.dmr.filter((item) => item.symbol === entry.symbol)[0].delta < 0}
-									<ArrowDown class="h-4 w-4" />
-								{:else}
-									<Minus class="h-4 w-4" />
-								{/if}</span
-							></td
-						>
+						<th></th>
+						<th>Date</th>
+						<th>Symbol</th>
+						<th>Price</th>
+						<th>Vol.</th>
+						<th>Value</th>
 					</tr>
-				{/each}
-			</tbody>
-			{/if}
-		</table>
-		-->
+				</thead>
+				{#if $portfolioCacheStore[year.toString()].portfolio.matched}
+					<tbody>
+						{#each $portfolioCacheStore[year.toString()].portfolio.matched?.tradesRaw as entry}
+							<tr>
+								<td class="num text-center">{entry.trade_side === "buy" ? "B" : "S"}</td>
+								<td class="text-center">{miniDate(entry.trade_date)}</td>
+								<td class="text-center">{entry.symbol}</td>
+								<td class="text-center">{numParse(entry.price.toFixed(2))}</td>
+								<td class="num text-center">{numParse(entry.qty)}</td>
+								<td class="num text-center">{numParse((entry.price * entry.qty).toFixed(2))}</td>
+							</tr>
+						{/each}
+					</tbody>
+				{:else}
+					<tbody>
+						<tr>
+							<td>No trade history to show.</td>
+						</tr>
+					</tbody>
+				{/if}
+			</table>
+		</div>
+		<p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
+			Please note that the above table is scrollable, and that settlemet of trades takes <b>T+3</b> days
+			from the match date (or date in the table above).
+		</p>
+
+		<p class="mt-5 -mb-5 text-[0.8em] opacity-70">Pending Orders</p>
+		<div class="hisory-table">
+			<table class="summary-table mt-5 w-full">
+				<thead>
+					<tr>
+						<th></th>
+						<th>Date</th>
+						<th>Symbol</th>
+						<th>Price</th>
+						<th>Vol.</th>
+						<th>Value</th>
+					</tr>
+				</thead>
+				{#if $portfolioCacheStore[year.toString()].portfolio.screen}
+					<tbody>
+						{#each $portfolioCacheStore[year.toString()].portfolio.screen?.ordersRaw as entry}
+							<tr>
+								<td class="text-center">{miniDate(entry.date)}</td>
+								<td class="text-center">{entry.symbol}</td>
+								<td class="text-center">{numParse(entry.price.toFixed(2))}</td>
+								<td class="num text-center">{numParse(entry.qty)}</td>
+								<td class="num text-center">{numParse((entry.price * entry.qty).toFixed(2))}</td>
+							</tr>
+						{/each}
+					</tbody>
+				{:else}
+					<tbody>
+						<tr>
+							<td colspan="6" class="text-center">No pending orders to show.</td>
+						</tr>
+					</tbody>
+				{/if}
+			</table>
+		</div>
+		{#if $portfolioCacheStore[year.toString()].portfolio.screen?.ordersRaw}
+			<p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
+				Please note that the above table is scrollable.
+			</p>
+		{/if}
 
 		<p class="mt-5 text-[0.8em] opacity-70">Portfolio Analysis</p>
 
@@ -577,6 +612,29 @@
 
 		tbody tr:nth-child(odd) {
 			background-color: var(--muted);
+		}
+	}
+
+	.hisory-table {
+		width: 100%;
+		max-height: 300px;
+		overflow-y: auto;
+		position: relative;
+
+		table {
+			border-collapse: separate !important;
+			border-spacing: 0 !important;
+		}
+
+		table thead th {
+			position: sticky !important;
+			top: 0 !important;
+			z-index: 11 !important;
+			background-color: var(--background) !important;
+		}
+
+		* {
+			font-size: 9pt;
 		}
 	}
 

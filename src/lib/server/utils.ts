@@ -49,26 +49,28 @@ const genQuickStats = (pdata: GetPortfolioData): QuickStats => {
 
 	// ? overall Portfolio calcs
 	pdata.settled.forEach((cn) => {
-		if (cn.currency.toLowerCase() === "usd") {
+		if (cn.symbol.toLowerCase().includes("usd")) {
 			const currentPrice = pdata.dmr.find((item) => item.symbol === cn.symbol);
+
+			console.log({ cn });
 
 			if (cn.side === "buy") {
 				if (currentPrice) portfolioValueUSD += cn.qty * currentPrice.market_price;
 				investmentValueUSD += cn.value;
-			} else {
+			} /*else {
 				if (currentPrice) portfolioValueUSD -= cn.qty * currentPrice.market_price;
 				investmentValueUSD -= cn.value;
-			}
+			}*/
 		} else {
 			const currentPrice = pdata.dmr.find((item) => item.symbol === cn.symbol);
 
 			if (cn.side === "buy") {
 				if (currentPrice) portfolioValueZMW += cn.qty * currentPrice.market_price;
 				investmentValueZMW += cn.value;
-			} else {
+			} /*else {
 				if (currentPrice) portfolioValueZMW -= cn.qty * currentPrice.market_price;
 				investmentValueZMW -= cn.value;
-			}
+			}*/
 		}
 	});
 
@@ -219,11 +221,13 @@ const genPortfolio = (rawData: GetPortfolioData, luseId: number): ClientTradeHis
 	const _genScreen = (screenData: GetPortfolioData["onScreen"]) => {
 		if (!screenData.length) return undefined;
 
-		const ordersRaw = screenData.filter((item) => item.luse_id === luseId);
+		const currDate: number = rawData.dmr[0].date;
 
-		let currDate: number = ordersRaw[0].date;
+		const ordersRaw = screenData.filter(
+			(item) => item.luse_id === luseId && item.date === currDate,
+		);
 
-		const ordersRawDated = ordersRaw.filter((item) => item.date === currDate);
+		if (!ordersRaw.length) return undefined;
 
 		let zmwTotal: number = 0;
 		let zmwTotalBuy: number = 0;
@@ -240,8 +244,8 @@ const genPortfolio = (rawData: GetPortfolioData, luseId: number): ClientTradeHis
 			[key: string]: NFHelp["SimpleOrder"];
 		} = {};
 
-		if (ordersRawDated.length) {
-			ordersRawDated.forEach((trade) => {
+		if (ordersRaw.length) {
+			ordersRaw.forEach((trade) => {
 				let symbol = mrMateSymbols(trade.symbol) + trade.price.toString();
 
 				if (trade.symbol.includes("USD")) {
@@ -363,10 +367,14 @@ const genPortfolio = (rawData: GetPortfolioData, luseId: number): ClientTradeHis
 	let totalInvestmentZmw: number = 0;
 	let totalInvestmentUsd: number = 0;
 
+	// console.log({ currentPricesCodex });
+
 	rawData.settled.forEach((row) => {
 		const { symbol, qty, side } = row;
 		const currentPrice = currentPricesCodex[symbol] ? currentPricesCodex[symbol] : 0;
 		const computedValue = qty * currentPrice;
+
+		//console.log({ symbol, currentPrice, qty, side, check: symbol.toLowerCase().includes("usd") });
 
 		// only work with listed symbols; One that is not listed will not have a price
 		if (currentPrice) {
@@ -400,10 +408,12 @@ const genPortfolio = (rawData: GetPortfolioData, luseId: number): ClientTradeHis
 				}
 			}
 
-			if (symbol.includes("USD")) {
+			if (symbol.toLowerCase().includes("usd")) {
 				if (!portfolioCodexUsd[symbol]) {
 					portfolioCodexUsd[symbol] = { price: currentPrice, symbol, value: 0, volume: 0 };
 				}
+
+				//  console.log(portfolioCodexUsd[symbol]);
 
 				if (side === "buy") {
 					usdTotal += computedValue;
@@ -431,6 +441,8 @@ const genPortfolio = (rawData: GetPortfolioData, luseId: number): ClientTradeHis
 			.sort((a, b) => a.symbol.localeCompare(b.symbol)),
 		100,
 	);
+
+	// print({ portfolioZmw, portfolioUsd, settled: rawData.settled });
 
 	zmwTotal = Object.values(portfolioCodexZmw)
 		.filter((item) => item.value > 0 && item.volume)

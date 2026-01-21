@@ -325,6 +325,24 @@ export const prettyDate = (_date: number | string): string => {
 	}
 };
 
+/**Get a date as YYYYMMDD and change it to DD/MM/YY */
+export const miniDate = (_date: number | string): string => {
+	try {
+		const date = _date.toString();
+		const y = Number(date.substring(0, 4));
+		const m = Number(date.substring(4, 6));
+		const D = Number(date.substring(6, 8));
+
+		const pd = parseDate(D, 0, m - 1, y);
+
+		if (typeof pd !== "object") return "...";
+
+		return `${pd.day.monthNumber}/${pd.month.number}/${pd.year.short}`;
+	} catch (ex) {
+		return "N/A";
+	}
+};
+
 export const logos = {
 	sbz: "https://gufnvlwdovkffgmwutgr.supabase.co/storage/v1/object/public/engine-constants/sbz/no%20alpha%20sbz%20logo.png",
 	neos: "https://gufnvlwdovkffgmwutgr.supabase.co/storage/v1/object/public/engine-constants/neos/logo_full.png",
