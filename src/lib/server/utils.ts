@@ -52,11 +52,9 @@ const genQuickStats = (pdata: GetPortfolioData): QuickStats => {
 		if (cn.symbol.toLowerCase().includes("usd")) {
 			const currentPrice = pdata.dmr.find((item) => item.symbol === cn.symbol);
 
-			console.log({ cn });
-
 			if (cn.side === "buy") {
 				if (currentPrice) portfolioValueUSD += cn.qty * currentPrice.market_price;
-				investmentValueUSD += cn.value;
+				investmentValueUSD += cn.qty * cn.price;
 			} /*else {
 				if (currentPrice) portfolioValueUSD -= cn.qty * currentPrice.market_price;
 				investmentValueUSD -= cn.value;
@@ -65,8 +63,9 @@ const genQuickStats = (pdata: GetPortfolioData): QuickStats => {
 			const currentPrice = pdata.dmr.find((item) => item.symbol === cn.symbol);
 
 			if (cn.side === "buy") {
+				// console.log({ cn });
 				if (currentPrice) portfolioValueZMW += cn.qty * currentPrice.market_price;
-				investmentValueZMW += cn.value;
+				investmentValueZMW += cn.qty * cn.price;
 			} /*else {
 				if (currentPrice) portfolioValueZMW -= cn.qty * currentPrice.market_price;
 				investmentValueZMW -= cn.value;
@@ -86,12 +85,16 @@ const genQuickStats = (pdata: GetPortfolioData): QuickStats => {
 	if (investmentValueZMW < 0) investmentValueZMW = 0;
 
 	/*
-    console.log({
-        overallPfolio,
-        overalInv,
-        pDelta: (overallPfolio - overalInv) / overalInv,
-    });
-    */
+	console.log({
+		overallPfolio,
+		overalInv,
+		pDelta: (overallPfolio - overalInv) / overalInv,
+		portfolioValueUSD,
+		portfolioValueZMW,
+		investmentValueUSD,
+		investmentValueZMW,
+	});
+	*/
 
 	return {
 		portfolioValueUSD,
@@ -1056,7 +1059,9 @@ export const genYtdFolio = async ({
 			},
 		);
 
-		quickStats.pDelta = (pfolio.overall - quickStats.overalInv) / quickStats.overalInv;
+		// cleanup
+
+		quickStats.pDelta = pfolio.overall - quickStats.overalInv;
 
 		macroAnalysis.perf.summary.forEach((text, i) => {
 			macroAnalysis.perf.summary[i] = text.replaceAll("In,fin,ity", "100.00");

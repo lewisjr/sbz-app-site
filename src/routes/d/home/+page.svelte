@@ -167,7 +167,10 @@
 		<span class="num"
 			>{numParse($portfolioCacheStore[year.toString()].pdata.fxUsd.buy.toFixed(2))}</span
 		>
-		on {prettyDate($portfolioCacheStore[year.toString()].pdata.fxUsd.date)}
+		on {prettyDate($portfolioCacheStore[year.toString()].pdata.fxUsd.date)}.
+	</p>
+	<p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
+		Please note that the percentage above dictates your portfolio's <b>all time</b> ROI.
 	</p>
 
 	<table class="summary-table mt-5 w-full">

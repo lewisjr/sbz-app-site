@@ -349,6 +349,44 @@ interface ChartData<T> {
 	strokeColor?: string;
 }
 
+interface ChartDataTwo<T> {
+	series: T[];
+	labels: string[];
+}
+
+type Converted<T> = T extends ChartData<infer U>[]
+	? ChartDataTwo<U>
+	: T extends ChartDataTwo<infer U>
+		? ChartData<U>[]
+		: undefined;
+
+/*
+const chartConverter = <T extends ChartData<any>[] | ChartDataTwo<any>>(
+	data: ChartData<T>[] | ChartDataTwo<T>,
+): Converted<T> => {
+	if ("series" in data) {
+		const codex: { [key: string]: ChartData<T> } = {};
+
+		data.labels.forEach((d) => {
+			// @ts-ignore
+			if (!codex[d]) codex[d] = { x: "0", y: 0};
+		});
+
+		return Object.values(codex);
+	} else if ("x" in data) {
+
+		const obj = {
+			labels: data.map((d) => d.x),
+			series: data.map((d) => d.y),
+		}
+
+		return obj
+	}
+
+	return undefined
+};
+*/
+
 export interface ApexDataPresets {
 	/**for a column, set ```plotOptions.bar.horizontal``` to **false** */
 	Column: ChartData<number>[];
@@ -356,6 +394,7 @@ export interface ApexDataPresets {
 	TreeMap: ChartData<number>[];
 	/**This assumes that the chart data points are represented as percentages instead, this will not affect the labels but rather the colour ranges */
 	TreeMapPercent: ChartData<number>[];
+	PolarArea: ChartDataTwo<number>;
 }
 
 interface SectionAnalysis<T> {
