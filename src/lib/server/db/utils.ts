@@ -1614,6 +1614,7 @@ const sbz = (): SBZutils => {
 					message: error.message,
 					title: "Get Client Error",
 				});
+				console.log(error.message);
 				return [];
 			}
 
