@@ -132,10 +132,12 @@
 		<p>Analytics</p>
 	</a>
 
-	<a class={`link${path === "/admin/socials" ? " current" : ""}`} href="/admin/socials">
-		<Facebook class="h-8 w-8" />
-		<p>Socials</p>
-	</a>
+	{#if permissions.includes("master")}
+		<a class={`link${path === "/admin/socials" ? " current" : ""}`} href="/admin/socials">
+			<Facebook class="h-8 w-8" />
+			<p>Socials</p>
+		</a>
+	{/if}
 
 	<!-- Market -->
 	<div class="titl">
@@ -192,10 +194,12 @@
 		<p>Settle</p>
 	</a>
 
-	<a class={`link${path === "/admin/upload" ? " current" : ""}`} href="/admin/upload">
-		<Upload class="h-8 w-8" />
-		<p>Upload</p>
-	</a>
+	{#if permissions.includes("master")}
+		<a class={`link${path === "/admin/upload" ? " current" : ""}`} href="/admin/upload">
+			<Upload class="h-8 w-8" />
+			<p>Upload</p>
+		</a>
+	{/if}
 
 	<!--
 	<a class={`link${path === "/admin/reports" ? " current" : ""}`} href="/admin/reports">

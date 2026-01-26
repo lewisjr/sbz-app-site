@@ -2877,7 +2877,7 @@ interface GetRecommendationsReturn {
 
 interface NFutils {
 	/**Get the mathced trades from the db. Needs to be updated to include date filtering */
-	getMatchedTrades: (luseId?: number, diff?: number) => Promise<GetMatchedResponse>;
+	getMatchedTrades: (luseId?: number, diff?: number, wDate?: number) => Promise<GetMatchedResponse>;
 	/**Get the on screen orders from the db. Needs to be updated to include date filtering */
 	getOnScreenOrders: (luseId?: number, diff?: number) => Promise<GetOnScreenResponse>;
 	/**Get the news from the db. Needs to be updated to include date filtering */
@@ -2899,21 +2899,30 @@ const nf = (): NFutils => {
 	const _getMatchedTrades = async (
 		luseId?: number,
 		diff: number = 31,
+		wDate?: number,
 	): Promise<GetMatchedResponse> => {
 		const oldDate = getOldDate(genDate(), diff);
 
 		try {
-			const { data, error } = luseId
-				? await nfdb
-						.from("sbz-matched-trades")
-						.select()
-						.filter("luse_id", "eq", luseId)
-						.order("trade_date", { ascending: false })
-				: await nfdb
-						.from("sbz-matched-trades")
-						.select()
-						.filter("trade_date", "gte", oldDate)
-						.order("trade_date", { ascending: false });
+			const { data, error } =
+				wDate && luseId
+					? await nfdb
+							.from("sbz-matched-trades")
+							.select()
+							.filter("luse_id", "eq", luseId)
+							.filter("trade_date", "eq", wDate)
+							.order("trade_date", { ascending: false })
+					: luseId
+						? await nfdb
+								.from("sbz-matched-trades")
+								.select()
+								.filter("luse_id", "eq", luseId)
+								.order("trade_date", { ascending: false })
+						: await nfdb
+								.from("sbz-matched-trades")
+								.select()
+								.filter("trade_date", "gte", oldDate)
+								.order("trade_date", { ascending: false });
 
 			if (error) {
 				console.error("\n\nGET MATCHED ERROR", error, "\n\n");

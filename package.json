@@ -1,7 +1,7 @@
 {
 	"name": "sbz-app-site",
 	"private": true,
-	"version": "1.25.0",
+	"version": "1.26.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev --host",

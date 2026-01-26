@@ -142,7 +142,7 @@ export const POST = async (event) => {
 		</html>
 	`;
 
-	//console.log(generatedHtml);
+	console.log({ html });
 
 	const fullHtml = generatedHtml;
 

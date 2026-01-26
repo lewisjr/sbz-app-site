@@ -116,11 +116,6 @@
 		<p>News</p>
 	</a>
 
-	<a class={`link${path === "/d/reports" ? " current" : ""}`} href="/d/reports">
-		<FileText class="h-8 w-8" />
-		<p>Reports</p>
-	</a>
-
 	<!-- SBZ Specific -->
 	<div class="titl">
 		<p>Account</p>
@@ -139,6 +134,11 @@
 	</a>
 
 	-->
+
+	<a class={`link${path === "/d/reports" ? " current" : ""}`} href="/d/reports">
+		<FileText class="h-8 w-8" />
+		<p>Reports</p>
+	</a>
 
 	<button class="battan link" onclick={signOut} disabled={loading}>
 		<LogOut class="h-8 w-8" />

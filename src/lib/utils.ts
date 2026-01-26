@@ -81,8 +81,8 @@ export const randomAb = <T>(arr: T[]): T | null => {
 };
 
 /**Convert decimal percentages to percentage values with the "%" */
-export const percentageHandler = (_value: number): string => {
-	return (_value * 100).toFixed(2) + "%";
+export const percentageHandler = (_value: number, decimals?: number): string => {
+	return (_value * 100).toFixed(decimals ? decimals : 2) + "%";
 };
 
 export const referralSourcesArray = [

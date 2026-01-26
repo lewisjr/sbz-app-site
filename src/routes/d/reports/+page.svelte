@@ -20,34 +20,15 @@
 	import { screenWidthStore } from "$lib/stores";
 
 	//types
-	import type { GenericResponseWData, NewsLean } from "$lib/types";
 	import type { PageProps } from "./$types";
 	import { numParse } from "@cerebrusinc/qol";
 	import { onMount, tick } from "svelte";
 
-	let viewer = $state<any>(undefined);
-
 	// annoying pdf
 	onMount(async () => {
 		// @ts-ignore
-		const pdfjs = await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/pdf.mjs");
-		const pdfjsViewer = await import(
-			// @ts-ignore
-			"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/pdf_viewer.mjs"
-		);
-		pdfjs.GlobalWorkerOptions.workerSrc =
+		window.pdfjsLib.GlobalWorkerOptions.workerSrc =
 			"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/pdf.worker.mjs";
-
-		const eventBus = new pdfjsViewer.EventBus();
-		const _viewer = new pdfjsViewer.PDFViewer({
-			container: document.getElementById("mob-2"),
-			eventBus,
-		});
-		//console.log({ _viewer });
-		/*
-
-		viewer = _viewer;
-		*/
 	});
 
 	let { data }: PageProps = $props();
@@ -59,9 +40,15 @@
 	let src = $state<string>("");
 
 	let spinners = $state<{ [key: string]: boolean }>({});
+	let spinnersTwo = $state<{ [key: string]: boolean }>({});
+	let spinnersThree = $state<{ [key: string]: boolean }>({});
 
-	const addSpin = (i: number) => {
-		const _spin = JSON.parse(JSON.stringify(spinners)) as typeof spinners;
+	const addSpin = (i: number, cfg?: "2" | "3") => {
+		let _spin: typeof spinners = {};
+
+		if (!cfg) JSON.parse(JSON.stringify(spinners)) as typeof spinners;
+		if (cfg && cfg === "2") JSON.parse(JSON.stringify(spinnersTwo)) as typeof spinners;
+		if (cfg && cfg === "3") JSON.parse(JSON.stringify(spinnersThree)) as typeof spinners;
 
 		if (!_spin) {
 			toast.error("Failed to get reports.");
@@ -70,20 +57,15 @@
 
 		_spin[i.toString()] = true;
 
-		spinners = _spin;
+		if (!cfg) spinners = _spin;
+		if (cfg && cfg === "2") spinnersTwo = _spin;
+		if (cfg && cfg === "3") spinnersThree = _spin;
 	};
 
-	const removeSpin = (i: number) => {
-		const _spin = JSON.parse(JSON.stringify(spinners)) as typeof spinners;
-
-		if (!_spin) {
-			toast.error("Failed to get reports.");
-			return;
-		}
-
-		_spin[i.toString()] = false;
-
-		spinners = _spin;
+	const removeSpin = () => {
+		spinners = {};
+		spinnersTwo = {};
+		spinnersThree = {};
 	};
 
 	let pdfData = $state<ArrayBuffer | null>(null);
@@ -92,11 +74,7 @@
 	onMount(async () => {
 		if (!browser) return;
 
-		/*
-		await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.12.313/pdf.min.js");
-		await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.12.313/pdf_viewer.min.js");
-		*/
-
+		// @ts-ignore
 		window.pdfjsLib.GlobalWorkerOptions.workerSrc =
 			"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js";
 
@@ -122,7 +100,7 @@
 				body: JSON.stringify({ date }),
 			});
 
-			removeSpin(i);
+			removeSpin();
 
 			if (req.status === 500) {
 				toast.error("We are experiencing difficulties, please try again in a few minutes.");
@@ -135,60 +113,110 @@
 				await tick();
 				setTimeout(() => {
 					pdfData = arrayBuffer.slice(0); // <-- reactive effect will run here
-				}, 2000);
+				}, 300);
 			} else {
 				const res = await req.blob();
 				openTrigger = Date.now();
 				src = URL.createObjectURL(res);
 			}
 		} catch (ex) {
-			removeSpin(i);
+			removeSpin();
+		}
+	};
+
+	const genCns = async (i: number, date: number) => {
+		const isSPinning = spinnersTwo[i.toString()];
+
+		// console.log({ isSPinning, spinnersTwo, i });
+
+		if (isSPinning) {
+			toast.info("Please wait for the pending contract note to load.");
+			return;
+		} else {
+			addSpin(i, "2");
+			selectedIndex = i;
+		}
+
+		try {
+			const req = await fetch("/api/d/gen", {
+				method: "PUT",
+				body: JSON.stringify({ date }),
+			});
+
+			removeSpin();
+
+			if (req.status === 500) {
+				toast.error("We are experiencing difficulties, please try again in a few minutes.");
+				return;
+			}
+
+			removeSpin();
+
+			if (isMobile) {
+				const arrayBuffer = await req.arrayBuffer();
+				openTrigger = Date.now();
+				await tick();
+				setTimeout(() => {
+					pdfData = arrayBuffer.slice(0); // <-- reactive effect will run here
+				}, 300);
+			} else {
+				const res = await req.blob();
+				openTrigger = Date.now();
+				src = URL.createObjectURL(res);
+			}
+		} catch (ex) {
+			removeSpin();
 		}
 	};
 
 	let openTrigger = $state<number>(0);
+	let forceClose = $state<number>(0);
 
 	let pdfViewerInstance = $state<any>(null);
 
-	$effect(() => {
-		if (!browser || !pdfData) return;
+	const refreshDom = async () => {
+		await tick(); // wait for drawer DOM
 
 		const container = document.getElementById("mob");
 		if (!container) return;
 
-		let viewerEl = container.querySelector("#pdfViewer") as HTMLElement;
-		if (!viewerEl) {
-			viewerEl = document.createElement("div");
-			viewerEl.id = "pdfViewer";
-			container.appendChild(viewerEl);
-		}
+		// 🔥 FULL TEARDOWN
+		container.innerHTML = "";
 
-		// Create viewer ONCE
-		if (!pdfViewerInstance) {
-			const eventBus = new window.pdfjsViewer.EventBus();
+		const viewerEl = document.createElement("div");
+		viewerEl.id = "pdfViewer";
+		container.appendChild(viewerEl);
 
-			pdfViewerInstance = new window.pdfjsViewer.PDFViewer({
-				container,
-				viewer: viewerEl,
-				eventBus,
-				removePageBorders: true,
-			});
+		// @ts-ignore
+		const eventBus = new window.pdfjsViewer.EventBus();
 
-			// Apply scale only after pages exist
-			eventBus.on("pagesinit", () => {
-				pdfViewerInstance.currentScaleValue = "page-width";
-				// or "page-width" if you want scroll
-			});
-		}
-
-		// Load / replace document
-		window.pdfjsLib.getDocument(new Uint8Array(pdfData)).promise.then((doc) => {
-			pdfViewerInstance.setDocument(doc);
-			// console.log({ doc });
+		// @ts-ignore
+		pdfViewerInstance = new window.pdfjsViewer.PDFViewer({
+			container,
+			viewer: viewerEl,
+			eventBus,
+			removePageBorders: true,
 		});
+
+		eventBus.on("pagesinit", () => {
+			pdfViewerInstance.currentScaleValue = "page-width";
+		});
+
+		// @ts-ignore
+		const loadingTask = window.pdfjsLib.getDocument(new Uint8Array(pdfData));
+
+		const doc = await loadingTask.promise;
+		pdfViewerInstance.setDocument(doc);
+	};
+
+	$effect(() => {
+		if (!browser || !pdfData || !openTrigger) return;
+		else refreshDom();
 	});
 
 	let downloading = $state<boolean>(false);
+
+	// $effect(() => console.log({ tabValue }));
 
 	const dld = async () => {
 		if (!pdfData) {
@@ -198,35 +226,64 @@
 
 		downloading = true;
 
-		let title = `${data.luseId}LI Trade Report - ${prettyDate(data.matchedSummary[selectedIndex].date)}`;
+		await tick();
+
+		let title = "";
 		const ext = ".pdf";
+
+		switch (tabValue) {
+			case "trades":
+				title = `${data.luseId}LI Trade Report - ${prettyDate(data.matchedSummary[selectedIndex].date)}`;
+				break;
+			case "cns":
+				title = `${data.luseId}LI Contract Notes - ${prettyDate(data.cnSummary[selectedIndex].date)}`;
+				break;
+			default:
+				title = "error";
+		}
+
+		await tick();
 
 		const blob = new Blob([pdfData], { type: "application/pdf" });
 		const file = new File([blob], `${title}${ext}`, {
 			type: "application/pdf",
 		});
 
-		if (navigator.canShare && navigator.canShare({ files: [file] })) {
-			await navigator.share({
-				title,
-				text: "",
-				files: [file],
-			});
-			return;
-		} else {
-			const url = URL.createObjectURL(blob);
+		try {
+			if (navigator.canShare && navigator.canShare({ files: [file] })) {
+				downloading = false;
+				forceClose = Date.now();
 
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = `${data.luseId}LI Trade Report - ${prettyDate(data.matchedSummary[selectedIndex].date)}.pdf`; // set whatever filename you want
-			document.body.appendChild(a);
-			a.click();
+				await navigator.share({
+					title,
+					text: "",
+					files: [file],
+				});
+				return;
+			} else {
+				const url = URL.createObjectURL(blob);
 
-			// cleanup
-			document.body.removeChild(a);
-			URL.revokeObjectURL(url);
+				const a = document.createElement("a");
+				a.href = url;
+				a.download = `${title}${ext}`;
+				document.body.appendChild(a);
+				a.click();
+
+				downloading = false;
+				forceClose = Date.now();
+
+				// cleanup
+				document.body.removeChild(a);
+				URL.revokeObjectURL(url);
+			}
+		} catch {
+			removeSpin();
+			await tick();
+			title = "";
+			downloading = false;
+			forceClose = Date.now();
+			await tick();
 		}
-		downloading = false;
 	};
 
 	let currency = $state<"ZMW" | "USD">("ZMW");
@@ -248,18 +305,17 @@
 </svelte:head>
 
 <div class="relative flex flex-col">
-	<Tabs.Root value="trades">
+	<Tabs.Root bind:value={tabValue}>
 		<Tabs.List>
 			<Tabs.Trigger value="trades">Trades</Tabs.Trigger>
 			<Tabs.Trigger value="cns">Contract Notes</Tabs.Trigger>
-			<Tabs.Trigger value="cns">TCRs</Tabs.Trigger>
 		</Tabs.List>
 	</Tabs.Root>
 </div>
 
 {#if data.noData}
 	<h4 class="mt-3 w-full">No data to show.</h4>
-{:else}
+{:else if tabValue === "trades"}
 	<p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
 		Please note that the table below shows total values in <button
 			class="m-0 p-0 text-[8pt]"
@@ -312,13 +368,59 @@
 			{/if}
 		</tbody>
 	</table>
+{:else if tabValue === "cns"}
+	<p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
+		Please note that the table below shows total values in <button
+			class="m-0 p-0 text-[8pt]"
+			onclick={() => (currency === "USD" ? (currency = "ZMW") : (currency = "USD"))}
+			><u>{currency}</u></button
+		>. To change, please click the underlined currency.
+	</p>
+	<table class="summary-table mt-5 w-full">
+		<thead
+			><tr>
+				<th>Date</th>
+				<th>Total Buys</th>
+				<th>Total Sells</th>
+			</tr></thead
+		>
+		<tbody>
+			{#if data.cnSummary.length}
+				{#each data.cnSummary as m, i}
+					<tr>
+						<td class="num text-center">{prettyDate(m.date)}</td>
+
+						{#if currency === "ZMW"}
+							<td class="num text-center">{!m.buys ? "-" : numParse(m.buys.toFixed(2))}</td>
+							<td class="num text-center">{!m.sells ? "-" : numParse(m.sells.toFixed(2))}</td>
+						{:else}
+							<td class="num text-center"
+								>{!m.buys ? "-" : numParse((m.buys / data.fx["sell"]).toFixed(2))}</td
+							>
+							<td class="num text-center"
+								>{!m.sells ? "-" : numParse((m.sells / data.fx["sell"]).toFixed(2))}</td
+							>
+						{/if}
+
+						<td
+							><button onclick={() => genCns(i, m.date)} class="m-0 flex w-[100%] items-center p-0">
+								{#if spinnersTwo[i]}
+									<Spinner class="m-0 h-3 w-3 p-0" />
+								{:else}
+									<Download class="mx-auto h-3 w-3" />
+								{/if}
+							</button></td
+						>
+					</tr>
+				{:else}
+					<tr><td>No data to show.</td></tr>
+				{/each}
+			{/if}
+		</tbody>
+	</table>
 {/if}
 
-<div id="mob-2" style="display: hidden;position:absolute">
-	<div id="pdfViewer-2" style="display: hidden;position:absolute"></div>
-</div>
-
-<AnyDrawer {openTrigger} big description="" title="">
+<AnyDrawer {openTrigger} big description="" title="" {forceClose}>
 	{#snippet main()}
 		{#if isMobile}
 			<div id="mob">
@@ -340,6 +442,13 @@
 	{/snippet}
 </AnyDrawer>
 
+<!-- ignore -->
+<div id="mob-2" style="display: hidden;position:absolute">
+	<div id="pdfViewer-2" style="display: hidden;position:absolute"></div>
+</div>
+
+<!-- ignore -->
+
 <style lang="scss">
 	.summary-table {
 		//border: 1px solid var(--shadow);
@@ -347,13 +456,10 @@
 		max-height: 300px;
 		overflow-y: auto;
 		position: relative;
+		border-collapse: separate !important;
+		border-spacing: 0 !important;
 
-		table {
-			border-collapse: separate !important;
-			border-spacing: 0 !important;
-		}
-
-		table thead th {
+		thead th {
 			position: sticky !important;
 			top: 0 !important;
 			z-index: 11 !important;
