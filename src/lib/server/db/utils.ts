@@ -1606,7 +1606,7 @@ const sbz = (): SBZutils => {
 			const { data, error } = await sbzdb
 				.from("clients")
 				.select()
-				.filter("luseId", "eq", luseId)
+				.filter("luse_id", "eq", luseId)
 				.filter("is_approved", "eq", true);
 
 			if (error) {
@@ -1641,7 +1641,8 @@ const sbz = (): SBZutils => {
 	): Promise<GenericResponse> => {
 		try {
 			const tempId: number = Number(obj.id_num.replace(/\D+/g, "")) * -1;
-			obj.luseId = tempId;
+
+			if (!obj.luseId) obj.luseId = tempId;
 
 			const firstCheck = await sbzdb.from("clients").select().filter("id_num", "eq", obj.id_num);
 
@@ -2914,7 +2915,12 @@ const nf = (): NFutils => {
 						.filter("trade_date", "gte", oldDate)
 						.order("trade_date", { ascending: false });
 
-			if (error) return { trades: [] };
+			if (error) {
+				console.error("\n\nGET MATCHED ERROR", error, "\n\n");
+				return {
+					trades: [],
+				};
+			}
 
 			return { trades: data };
 		} catch (ex: any) {

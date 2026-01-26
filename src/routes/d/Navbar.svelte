@@ -16,6 +16,7 @@
 		Wallet,
 		FolderClock,
 		Settings,
+		FileText,
 	} from "@lucide/svelte";
 
 	//types
@@ -115,6 +116,11 @@
 		<p>News</p>
 	</a>
 
+	<a class={`link${path === "/d/reports" ? " current" : ""}`} href="/d/reports">
+		<FileText class="h-8 w-8" />
+		<p>Reports</p>
+	</a>
+
 	<!-- SBZ Specific -->
 	<div class="titl">
 		<p>Account</p>
@@ -125,11 +131,6 @@
 	<a class={`link${path === "/d/wallet" ? " current" : ""}`} href="/d/wallet">
 		<Wallet class="h-8 w-8" />
 		<p>Wallet</p>
-	</a>
-
-	<a class={`link${path === "/d/history" ? " current" : ""}`} href="/d/history">
-		<FolderClock class="h-8 w-8" />
-		<p>History</p>
 	</a>
 
 	<a class={`link${path === "/d/settings" ? " current" : ""}`} href="/d/settings">

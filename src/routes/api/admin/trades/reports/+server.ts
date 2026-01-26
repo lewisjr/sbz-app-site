@@ -1,6 +1,8 @@
 import { DEV } from "$env/static/private";
 import kratos from "$lib/server/kratos";
 
+import { print } from "$lib/utils";
+
 export const POST = async (event) => {
 	const sender = await kratos.admin(event);
 	if (sender instanceof Response) return sender;
