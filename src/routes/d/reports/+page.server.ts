@@ -4,7 +4,10 @@ import { scourgeOfInvestor } from "$lib/server/jwt";
 export const load = async (data) => {
 	const client = scourgeOfInvestor(data);
 
-	const folio = await dbs.sbz.getPortfolio(client.data.luseId);
+	const [folio, fx] = await Promise.all([
+		dbs.sbz.getPortfolio(client.data.luseId),
+		dbs.nf.getLastFxData(),
+	]);
 
 	interface MatchedCodex {
 		luseId: number;
@@ -13,25 +16,44 @@ export const load = async (data) => {
 		buys: number;
 	}
 
-	if (!folio) {
+	if (!folio)
 		return {
 			noData: true,
-			rawMatched: [],
 			matchedSummary: [],
+			fx: { buy: 0, sell: 0 },
 		};
-	}
+
+	if (!fx.fx.length)
+		return {
+			noData: true,
+			matchedSummary: [],
+			fx: { buy: 0, sell: 0 },
+		};
 
 	const matchedCodex: { [key: string]: MatchedCodex } = {};
 
 	if (!folio.data) {
 		return {
 			noData: true,
-			rawMatched: [],
 			matchedSummary: [],
+			fx: { buy: 0, sell: 0 },
+		};
+	}
+
+	fx.fx.sort((b, a) => b.date - a.date);
+	const usd = fx.fx.find((item) => item.currency.toLowerCase().includes("usd"));
+
+	if (!usd) {
+		return {
+			noData: true,
+			matchedSummary: [],
+			fx: { buy: 0, sell: 0 },
 		};
 	}
 
 	folio.data.matched.forEach((m) => {
+		const k = m.symbol.toLowerCase().includes("usd") ? usd.buy : 1;
+
 		if (!matchedCodex[`${m.luse_id}${m.trade_date}`]) {
 			const sells = m.trade_side === "buy" ? 0 : m.qty * m.price;
 			const buys = m.trade_side !== "buy" ? 0 : m.qty * m.price;
@@ -39,12 +61,15 @@ export const load = async (data) => {
 			matchedCodex[`${m.luse_id}${m.trade_date}`] = {
 				luseId: m.luse_id,
 				date: m.trade_date,
-				buys,
-				sells,
+				buys: buys * k,
+				sells: sells * k,
 			};
 		} else {
-			const sells = m.trade_side === "buy" ? 0 : m.qty * m.price;
-			const buys = m.trade_side !== "buy" ? 0 : m.qty * m.price;
+			const _sells = m.trade_side === "buy" ? 0 : m.qty * m.price;
+			const _buys = m.trade_side !== "buy" ? 0 : m.qty * m.price;
+
+			const sells = _sells * k;
+			const buys = _buys * k;
 
 			matchedCodex[`${m.luse_id}${m.trade_date}`].buys =
 				matchedCodex[`${m.luse_id}${m.trade_date}`].buys + buys;
@@ -55,7 +80,7 @@ export const load = async (data) => {
 
 	return {
 		noData: false,
-		rawMatched: folio.data.matched,
 		matchedSummary: Object.values(matchedCodex),
+		fx: { buy: usd.buy, sell: usd.sell },
 	};
 };

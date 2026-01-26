@@ -2,6 +2,7 @@
 	//functions
 	import { prettyDate } from "$lib/utils";
 	import { toast } from "svelte-sonner";
+	import { browser } from "$app/environment";
 
 	//components - custom
 	import Head from "$lib/components/Head.svelte";
@@ -10,6 +11,7 @@
 	//componenets - shadcn
 	import { Spinner } from "$lib/components/ui/spinner/index";
 	import AnyDrawer from "$lib/components/AnyDrawer.svelte";
+	import Button from "$lib/components/ui/button/button.svelte";
 
 	//icons
 	import { Download } from "@lucide/svelte";
@@ -21,7 +23,32 @@
 	import type { GenericResponseWData, NewsLean } from "$lib/types";
 	import type { PageProps } from "./$types";
 	import { numParse } from "@cerebrusinc/qol";
-	import { onMount } from "svelte";
+	import { onMount, tick } from "svelte";
+
+	let viewer = $state<any>(undefined);
+
+	// annoying pdf
+	onMount(async () => {
+		// @ts-ignore
+		const pdfjs = await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/pdf.mjs");
+		const pdfjsViewer = await import(
+			// @ts-ignore
+			"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/pdf_viewer.mjs"
+		);
+		pdfjs.GlobalWorkerOptions.workerSrc =
+			"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/pdf.worker.mjs";
+
+		const eventBus = new pdfjsViewer.EventBus();
+		const _viewer = new pdfjsViewer.PDFViewer({
+			container: document.getElementById("mob-2"),
+			eventBus,
+		});
+		//console.log({ _viewer });
+		/*
+
+		viewer = _viewer;
+		*/
+	});
 
 	let { data }: PageProps = $props();
 
@@ -32,10 +59,6 @@
 	let src = $state<string>("");
 
 	let spinners = $state<{ [key: string]: boolean }>({});
-
-	let mob = $derived.by(() => {
-		return /Android|iPhone/i.test(navigator.userAgent);
-	});
 
 	const addSpin = (i: number) => {
 		const _spin = JSON.parse(JSON.stringify(spinners)) as typeof spinners;
@@ -63,6 +86,25 @@
 		spinners = _spin;
 	};
 
+	let pdfData = $state<ArrayBuffer | null>(null);
+
+	// Load PDF.js UMD once on mount
+	onMount(async () => {
+		if (!browser) return;
+
+		/*
+		await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.12.313/pdf.min.js");
+		await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.12.313/pdf_viewer.min.js");
+		*/
+
+		window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+			"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js";
+
+		//console.log("[log] dependencies set");
+	});
+
+	let selectedIndex = $state<number>(0);
+
 	const genReport = async (i: number, date: number) => {
 		const isSPinning = spinners[i.toString()];
 
@@ -71,6 +113,7 @@
 			return;
 		} else {
 			addSpin(i);
+			selectedIndex = i;
 		}
 
 		try {
@@ -86,27 +129,18 @@
 				return;
 			}
 
-			const _arrayBufferToBase64 = (buffer: ArrayBuffer) => {
-				let binary = "";
-				const bytes = new Uint8Array(buffer);
-				const chunkSize = 0x8000;
-				for (let i = 0; i < bytes.length; i += chunkSize) {
-					const chunk = bytes.subarray(i, i + chunkSize);
-					binary += String.fromCharCode(...chunk);
-				}
-				return btoa(binary);
-			};
-
 			if (isMobile) {
-				const res = await req.arrayBuffer();
-				const b64 = _arrayBufferToBase64(res);
-				src = "https://snippet.embedpdf.com/ebook.pdf";
+				const arrayBuffer = await req.arrayBuffer();
+				openTrigger = Date.now();
+				await tick();
+				setTimeout(() => {
+					pdfData = arrayBuffer.slice(0); // <-- reactive effect will run here
+				}, 2000);
 			} else {
 				const res = await req.blob();
+				openTrigger = Date.now();
 				src = URL.createObjectURL(res);
 			}
-
-			openTrigger = Date.now();
 		} catch (ex) {
 			removeSpin(i);
 		}
@@ -114,14 +148,88 @@
 
 	let openTrigger = $state<number>(0);
 
-	let PDFViewer = $state<typeof import("@embedpdf/svelte-pdf-viewer").PDFViewer | undefined>(
-		undefined,
-	);
+	let pdfViewerInstance = $state<any>(null);
 
-	onMount(async () => {
-		const module = await import("@embedpdf/svelte-pdf-viewer");
-		PDFViewer = module.PDFViewer;
+	$effect(() => {
+		if (!browser || !pdfData) return;
+
+		const container = document.getElementById("mob");
+		if (!container) return;
+
+		let viewerEl = container.querySelector("#pdfViewer") as HTMLElement;
+		if (!viewerEl) {
+			viewerEl = document.createElement("div");
+			viewerEl.id = "pdfViewer";
+			container.appendChild(viewerEl);
+		}
+
+		// Create viewer ONCE
+		if (!pdfViewerInstance) {
+			const eventBus = new window.pdfjsViewer.EventBus();
+
+			pdfViewerInstance = new window.pdfjsViewer.PDFViewer({
+				container,
+				viewer: viewerEl,
+				eventBus,
+				removePageBorders: true,
+			});
+
+			// Apply scale only after pages exist
+			eventBus.on("pagesinit", () => {
+				pdfViewerInstance.currentScaleValue = "page-width";
+				// or "page-width" if you want scroll
+			});
+		}
+
+		// Load / replace document
+		window.pdfjsLib.getDocument(new Uint8Array(pdfData)).promise.then((doc) => {
+			pdfViewerInstance.setDocument(doc);
+			// console.log({ doc });
+		});
 	});
+
+	let downloading = $state<boolean>(false);
+
+	const dld = async () => {
+		if (!pdfData) {
+			toast.error("Failed to download document.");
+			return;
+		}
+
+		downloading = true;
+
+		let title = `${data.luseId}LI Trade Report - ${prettyDate(data.matchedSummary[selectedIndex].date)}`;
+		const ext = ".pdf";
+
+		const blob = new Blob([pdfData], { type: "application/pdf" });
+		const file = new File([blob], `${title}${ext}`, {
+			type: "application/pdf",
+		});
+
+		if (navigator.canShare && navigator.canShare({ files: [file] })) {
+			await navigator.share({
+				title,
+				text: "",
+				files: [file],
+			});
+			return;
+		} else {
+			const url = URL.createObjectURL(blob);
+
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `${data.luseId}LI Trade Report - ${prettyDate(data.matchedSummary[selectedIndex].date)}.pdf`; // set whatever filename you want
+			document.body.appendChild(a);
+			a.click();
+
+			// cleanup
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+		}
+		downloading = false;
+	};
+
+	let currency = $state<"ZMW" | "USD">("ZMW");
 </script>
 
 <Head
@@ -130,12 +238,21 @@
 	description="Download your historical reports!"
 	ogDescription="Download your historical reports!"
 />
+<svelte:head>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf_viewer.min.js"></script>
+	<link
+		rel="stylesheet"
+		href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf_viewer.min.css"
+	/>
+</svelte:head>
 
 <div class="relative flex flex-col">
 	<Tabs.Root value="trades">
 		<Tabs.List>
 			<Tabs.Trigger value="trades">Trades</Tabs.Trigger>
 			<Tabs.Trigger value="cns">Contract Notes</Tabs.Trigger>
+			<Tabs.Trigger value="cns">TCRs</Tabs.Trigger>
 		</Tabs.List>
 	</Tabs.Root>
 </div>
@@ -143,6 +260,13 @@
 {#if data.noData}
 	<h4 class="mt-3 w-full">No data to show.</h4>
 {:else}
+	<p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
+		Please note that the table below shows total values in <button
+			class="m-0 p-0 text-[8pt]"
+			onclick={() => (currency === "USD" ? (currency = "ZMW") : (currency = "USD"))}
+			><u>{currency}</u></button
+		>. To change, please click the underlined currency.
+	</p>
 	<table class="summary-table mt-5 w-full">
 		<thead
 			><tr>
@@ -156,14 +280,28 @@
 				{#each data.matchedSummary as m, i}
 					<tr>
 						<td class="num text-center">{prettyDate(m.date)}</td>
-						<td class="num text-center">{!m.buys ? "-" : numParse(m.buys.toFixed(2))}</td>
-						<td class="num text-center">{!m.sells ? "-" : numParse(m.sells.toFixed(2))}</td>
+
+						{#if currency === "ZMW"}
+							<td class="num text-center">{!m.buys ? "-" : numParse(m.buys.toFixed(2))}</td>
+							<td class="num text-center">{!m.sells ? "-" : numParse(m.sells.toFixed(2))}</td>
+						{:else}
+							<td class="num text-center"
+								>{!m.buys ? "-" : numParse((m.buys / data.fx["sell"]).toFixed(2))}</td
+							>
+							<td class="num text-center"
+								>{!m.sells ? "-" : numParse((m.sells / data.fx["sell"]).toFixed(2))}</td
+							>
+						{/if}
+
 						<td
-							><button onclick={() => genReport(i, m.date)} class="m-0 p-0">
+							><button
+								onclick={() => genReport(i, m.date)}
+								class="m-0 flex w-[100%] items-center p-0"
+							>
 								{#if spinners[i]}
-									<Spinner class="h-3 w-3" />
+									<Spinner class="m-0 h-3 w-3 p-0" />
 								{:else}
-									<Download class="h-3 w-3" />
+									<Download class="mx-auto h-3 w-3" />
 								{/if}
 							</button></td
 						>
@@ -176,18 +314,29 @@
 	</table>
 {/if}
 
+<div id="mob-2" style="display: hidden;position:absolute">
+	<div id="pdfViewer-2" style="display: hidden;position:absolute"></div>
+</div>
+
 <AnyDrawer {openTrigger} big description="" title="">
 	{#snippet main()}
-		{#if isMobile && PDFViewer !== undefined}
-			<PDFViewer
-				config={{
-					src: "https://snippet.embedpdf.com/ebook.pdf",
-				}}
-				style="width: 100%; height: 100%;"
-			/>
+		{#if isMobile}
+			<div id="mob">
+				<div id="pdfViewer"></div>
+			</div>
 		{:else}
 			<iframe title="Doc" style="border: 1px solid red;" {src} width="100%" height="800"></iframe>
 		{/if}
+	{/snippet}
+
+	{#snippet actionButton()}
+		<Button onclick={dld}>
+			{#if downloading}
+				<Spinner class="ml-2 h-4 w-4" />
+			{:else}
+				Download<Download class="ml-2 h-4 w-4" />
+			{/if}
+		</Button>
 	{/snippet}
 </AnyDrawer>
 
@@ -219,6 +368,18 @@
 		tbody tr:nth-child(odd) {
 			background-color: var(--muted);
 		}
+	}
+
+	#mob {
+		width: calc(100% - 7px);
+		height: 100%;
+		overflow-y: auto; // scroll vertically
+		overflow-x: hidden; // hide horizontal scroll
+		// border: 1px solid red;
+		position: absolute;
+		padding: 0px;
+		left: 0px;
+		top: 0px;
 	}
 
 	iframe {

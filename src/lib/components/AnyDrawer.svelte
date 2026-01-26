@@ -149,6 +149,7 @@
 		padding: 0px 16px;
 		height: 100%;
 		overflow-y: auto;
+		position: relative;
 	}
 
 	.title {

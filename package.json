@@ -1,7 +1,7 @@
 {
 	"name": "sbz-app-site",
 	"private": true,
-	"version": "1.24.1",
+	"version": "1.25.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev --host",
@@ -51,7 +51,6 @@
 	"dependencies": {
 		"@cerebrusinc/fstring": "^0.1.5",
 		"@cerebrusinc/qol": "^1.2.1",
-		"@embedpdf/svelte-pdf-viewer": "^2.3.0",
 		"@nomicfoundation/hardhat-ethers": "^4.0.3",
 		"@nomicfoundation/hardhat-network-helpers": "^3.0.3",
 		"@nomicfoundation/hardhat-typechain": "^3.0.1",
