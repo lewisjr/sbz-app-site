@@ -720,7 +720,7 @@
 		}
 	};
 
-	let imgSrc = $state<string | undefined>(undefined);
+	let imgSrc = $state<any>(undefined);
 	let imgBlob = $state<File | null>(null);
 
 	let otpValue = $state<string>("");
@@ -1070,6 +1070,15 @@
 
 		if (target.files && target.files.length > 0) {
 			imgBlob = target.files[0];
+
+			const reader = new FileReader();
+			reader.onload = function (e) {
+				imgSrc = e.target.result;
+			};
+
+			reader.readAsDataURL(imgBlob);
+
+			imgSrc = URL.createObjectURL(imgBlob);
 		}
 	};
 
