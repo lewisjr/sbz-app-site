@@ -1606,7 +1606,7 @@ const sbz = (): SBZutils => {
 			const { data, error } = await sbzdb
 				.from("clients")
 				.select()
-				.filter("luse_id", "eq", luseId)
+				.filter("luseId", "eq", luseId)
 				.filter("is_approved", "eq", true);
 
 			if (error) {
