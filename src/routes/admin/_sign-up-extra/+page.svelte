@@ -1109,10 +1109,12 @@
 			return;
 		}
 
+		/*
 		if (!acoValue) {
 			toast.error("You must upload the account opening document as well!");
 			return;
 		}
+		*/
 
 		await openAccount();
 
