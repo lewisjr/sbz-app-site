@@ -536,11 +536,9 @@
 
 	/**For joint accounts*/
 	const deleteJointPartner = (i: number) => {
-		const temp: UserObjFull[] = JSON.parse(JSON.stringify(jointUsers));
+		jointUsers.splice(i, 1);
 
-		temp.splice(i, 1);
-
-		jointUsers = temp;
+		jointUsers = jointUsers;
 	};
 
 	/**For institute accounts*/
@@ -573,11 +571,9 @@
 
 	/**For institute accounts*/
 	const deleteDirector = (i: number) => {
-		const temp: UserObjFull[] = JSON.parse(JSON.stringify(directors));
+		directors.splice(i, 1);
 
-		temp.splice(i, 1);
-
-		directors = temp;
+		directors = directors;
 	};
 
 	/**For institute accounts*/
@@ -610,11 +606,8 @@
 
 	/**For institute accounts*/
 	const deleteManager = (i: number) => {
-		const temp: UserObjFull[] = JSON.parse(JSON.stringify(instituteManagers));
-
-		temp.splice(i, 1);
-
-		instituteManagers = temp;
+		instituteManagers.splice(i, 1);
+		instituteManagers = instituteManagers;
 	};
 
 	type ReferralSource =
