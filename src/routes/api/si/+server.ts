@@ -4,11 +4,12 @@ import notif from "$lib/server/email";
 import { DEV } from "$env/static/private";
 
 import { devLog, genDbTimestamp, genOTP } from "$lib/utils";
-import { genJwt } from "$lib/server/jwt";
+import { checkJwt, genJwt } from "$lib/server/jwt";
 
 // import type { UserObj } from "../su/+server.js";
 import type { OTPBulkObj } from "$lib/server/db/utils.js";
 import type { SBZdb, Types } from "$lib/types/index.js";
+import kratos from "$lib/server/kratos.js";
 
 export const PUT = async ({ request }) => {
 	const { id, label }: { label: "Admin Username" | "LuSE ID"; id: string } = await request.json();
@@ -286,6 +287,12 @@ export const POST = async ({ request, cookies }) => {
 			});
 		}
 
+		const isApp = cookies.get("sbz-push");
+
+		if (isApp) {
+			await dbs.sbz.updatePushId(Number(id), correct.data, isApp);
+		}
+
 		return json(
 			{
 				success: correct.success,
@@ -297,10 +304,26 @@ export const POST = async ({ request, cookies }) => {
 	}
 };
 
-export const DELETE = async ({ cookies }) => {
+export const DELETE = async (event) => {
+	const client = await kratos.client(event);
+	if (client instanceof Response) return client;
+
+	const { cookies } = event;
+
+	const clientMailJwt = cookies.get("sbz-client-mail");
+	const isApp = cookies.get("sbz-push");
+
 	cookies.delete("sbz-admin", { path: "/" });
 	cookies.delete("sbz-client", { path: "/" });
 	cookies.delete("sbz-client-mail", { path: "/" });
+
+	if (isApp && clientMailJwt) {
+		const clientMailCheck = checkJwt(clientMailJwt);
+
+		if (clientMailCheck && typeof clientMailCheck !== "string") {
+			await dbs.sbz.removePushId(client.luseId, clientMailCheck.data);
+		}
+	}
 
 	return json({ success: true, message: "Successfully signed out!" }, { status: 200 });
 };

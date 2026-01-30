@@ -21,51 +21,59 @@ export const POST = async (event) => {
 
 	// console.log({ action, obj });
 
-	switch (action) {
-		case "approve":
-			const approveClient = await dbs.sbz.approveRequest(
-				obj.idNum,
-				obj.fname,
-				sender.username,
-				obj.email,
-			);
+	try {
+		switch (action) {
+			case "approve":
+				const approveClient = await dbs.sbz.approveRequest(
+					obj.idNum,
+					obj.fname,
+					sender.username,
+					obj.email,
+				);
 
-			return json(
-				{
-					success: approveClient.success,
-					message: approveClient.message,
-				},
-				{ status: approveClient.success ? 200 : 400 },
-			);
-		case "reject":
-			const rejectClient = await dbs.sbz.rejectRequest(
-				obj.idNum,
-				obj.luseId,
-				obj.fname,
-				sender.username,
-				obj.email,
-				obj.reason,
-			);
+				return json(
+					{
+						success: approveClient.success,
+						message: approveClient.message,
+					},
+					{ status: approveClient.success ? 200 : 400 },
+				);
+			case "reject":
+				const rejectClient = await dbs.sbz.rejectRequest(
+					obj.idNum,
+					obj.luseId,
+					obj.fname,
+					sender.username,
+					obj.email,
+					obj.reason,
+				);
 
-			return json(
-				{
-					success: rejectClient.success,
-					message: rejectClient.message,
-					data: rejectClient.success ? obj : undefined,
-				},
-				{ status: rejectClient.success ? 200 : 400 },
-			);
-		case "kyc":
-			const kyc = await dbs.sbz.getFiles(obj.idNum);
+				return json(
+					{
+						success: rejectClient.success,
+						message: rejectClient.message,
+						data: rejectClient.success ? obj : undefined,
+					},
+					{ status: rejectClient.success ? 200 : 400 },
+				);
+			case "kyc":
+				const kyc = await dbs.sbz.getFiles(obj.idNum);
 
-			return json(kyc, { status: kyc.success ? 200 : 400 });
-		default:
-			return json(
-				{
-					success: false,
-					message: "Received a malformed request, please contact the developer.",
-				},
-				{ status: 400 },
-			);
+				return json(kyc, { status: kyc.success ? 200 : 400 });
+			default:
+				return json(
+					{
+						success: false,
+						message: "Received a malformed request, please contact the developer.",
+					},
+					{ status: 400 },
+				);
+		}
+	} catch (ex) {
+		console.error(ex);
+		return json(
+			{ success: false, message: "Account error, please contact developers." },
+			{ status: 400 },
+		);
 	}
 };

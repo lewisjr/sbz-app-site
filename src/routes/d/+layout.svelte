@@ -10,7 +10,7 @@
 
 <section>
 	<Navbar />
-	<div class="content">
+	<div class="content" style={data.forceApp ? "padding-top: 50px;" : undefined}>
 		{@render children?.()}
 	</div>
 </section>

@@ -45,8 +45,12 @@
 	import { nationalities, countries } from "./utils";
 	import tc from "$lib/tc";
 
+	//stores
+	import { isAppStore } from "$lib/stores";
+
 	//types
 	import type { SBZdb, Types } from "$lib/types";
+	import type { PageProps } from "./$types";
 
 	let activeTab = $state<string>("individual");
 	let isMobile = $derived<boolean>($screenWidthStore < 1025);
@@ -447,6 +451,45 @@
 			directors = [];
 			instituteManagers = [];
 		}
+
+		const jointPoa = document.getElementById("jpoa");
+		const jointPoi = document.getElementById("jpoi");
+
+		const directorPoa = document.getElementById("dpoa");
+		const directorPoi = document.getElementById("dpoi");
+
+		const managPoa = document.getElementById("mpoa");
+		const managPoi = document.getElementById("mpoi");
+
+		if (jointPoa) {
+			// @ts-ignore
+			jointPoa.value = null;
+		}
+
+		if (jointPoi) {
+			// @ts-ignore
+			jointPoi.value = null;
+		}
+
+		if (directorPoa) {
+			// @ts-ignore
+			directorPoa.value = null;
+		}
+
+		if (directorPoi) {
+			// @ts-ignore
+			directorPoi.value = null;
+		}
+
+		if (managPoa) {
+			// @ts-ignore
+			managPoa.value = null;
+		}
+
+		if (managPoi) {
+			// @ts-ignore
+			managPoi.value = null;
+		}
 	};
 
 	// reset fields if someone changes tab
@@ -454,32 +497,41 @@
 		if (activeTab) reset();
 	});
 
-	/**For joint accounts*/
-	const addToJointList = () => {
-		const temp: UserObjFull[] = JSON.parse(JSON.stringify(jointUsers));
-		const f = new File([], "");
+	const cloneFile = async (f: File): Promise<File> => {
+		const buffer = await f.arrayBuffer();
 
-		temp.push({
-			fname: fnameValue,
-			lname: lnameValue,
-			phone: phoneValue,
-			email: emailValue,
-			dob: dobValue ? dobValue : "",
-			gender: genderValue,
-			mstatus: maritalValue,
-			nationality: nationalityValue,
-			street: streetValue,
-			city: cityValue,
-			country: countryValue,
-			poa: poaValue ? poaValue : f,
-			idNum: idNumValue,
-			idType: idTypeValue,
-			poi: poiValue ? poiValue : f,
+		return new File([buffer], f.name, {
+			type: f.type,
+			lastModified: f.lastModified,
 		});
+	};
 
-		jointUsers = temp;
+	/**For joint accounts*/
+	const addToJointList = async () => {
+		if (poaValue && poiValue) {
+			jointUsers = [
+				...jointUsers,
+				{
+					fname: fnameValue,
+					lname: lnameValue,
+					phone: phoneValue,
+					email: emailValue,
+					dob: dobValue ?? "",
+					gender: genderValue,
+					mstatus: maritalValue,
+					nationality: nationalityValue,
+					street: streetValue,
+					city: cityValue,
+					country: countryValue,
+					poa: poaValue, // ← no cloning needed
+					idNum: idNumValue,
+					idType: idTypeValue,
+					poi: poiValue, // ← no cloning needed
+				},
+			];
 
-		reset(false, false);
+			reset(false, false);
+		}
 	};
 
 	/**For joint accounts*/
@@ -492,31 +544,31 @@
 	};
 
 	/**For institute accounts*/
-	const addToDirectorsList = () => {
-		const temp: UserObjFull[] = JSON.parse(JSON.stringify(directors));
-		const f = new File([], "");
+	const addToDirectorsList = async () => {
+		if (poaValue && poiValue) {
+			directors = [
+				...directors,
+				{
+					fname: fnameValue,
+					lname: lnameValue,
+					phone: phoneValue,
+					email: emailValue,
+					dob: dobValue ?? "",
+					gender: genderValue,
+					mstatus: maritalValue,
+					nationality: nationalityValue,
+					street: streetValue,
+					city: cityValue,
+					country: countryValue,
+					poa: poaValue, // ← no cloning needed
+					idNum: idNumValue,
+					idType: idTypeValue,
+					poi: poiValue, // ← no cloning needed
+				},
+			];
 
-		temp.push({
-			fname: fnameValue,
-			lname: lnameValue,
-			phone: phoneValue,
-			email: emailValue,
-			dob: dobValue ? dobValue : "",
-			gender: genderValue,
-			mstatus: maritalValue,
-			nationality: nationalityValue,
-			street: streetValue,
-			city: cityValue,
-			country: countryValue,
-			poa: poaValue ? poaValue : f,
-			idNum: idNumValue,
-			idType: idTypeValue,
-			poi: poiValue ? poiValue : f,
-		});
-
-		directors = temp;
-
-		reset(false, true, false);
+			reset(false, true, false);
+		}
 	};
 
 	/**For institute accounts*/
@@ -529,31 +581,31 @@
 	};
 
 	/**For institute accounts*/
-	const addToManagersList = () => {
-		const temp: UserObjFull[] = JSON.parse(JSON.stringify(instituteManagers));
-		const f = new File([], "");
+	const addToManagersList = async () => {
+		if (poaValueManager && poiValueManager) {
+			instituteManagers = [
+				...instituteManagers,
+				{
+					fname: fnameValue,
+					lname: lnameValue,
+					phone: phoneValue,
+					email: emailValue,
+					dob: dobValue ?? "",
+					gender: genderValue,
+					mstatus: maritalValue,
+					nationality: nationalityValue,
+					street: streetValue,
+					city: cityValue,
+					country: countryValue,
+					poa: poiValueManager, // ← no cloning needed
+					idNum: idNumValue,
+					idType: idTypeValue,
+					poi: poaValueManager, // ← no cloning needed
+				},
+			];
 
-		temp.push({
-			fname: fnameValueManager,
-			lname: lnameValueManager,
-			phone: phoneValueManager,
-			email: emailValueManager,
-			dob: dobValueManager ? dobValueManager : "",
-			gender: genderValueManager,
-			mstatus: maritalValueManager,
-			nationality: nationalityValueManager,
-			street: streetValueManager,
-			city: cityValueManager,
-			country: countryValueManager,
-			poa: poaValueManager ? poaValueManager : f,
-			idNum: idNumValueManager,
-			idType: idTypeValueManager,
-			poi: poiValueManager ? poiValueManager : f,
-		});
-
-		instituteManagers = temp;
-
-		reset(false, true, false);
+			reset(false, true, false);
+		}
 	};
 
 	/**For institute accounts*/
@@ -859,6 +911,7 @@
 
 		// append partners files
 		jointUsers.forEach((row) => {
+			console.log({ location: "jointUsers", row });
 			form.append(`${row.idNum}-poa`, row.poa);
 			form.append(`${row.idNum}-poi`, row.poi);
 		});
@@ -1120,12 +1173,6 @@
 			}
 		} catch (ex: any) {
 			loading = false;
-			const message =
-				typeof ex === "string"
-					? ex
-					: ex instanceof Error
-						? ex.message
-						: ex?.message || JSON.stringify(ex);
 
 			toast.error(String(ex));
 		}
@@ -1203,8 +1250,12 @@
 	ogTitle="Sign Up"
 	description="Create or link your account and begin your digital investing journey!"
 	ogDescription="Create or link your account and begin your digital investing journey!"
+	token={$isAppStore}
 />
 
+{#if $isAppStore}
+	<div class="app"></div>
+{/if}
 <div class="main-tainer">
 	<div class="img">
 		<img src="/img/kyc.png" alt="infographic" />
@@ -2099,7 +2150,7 @@
 					<div class="items tp mt-7 flex">
 						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
 							<Label class="mb-1">Proof of Address</Label>
-							<Input type="file" onchange={handlePoaUpload} accept=".pdf" />
+							<Input id="jpoa" type="file" onchange={handlePoaUpload} accept=".pdf" />
 							<p class="mb-4 text-justify text-sm text-muted-foreground">
 								Upload a tenancy agreement, tax certificate, utility bill, or bank statement from
 								the past three months.
@@ -2149,7 +2200,7 @@
 					<div class="items tp mt-7 flex">
 						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
 							<Label class="mb-1">Proof of Identity</Label>
-							<Input type="file" onchange={handlePoiUpload} accept=".pdf" />
+							<Input id="jpoi" type="file" onchange={handlePoiUpload} accept=".pdf" />
 							<p class="mb-4 text-justify text-sm text-muted-foreground">
 								Upload {poiComment}, passport, drivers license, voters card, or birth certificate.
 							</p>
@@ -2669,7 +2720,7 @@
 					<div class="items tp mt-7 flex">
 						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
 							<Label class="mb-1">Proof of Address</Label>
-							<Input type="file" onchange={handlePoaUpload} accept=".pdf" />
+							<Input id="dpoa" type="file" onchange={handlePoaUpload} accept=".pdf" />
 							<p class="mb-4 text-justify text-sm text-muted-foreground">
 								Upload a tenancy agreement, tax certificate, utility bill, or bank statement from
 								the past three months.
@@ -2718,7 +2769,7 @@
 					<div class="items tp mt-7 flex">
 						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
 							<Label class="mb-1">Proof of Identity</Label>
-							<Input type="file" onchange={handlePoiUpload} accept=".pdf" />
+							<Input id="dpoi" type="file" onchange={handlePoiUpload} accept=".pdf" />
 							<p class="mb-4 text-justify text-sm text-muted-foreground">
 								Upload {poiComment}, passport, drivers license, voters card.
 							</p>
@@ -2933,7 +2984,7 @@
 					<div class="items tp mt-7 flex">
 						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
 							<Label class="mb-1">Proof of Address</Label>
-							<Input type="file" onchange={handlePoaUploadManager} accept=".pdf" />
+							<Input id="mpoa" type="file" onchange={handlePoaUploadManager} accept=".pdf" />
 							<p class="mb-4 text-justify text-sm text-muted-foreground">
 								Upload a tenancy agreement, tax certificate, utility bill, or bank statement from
 								the past three months.
@@ -2982,7 +3033,7 @@
 					<div class="items tp mt-7 flex">
 						<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
 							<Label class="mb-1">Proof of Identity</Label>
-							<Input type="file" onchange={handlePoiUploadManager} accept=".pdf" />
+							<Input id="mpoi" type="file" onchange={handlePoiUploadManager} accept=".pdf" />
 							<p class="mb-4 text-justify text-sm text-muted-foreground">
 								Upload {poiComment}, passport, drivers license, voters card.
 							</p>
@@ -3190,7 +3241,7 @@
 							</p>
 
 							<div class="selfie-tainer">
-								<video bind:this={videoEl} class="selfie-cam mt-4" autoplay playsinline>
+								<video bind:this={videoEl} class="selfie-cam mt-4" autoplay playsinline muted>
 									<track kind="captions" />
 								</video>
 
@@ -3406,8 +3457,10 @@
 		{/if}
 
 		<div class="footer my-10">
-			<p>Built by <a href="https://www.neos.finance" target="_blank">Neos FinTech</a></p>
-			<p class="mb-10">© {year} OmniBot, All Rights Reserved</p>
+			<p>
+				Built by <a href="https://www.neos.finance" target="_blank" rel="noopener">Neos FinTech</a>
+			</p>
+			<p class="mb-10">© {year} Broking Engine7, All Rights Reserved</p>
 		</div>
 	</div>
 </div>

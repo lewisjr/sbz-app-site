@@ -462,6 +462,27 @@ export type Database = {
 				};
 				Relationships: [];
 			};
+			"push-ids": {
+				Row: {
+					email: string;
+					id: string;
+					luse_id: number;
+					updated_at: string;
+				};
+				Insert: {
+					email: string;
+					id: string;
+					luse_id: number;
+					updated_at?: string;
+				};
+				Update: {
+					email?: string;
+					id?: string;
+					luse_id?: number;
+					updated_at?: string;
+				};
+				Relationships: [];
+			};
 			settled_trades: {
 				Row: {
 					broker_comission: number;

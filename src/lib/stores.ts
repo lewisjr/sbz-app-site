@@ -21,3 +21,5 @@ export const expandedStockCacheStore = writable<DataCache<ExpandedSymbol>>({});
 export const filesCacheStore = writable<DataCache<Types["ClientKyc"][]>>({});
 
 export const portfolioCacheStore = writable<DataCache<Types["YTDFolio"]>>({});
+
+export const isAppStore = writable<boolean>(false);

@@ -472,18 +472,20 @@
 		toast.info("Rejecting client...");
 
 		try {
+			const body = {
+				action: "reject",
+				obj: {
+					idNum: activeRow.id_num,
+					luseId: activeRow.luseId.toString(),
+					fname: activeRow.fname,
+					email: activeRow.email,
+					reason: udf1.trim(),
+				},
+			};
+
 			const req = await fetch("/api/admin/requests", {
 				method: "POST",
-				body: JSON.stringify({
-					action: "reject",
-					obj: {
-						idNum: activeRow.id_num,
-						luseId: activeRow.luseId.toString(),
-						fname: activeRow.fname,
-						email: activeRow.email,
-						reason: udf1.trim(),
-					},
-				}),
+				body: JSON.stringify(body),
 			});
 
 			const res: GenericResponse = await req.json();

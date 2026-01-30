@@ -136,6 +136,10 @@ export const load = (data) => {
 		e_mail = emailCookie.data;
 	}
 
+	const forceApp = data.cookies.get("sbz-push");
+
+	console.log({ forceApp });
+
 	return {
 		hasSignature,
 		luseId,
@@ -145,5 +149,6 @@ export const load = (data) => {
 		idNum,
 		email: e_mail,
 		isLocal: nationality.toLowerCase() === "zambian",
+		forceApp,
 	};
 };

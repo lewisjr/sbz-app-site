@@ -3,6 +3,7 @@
 	import { goto } from "$app/navigation";
 	import { queryTypesArray, referralSourcesArray } from "$lib/utils";
 	import isEmail from "is-email";
+	import { toast } from "svelte-sonner";
 
 	//stores
 	import { screenWidthStore } from "$lib/stores";
@@ -21,8 +22,12 @@
 	import type { Types, GenericResponseWData, GenericResponse } from "$lib/types";
 
 	//icons
-	import { MessageCircle, LogIn, ArrowRight, Upload } from "@lucide/svelte";
-	import { toast } from "svelte-sonner";
+	import { MessageCircle, LogIn, ArrowRight, Upload, MoveLeft } from "@lucide/svelte";
+
+	//types
+	import type { PageProps } from "./$types";
+
+	let { data }: PageProps = $props();
 
 	let isMobile = $derived($screenWidthStore < 768);
 	let year = new Date().getFullYear();
@@ -75,7 +80,7 @@
 			!isEmail(emailValue) ||
 			idNumValue.length < 5;
 
-		const v2Disabled = isClient ? (luseIdValue.length ? true : false) : false;
+		const v2Disabled = isClient ? (luseIdValue.length ? false : true) : false;
 
 		const v3Disabled = referral ? !referral.length : true;
 
@@ -258,48 +263,61 @@
 	ogDescription="Speak directly to a broker and get answers to your queries!"
 />
 
+{#if data.isApp}
+	<div class="app"></div>
+{/if}
 <div class="tainer">
 	<header>
-		<div class="flex flex-row items-center">
-			<img class="h-[60px] w-[60px]" src="/img/logo-bull.png" alt="sbz-logo" />
-			<h3 class="ml-2">SBZ Digital</h3>
-		</div>
+		{#if !data.isApp}
+			<div class="flex flex-row items-center">
+				<img class="h-[60px] w-[60px]" src="/img/logo-bull.png" alt="sbz-logo" />
+				<h3 class="ml-2">SBZ Digital</h3>
+			</div>
 
-		{#if !isMobile}
-			<div class="links">
-				<div class="link">
-					<a href="/#stock">Market Data</a>
+			{#if !isMobile}
+				<div class="links">
+					<div class="link">
+						<a href="/#stock">Market Data</a>
+					</div>
+
+					<div class="link">
+						<a href="/#portfolio">Portfolio Analysis</a>
+					</div>
+
+					<div class="link">
+						<a href="/#screener">Screener</a>
+					</div>
+
+					<div class="link">
+						<a href="/#news">News</a>
+					</div>
+
+					<div class="link">
+						<a href="/#advisory">Advisory</a>
+					</div>
 				</div>
+			{/if}
 
-				<div class="link">
-					<a href="/#portfolio">Portfolio Analysis</a>
-				</div>
-
-				<div class="link">
-					<a href="/#screener">Screener</a>
-				</div>
-
-				<div class="link">
-					<a href="/#news">News</a>
-				</div>
-
-				<div class="link">
-					<a href="/#advisory">Advisory</a>
+			<div class={`flex${!isMobile ? " flex-row" : " flex-col items-end"}`}>
+				<Button
+					href="/sign-in"
+					style="text-decoration: none; font-weight: 600;"
+					class={`text-white${!isMobile ? " mr-4" : " mb-1"}`}
+					>Sign In<LogIn class="ml-1 h-4 w-4" /></Button
+				>
+				<Button variant="outline" href="/contact" style="text-decoration: none; font-weight: 600;"
+					>Contact<MessageCircle class="ml-2 h-4 w-4" /></Button
+				>
+			</div>
+		{:else}
+			<div class="flex w-full flex-row items-center justify-between">
+				<Button variant="ghost" href="/sign-in"><MoveLeft class="h-8 w-8" /></Button>
+				<div class="flex flex-row items-center justify-between">
+					<img class="h-[60px] w-[60px]" src="/img/logo-bull.png" alt="sbz-logo" />
+					<h3 class="ml-2">SBZ Digital</h3>
 				</div>
 			</div>
 		{/if}
-
-		<div class={`flex${!isMobile ? " flex-row" : " flex-col items-end"}`}>
-			<Button
-				href="/sign-in"
-				style="text-decoration: none; font-weight: 600;"
-				class={`text-white${!isMobile ? " mr-4" : " mb-1"}`}
-				>Sign In<LogIn class="ml-1 h-4 w-4" /></Button
-			>
-			<Button variant="outline" href="/contact" style="text-decoration: none; font-weight: 600;"
-				>Contact<MessageCircle class="ml-2 h-4 w-4" /></Button
-			>
-		</div>
 	</header>
 
 	<section class={`box border`}>
@@ -516,7 +534,9 @@
 	</section>
 
 	<footer>
-		<p>Built by <a href="https://www.neos.finance" target="_blank">Neos FinTech</a></p>
+		<p>
+			Built by <a href="https://www.neos.finance" target="_blank" rel="noopener">Neos FinTech</a>
+		</p>
 		<p class="mb-10">© {year} OmniBot, All Rights Reserved</p>
 	</footer>
 </div>

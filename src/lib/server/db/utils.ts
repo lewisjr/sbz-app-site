@@ -246,6 +246,8 @@ interface SBZutils {
 
 	// portfolio
 	getClients: () => Promise<TempClientName[]>;
+	updatePushId: (luseId: number, email: string, token: string) => Promise<boolean>;
+	removePushId: (luseId: number, email: string) => Promise<boolean>;
 	getPortfolio: (
 		luseId: number,
 		ytd?: number,
@@ -1154,14 +1156,7 @@ const sbz = (): SBZutils => {
 
 			return { message: `${fname}'s account has been approved!`, success: true };
 		} catch (ex: any) {
-			const error =
-				typeof ex === "string"
-					? ex
-					: ex instanceof Error
-						? ex.message
-						: ex.message || JSON.stringify(ex);
-
-			_log({ message: error, title: "Get Requests Exception" });
+			_log({ message: String(ex), title: "Get Requests Exception" });
 			return { message: String(ex), success: false };
 		}
 	};
@@ -1348,7 +1343,7 @@ const sbz = (): SBZutils => {
 			  }
 		>[] = [];
 
-		print(files);
+		// print(files);
 
 		const ids: string[] = [];
 
@@ -1392,14 +1387,7 @@ const sbz = (): SBZutils => {
 
 			return;
 		} catch (ex: any) {
-			const error =
-				typeof ex === "string"
-					? ex
-					: ex instanceof Error
-						? ex.message
-						: ex.message || JSON.stringify(ex);
-
-			_log({ message: error, title: "Upload KYC Exception" });
+			_log({ message: String(ex), title: "Upload KYC Exception" });
 			return;
 		}
 	};
@@ -1634,6 +1622,50 @@ const sbz = (): SBZutils => {
 		}
 	};
 
+	const _updatePushId = async (luseId: number, email: string, token: string): Promise<boolean> => {
+		try {
+			const { error } = await sbzdb
+				.from("push-ids")
+				.upsert({ email, luse_id: luseId, id: token, updated_at: genDbTimestamp() })
+				.filter("email", "eq", email);
+
+			if (error) {
+				_log({
+					message: error.message,
+					title: `Update Push Error - ${email} | ${luseId}`,
+				});
+				console.log(error.message);
+				return false;
+			}
+
+			return true;
+		} catch (ex: any) {
+			_log({ message: String(ex), title: `Update Push Exception - ${email} | ${luseId}` });
+			return false;
+		}
+	};
+
+	const _removePushId = async (luseId: number, email: string): Promise<boolean> => {
+		// console.log({ luseId, email });
+		try {
+			const { error } = await sbzdb.from("push-ids").delete().filter("email", "eq", email);
+
+			if (error) {
+				_log({
+					message: error.message,
+					title: `Delete Push Error - ${email} | ${luseId}`,
+				});
+				console.log(error.message);
+				return false;
+			}
+
+			return true;
+		} catch (ex: any) {
+			_log({ message: String(ex), title: `Delete Push Exception - ${email} | ${luseId}` });
+			return false;
+		}
+	};
+
 	const _openAccount = async (
 		obj: ClientInsert,
 		autoApprove?: boolean,
@@ -1671,10 +1703,17 @@ const sbz = (): SBZutils => {
 				obj.approved_by = sender;
 			}
 
+			if (obj.acc_type === "joint") {
+				// @ts-ignore
+				obj.dob = obj.joint_partners[0].dob;
+				// @ts-ignore
+				obj.manag_dob = obj.joint_partners[0].dob;
+			}
+
 			const { error } = await sbzdb.from("clients").insert(obj);
 
 			// console.log({ obj });
-			print(obj);
+			// print(obj);
 
 			if (error) {
 				await _log({ message: error.message, title: "Open Account E2" });
@@ -2822,6 +2861,8 @@ const sbz = (): SBZutils => {
 		getFilteredSettledTrades: _getFilteredSettledTrades,
 		settleTrades: _settleTrades,
 		getClients: _getClients,
+		updatePushId: _updatePushId,
+		removePushId: _removePushId,
 		getPortfolio: _getPortfolio,
 		getFiles: _getFiles,
 		blockStaffMember: _blockStaffMember,

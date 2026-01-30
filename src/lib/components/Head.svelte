@@ -7,6 +7,7 @@
 		description: string;
 		ogTitle: string;
 		ogDescription: string;
+		token?: boolean;
 	}
 
 	let meta: HTMLHead = $props();
@@ -28,5 +29,12 @@
 	<meta name="og:image:alt" content="sbz open graph" />
 	<meta name="og:image:width" content="1200" />
 	<meta name="og:image:height" content="630" />
-	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+	{#if meta.token}
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+		/>
+	{:else}
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+	{/if}
 </svelte:head>

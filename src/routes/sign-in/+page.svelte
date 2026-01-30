@@ -14,6 +14,14 @@
 	import { onMount } from "svelte";
 	import { portfolioCacheStore } from "$lib/stores";
 
+	//stores
+	import { isAppStore } from "$lib/stores";
+
+	// types
+	import type { PageProps } from "./$types";
+
+	let { data }: PageProps = $props();
+
 	let label = $state<"Admin Username" | "LuSE ID">("LuSE ID");
 	let placeholder = $state<"466932" | "bwalya">("466932");
 	let description = $state<
@@ -111,7 +119,12 @@
 					"Content-Type": "application/json",
 				},
 				method: "POST",
-				body: JSON.stringify({ label, id: inputValue.replace("#", ""), otp: Number(otpInput) }),
+				body: JSON.stringify({
+					label,
+					id: inputValue.replace("#", ""),
+					otp: Number(otpInput),
+					isApp: data.isApp,
+				}),
 			});
 
 			const res = await req.json();
@@ -154,8 +167,12 @@
 	ogTitle="Sign In"
 	description="Sign in and take control of your portfolio!"
 	ogDescription="Sign in and take control of your portfolio!"
+	token={$isAppStore}
 />
 
+{#if data.isApp}
+	<div class="app"></div>
+{/if}
 <div class="tainer">
 	<div class="img">
 		<img src="/img/sign-in.png" alt="infographic" />
@@ -180,6 +197,7 @@
 						//@ts-ignore
 						valueHandler(e.target.value);
 					}}
+					inputmode={$isAppStore ? "numeric" : undefined}
 				/>
 				<p class="text-justify text-sm text-muted-foreground">
 					{description}
@@ -206,11 +224,16 @@
 		</p>
 
 		<div class="footer">
-			<p>Built by <a href="https://www.neos.finance" target="_blank">Neos FinTech</a></p>
-			<p class="mb-10">© {year} OmniBot, All Rights Reserved</p>
+			<p>
+				Built by <a href="https://www.neos.finance" target="_blank" rel="noopener">Neos FinTech</a>
+			</p>
+			<p class="mb-10">© {year} Broking Engine, All Rights Reserved</p>
 		</div>
 	</div>
 </div>
+{#if data.isApp}
+	<div class="app"></div>
+{/if}
 
 <style lang="scss">
 	.tainer {

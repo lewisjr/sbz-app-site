@@ -1,7 +1,7 @@
 <script lang="ts">
 	//functions
 	import { setMode } from "mode-watcher";
-	import { screenWidthStore } from "$lib/stores";
+	import { isAppStore, screenWidthStore } from "$lib/stores";
 
 	//components - other
 	import { ModeWatcher } from "mode-watcher";
@@ -10,18 +10,20 @@
 	// styles
 	import "../app.css";
 
-	let { children } = $props();
-
-	// responsive to user's preferences
-	setMode("system");
+	let { children, data } = $props();
 
 	let innerWidth = $state<number>(0);
 
 	$effect(() => screenWidthStore.update(() => innerWidth));
+
+	if (data.isApp) {
+		setMode("dark");
+		isAppStore.set(true);
+	} else setMode("system");
 </script>
 
 <ModeWatcher track />
-<Toaster position="top-right" />
+<Toaster position={data.isApp ? "bottom-right" : "top-right"} />
 
 <svelte:window bind:innerWidth />
 

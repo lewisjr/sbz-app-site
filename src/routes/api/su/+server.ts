@@ -149,9 +149,13 @@ export const POST = async ({ request }) => {
 			// ! eventully change to row.idNum
 			const selfie = formData.get(`${obj.id_num}-selfie`) as Blob;
 
+			// print({ partners, formData: formData.keys().map((v) => v) });
+
 			partners.forEach((row, i) => {
 				const poa = formData.get(`${row.idNum}-poa`) as File;
 				const poi = formData.get(`${row.idNum}-poi`) as File;
+
+				console.log({ poa, poi, i, row });
 
 				files.push({ file: poa, id: row.idNum, type: "poa" });
 				files.push({ file: poi, id: row.idNum, type: "poi" });
@@ -225,9 +229,9 @@ export const POST = async ({ request }) => {
 			});
 		}
 
-		await dbs.sbz.uploadKyc(files);
+		const _files = files.filter((item) => item.file !== null);
 
-		print(obj);
+		await dbs.sbz.uploadKyc(_files);
 
 		const res = await dbs.sbz.openAccount(obj);
 

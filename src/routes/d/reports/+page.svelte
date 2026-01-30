@@ -17,7 +17,7 @@
 	import { Download } from "@lucide/svelte";
 
 	//stores
-	import { screenWidthStore } from "$lib/stores";
+	import { screenWidthStore, isAppStore } from "$lib/stores";
 
 	//types
 	import type { PageProps } from "./$types";
@@ -218,6 +218,39 @@
 
 	// $effect(() => console.log({ tabValue }));
 
+	const dldApp = async (file: Blob, fname: string) => {
+		const _blobToBase64 = async (blob: Blob): Promise<string> => {
+			const buffer = await blob.arrayBuffer();
+			let binary = "";
+			const bytes = new Uint8Array(buffer);
+			const chunkSize = 0x8000;
+
+			for (let i = 0; i < bytes.length; i += chunkSize) {
+				binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+			}
+
+			return btoa(binary);
+		};
+
+		downloading = false;
+
+		try {
+			const msg = {
+				type: "SHARE_FILE",
+				filename: fname,
+				mime: "application/pdf",
+				data: await _blobToBase64(file),
+				dialog: `Share your ${tabValue === "cns" ? "Contract Note(s)" : "Trade Report"}.`,
+			};
+
+			// @ts-ignore
+			window.ReactNativeWebView?.postMessage(JSON.stringify(msg));
+		} catch (ex) {
+			// toast.error(String(ex));
+			toast.error("Please wait a few seconds and try again.");
+		}
+	};
+
 	const dld = async () => {
 		if (!pdfData) {
 			toast.error("Failed to download document.");
@@ -245,6 +278,15 @@
 		await tick();
 
 		const blob = new Blob([pdfData], { type: "application/pdf" });
+
+		// toast.info(`check = ${$isAppStore}`);
+
+		if ($isAppStore) {
+			downloading = false;
+			await dldApp(blob, `${title}${ext}`);
+			return;
+		}
+
 		const file = new File([blob], `${title}${ext}`, {
 			type: "application/pdf",
 		});

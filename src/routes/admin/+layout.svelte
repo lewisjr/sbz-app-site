@@ -2,10 +2,18 @@
 	//componenets - custom
 	import Navbar from "./Navbar.svelte";
 
+	//stores
+	import { isAppStore } from "$lib/stores";
+
 	//types
 	import type { LayoutProps } from "./$types";
+	import { onMount } from "svelte";
 
 	let { data, children }: LayoutProps = $props();
+
+	onMount(() => {
+		if (data.isApp) isAppStore.set(true);
+	});
 </script>
 
 <section>
