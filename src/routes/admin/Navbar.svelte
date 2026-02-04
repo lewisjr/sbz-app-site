@@ -62,7 +62,7 @@
 		toast.info("Signing you out...");
 
 		try {
-			const req = await fetch("/api/si", {
+			const req = await fetch("/api/so", {
 				method: "DELETE",
 			});
 

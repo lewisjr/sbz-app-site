@@ -1674,7 +1674,15 @@ const sbz = (): SBZutils => {
 		try {
 			const tempId: number = Number(obj.id_num.replace(/\D+/g, "")) * -1;
 
-			if (!obj.luseId) obj.luseId = tempId === 0 ? Math.floor(Math.random() * 999_999) : tempId;
+			if (!obj.luseId)
+				obj.luseId = tempId === 0 ? Math.floor(Math.random() * 1_000_000) * -1 : tempId;
+
+			if (obj.luseId < 0) {
+				obj.id_num = (obj.luseId * -1).toString();
+			}
+
+			obj.id_num_og = obj.id_num;
+			obj.id_num = obj.luseId.toString();
 
 			const firstCheck = await sbzdb.from("clients").select().filter("id_num", "eq", obj.id_num);
 

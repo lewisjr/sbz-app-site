@@ -94,6 +94,7 @@ export type Database = {
 					fname: string;
 					gender: string;
 					id_num: string;
+					id_num_og: string;
 					id_type: string;
 					is_approved: boolean;
 					is_in_trust_of: boolean;
@@ -145,6 +146,7 @@ export type Database = {
 					fname: string;
 					gender: string;
 					id_num: string;
+					id_num_og?: string;
 					id_type: string;
 					is_approved?: boolean;
 					is_in_trust_of?: boolean;
@@ -196,6 +198,7 @@ export type Database = {
 					fname?: string;
 					gender?: string;
 					id_num?: string;
+					id_num_og?: string;
 					id_type?: string;
 					is_approved?: boolean;
 					is_in_trust_of?: boolean;

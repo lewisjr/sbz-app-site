@@ -231,6 +231,9 @@ export const POST = async ({ request }) => {
 
 		const _files = files.filter((item) => item.file !== null);
 
+		print({ files: _files });
+		print({ obj: obj });
+
 		await dbs.sbz.uploadKyc(_files);
 
 		const res = await dbs.sbz.openAccount(obj);

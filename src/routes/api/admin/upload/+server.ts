@@ -3,6 +3,7 @@ import kratos from "$lib/server/kratos";
 import { PdfReader } from "pdfreader";
 import dbs from "$lib/server/db";
 import loadWasm from "$lib/wasm/load";
+import { print } from "$lib/utils";
 
 import type { SettledTradeInsert } from "$lib/types";
 
@@ -58,6 +59,10 @@ export const PUT = async (event) => {
 		const fileBuffer = Buffer.from(await file.arrayBuffer());
 
 		const text = await readSettle(fileBuffer);
+
+		return json({ text }, { status: 200 });
+
+		// print({ jan28: text });
 
 		// console.log({ udf1 });
 		// console.log(`\n"${text}"\n`);

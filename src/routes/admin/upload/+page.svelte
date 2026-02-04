@@ -112,7 +112,7 @@
 
 			const res: GenericResponseWData<SettleTradeUploadResponse | undefined> = await req.json();
 
-			// console.log(res);
+			console.log({ res });
 
 			loading = false;
 
@@ -120,8 +120,6 @@
 				toast.error(res.message);
 				return;
 			}
-
-			//console.log({ res });
 
 			const tf = Date.now();
 
