@@ -476,7 +476,7 @@
 			const body = {
 				action: "reject",
 				obj: {
-					idNum: activeRow.id_num,
+					idNum: activeRow.id_num_og,
 					luseId: activeRow.luseId.toString(),
 					fname: activeRow.fname,
 					email: activeRow.email,
