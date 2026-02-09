@@ -4,12 +4,17 @@
  * handle the settlement report; based on *7 Oct 2025* settlement report
  */
 export function settle_v1(raw_str: string, currency: string): any;
+/**
+ * handle the settlement report; based on *7 Oct 2025* settlement report
+ */
+export function settle_v2(raw_str: string, currency: string): any;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
   readonly settle_v1: (a: number, b: number, c: number, d: number) => any;
+  readonly settle_v2: (a: number, b: number, c: number, d: number) => any;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_export_2: WebAssembly.Table;

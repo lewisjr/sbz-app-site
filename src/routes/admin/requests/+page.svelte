@@ -107,6 +107,7 @@
 		approved_by: "",
 		opened_by: "",
 		wallet_details: {},
+		id_num_og: "",
 	};
 
 	let activeRow = $state<ClientRow>(initClient);
@@ -130,7 +131,7 @@
 	const getDocs = async (id?: string) => {
 		kycLoading = true;
 
-		const _id = id ? id : activeRow.id_num;
+		const _id = id ? id : activeRow.id_num_og;
 
 		try {
 			const req = await fetch("/api/admin/requests", {
@@ -812,7 +813,7 @@
 								</tr>
 								<tr>
 									<td>{activeRow.id_type}</td>
-									<td style="border-right: 0px solid transparent;">{activeRow.id_num}</td>
+									<td style="border-right: 0px solid transparent;">{activeRow.id_num_og}</td>
 								</tr>
 							</tbody>
 						</table>

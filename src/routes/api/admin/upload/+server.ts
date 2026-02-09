@@ -60,8 +60,6 @@ export const PUT = async (event) => {
 
 		const text = await readSettle(fileBuffer);
 
-		return json({ text }, { status: 200 });
-
 		// print({ jan28: text });
 
 		// console.log({ udf1 });
@@ -74,8 +72,27 @@ export const PUT = async (event) => {
 				data: undefined,
 			});
 
+		let settleFn: ((text: string, udf1: string) => any) | null = null;
+
+		try {
+			settleFn = wasm.settle_v1;
+			settleFn(text, udf1);
+		} catch (ex1) {
+			console.warn("settle_v1 failed, trying v2", ex1);
+			try {
+				settleFn = wasm.settle_v2;
+				settleFn(text, udf1);
+			} catch (ex2) {
+				console.error("Both settle engines failed", ex2);
+				throw new Error("Unsupported settlement document");
+			}
+		}
+
+		if (!settleFn)
+			return json({ success: false, message: "Well... this won't be good." }, { status: 400 });
+
 		const { data, date, net_val, total_buy, total_buy_clients, total_sell, total_sell_clients } =
-			wasm.settle_v1(text, udf1);
+			settleFn(text, udf1);
 
 		interface RustRow {
 			csd_ref: string;

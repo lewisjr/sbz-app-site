@@ -107,6 +107,7 @@
 		approved_by: "",
 		opened_by: "",
 		wallet_details: {},
+		id_num_og: "",
 	};
 
 	let activeRow = $state<ClientRow>(initClient);
@@ -281,6 +282,7 @@
 		{
 			id: "status",
 			cell: ({ row }) => {
+				console.log({ row });
 				const renderCell = createRawSnippet<[string]>(() => {
 					const value = row.original.luseId > 0;
 					return {
@@ -413,6 +415,8 @@
 				const renderCell = createRawSnippet<[string]>(() => {
 					const value = cell.getValue() as string;
 
+					console.log({ value });
+
 					return {
 						render: () => toTitleCase(value),
 					};
@@ -484,8 +488,8 @@
 </script>
 
 <Head
-	title="Tracl | SBZ Admin"
-	ogTitle="Tracl"
+	title="TracK | SBZ Admin"
+	ogTitle="TracK"
 	description="Monitor the recent account openings."
 	ogDescription="Monitor the recent account openings."
 />

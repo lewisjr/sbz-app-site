@@ -172,6 +172,21 @@ export function settle_v1(raw_str, currency) {
     return ret;
 }
 
+/**
+ * handle the settlement report; based on *7 Oct 2025* settlement report
+ * @param {string} raw_str
+ * @param {string} currency
+ * @returns {any}
+ */
+export function settle_v2(raw_str, currency) {
+    const ptr0 = passStringToWasm0(raw_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ptr1 = passStringToWasm0(currency, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len1 = WASM_VECTOR_LEN;
+    const ret = wasm.settle_v2(ptr0, len0, ptr1, len1);
+    return ret;
+}
+
 const EXPECTED_RESPONSE_TYPES = new Set(['basic', 'cors', 'default']);
 
 async function __wbg_load(module, imports) {

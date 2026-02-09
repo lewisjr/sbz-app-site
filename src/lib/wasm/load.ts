@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import init, { settle_v1 } from "./sbz_wasm";
+import init, { settle_v1, settle_v2 } from "./sbz_wasm";
 
 const wasmPath = path.resolve("src/lib/wasm/sbz_wasm_bg.wasm");
 
@@ -16,7 +16,7 @@ const loadWasm = async () => {
 			initialized = true;
 		}
 
-		return { settle_v1 };
+		return { settle_v1, settle_v2 };
 	} catch (ex) {
 		console.error("\n\nWASM init failed:", ex, "\n\n");
 		return false;

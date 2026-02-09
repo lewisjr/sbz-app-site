@@ -537,7 +537,7 @@
 		<p>
 			Built by <a href="https://www.neos.finance" target="_blank" rel="noopener">Neos FinTech</a>
 		</p>
-		<p class="mb-10">© {year} OmniBot, All Rights Reserved</p>
+		<p class="mb-10">© {year} Broking Engine, All Rights Reserved</p>
 	</footer>
 </div>
 
