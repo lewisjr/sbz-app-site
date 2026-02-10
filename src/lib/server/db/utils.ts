@@ -269,6 +269,7 @@ interface SBZutils {
 		sender: string,
 		email: string,
 	) => Promise<GenericResponse>;
+	onboard: (obj: ClientInsert, sender: string) => Promise<GenericResponse>;
 	rejectRequest: (
 		idNum: string,
 		luseId: string,
@@ -1737,7 +1738,7 @@ const sbz = (): SBZutils => {
 							subject: `New Account Request | ${obj.fname} ${obj.lname}`,
 							title: `Account Opening`,
 							body: `A new client <b>${obj.fname} ${obj.lname}</b> wants to open an account!. Please click below to review.`,
-							link: `https://app.sbz.com.zm/admin/aco?q=${tempId}`,
+							link: `http://localhost:5173/admin/requests`,
 							linkText: "View Request",
 							extra: `This is a ${obj.country === "Zambia" ? "local" : "foreign"} client (currenly residing in ${obj.country}).`,
 							cc: IS_DEV ? "sbzlewis@gmail.com" : "trading@sbz.com.zm",
@@ -1769,6 +1770,112 @@ const sbz = (): SBZutils => {
 						: ex.message || JSON.stringify(ex);
 
 			_log({ message: error, title: "Open Account Exception" });
+			return {
+				success: false,
+				message: "Server error, please wait 10 minutes and try again.",
+			};
+		}
+	};
+
+	const _onboard = async (obj: ClientInsert, sender: string): Promise<GenericResponse> => {
+		try {
+			const tempId: number = Number(obj.id_num.replace(/\D+/g, "")) * -1;
+
+			if (!obj.luseId)
+				obj.luseId = tempId === 0 ? Math.floor(Math.random() * 1_000_000) * -1 : tempId;
+
+			if (obj.luseId < 0) {
+				obj.id_num = (obj.luseId * -1).toString();
+			}
+
+			obj.id_num_og = obj.id_num;
+			obj.id_num = obj.luseId.toString();
+			obj.opened_by = sender;
+
+			const firstCheck = await sbzdb.from("clients").select().filter("id_num", "eq", obj.id_num);
+
+			if (firstCheck.error) {
+				await _log({ message: firstCheck.error.message, title: "Onboard Account E1" });
+				return {
+					message: "Failed to validate, please wait a few minutes and try again.",
+					success: false,
+				};
+			}
+
+			if (firstCheck.data.length) {
+				return {
+					message: "They already have an account with us! Get in touch with the support mediums.",
+					success: false,
+				};
+			}
+
+			obj.opened_by = sender;
+			obj.is_approved = true;
+			obj.approved_by = sender;
+
+			if (obj.acc_type === "joint") {
+				// @ts-ignore
+				obj.dob = obj.joint_partners[0].dob;
+				// @ts-ignore
+				obj.manag_dob = obj.joint_partners[0].dob;
+			}
+
+			const { error } = await sbzdb.from("clients").insert(obj);
+
+			// console.log({ obj });
+			// print(obj);
+
+			if (error) {
+				await _log({ message: error.message, title: "Onboard Account E2" });
+				return {
+					message: "Failed to upload, please wait a few minutes and try again.",
+					success: false,
+				};
+			}
+
+			const internalEmail = notif.email.sendUpdate(
+				{
+					subject: `Account Onboarding | ${obj.fname} ${obj.lname}`,
+					title: `Account Onboarded!`,
+					body: `${toTitleCase(sender)} has onboarded client <b>${obj.fname} ${obj.lname}</b> (CV: ${obj.cv_num} | LI: ${obj.luseId}).`,
+					extra: "",
+					cc: IS_DEV ? "sbzlewis@gmail.com" : "trading@sbz.com.zm",
+				},
+				"",
+			);
+
+			const clientEmail = notif.email.sendLink(
+				{
+					subject: `Your Account Onboarding Request | SBZ Digital`,
+					title: `Account Onboarded`,
+					body: `Hi ${obj.fname},<br /><br />Thank you for your patience and patronage! Your SBZ account has now been onboarded. Please click the link below to download the app and get started!`,
+					extra: `Your LuSE ID is ${obj.luseId}`,
+					cc: "trading@sbz.com.zm",
+					link: "https://app.sbz.com.zm/access",
+					linkText: "Download App",
+				},
+				IS_DEV ? "sbzlewis@gmail.com" : obj.email,
+			);
+
+			await Promise.all([
+				internalEmail,
+				clientEmail,
+				_log({
+					message: `${toTitleCase(sender)} just onboarded client ${obj.fname} ${obj.lname}, ${obj.cv_num} and LI ${obj.luseId}`,
+					title: "Account Onboarded",
+				}),
+			]);
+
+			return { message: "Successfully onboarded!", success: true };
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Onboard Account Exception" });
 			return {
 				success: false,
 				message: "Server error, please wait 10 minutes and try again.",
@@ -2879,6 +2986,7 @@ const sbz = (): SBZutils => {
 		unPauseOdyn: _unPauseOdyn,
 		uploadFiles: _uploadFiles,
 		openAccount: _openAccount,
+		onboard: _onboard,
 		updateClient: _updateClient,
 		approveRequest: _approveRequest,
 		getRequests: _getRequests,

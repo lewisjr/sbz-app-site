@@ -131,7 +131,7 @@
 	const getDocs = async (id?: string) => {
 		kycLoading = true;
 
-		const _id = id ? id : activeRow.id_num;
+		const _id = id ? id : activeRow.id_num_og;
 
 		try {
 			const req = await fetch("/api/admin/requests", {
@@ -156,7 +156,7 @@
 	};
 
 	const getDocsOther = async (id?: string) => {
-		const _id = id ? id : activeRow.id_num;
+		const _id = id ? id : activeRow.id_num_og;
 
 		if (kycDocsMng[_id]) return;
 
@@ -282,9 +282,9 @@
 		{
 			id: "status",
 			cell: ({ row }) => {
-				console.log({ row });
+				// console.log({ row, p: "status" });
 				const renderCell = createRawSnippet<[string]>(() => {
-					const value = row.original.luseId > 0;
+					const value = row.original.cv_num !== "";
 					return {
 						render: () => `<span class="onl-status ${value ? "onl" : "ofl"}"></span>`,
 					};
@@ -316,6 +316,7 @@
 				return renderSnippet(renderCell);
 			},
 		},
+
 		{
 			accessorKey: "cv_num",
 			header: "CV",
@@ -409,16 +410,15 @@
 			},
 		},
 		{
-			accessorKey: "approved_by",
+			id: "approved_by",
 			header: "Approver",
-			cell: ({ cell }) => {
+			cell: ({ row }) => {
 				const renderCell = createRawSnippet<[string]>(() => {
-					const value = cell.getValue() as string;
-
-					console.log({ value });
-
+					const value = row.original.approved_by.length
+						? toTitleCase(row.original.approved_by)
+						: "<span></span>";
 					return {
-						render: () => toTitleCase(value),
+						render: () => value,
 					};
 				});
 
@@ -488,8 +488,8 @@
 </script>
 
 <Head
-	title="TracK | SBZ Admin"
-	ogTitle="TracK"
+	title="Track | SBZ Admin"
+	ogTitle="Track"
 	description="Monitor the recent account openings."
 	ogDescription="Monitor the recent account openings."
 />
@@ -763,7 +763,7 @@
 							</tr>
 							<tr>
 								<td>{activeRow.id_type}</td>
-								<td style="border-right: 0px solid transparent;">{activeRow.id_num}</td>
+								<td style="border-right: 0px solid transparent;">{activeRow.id_num_og}</td>
 							</tr>
 						</tbody>
 					</table>
