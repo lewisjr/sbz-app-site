@@ -14,7 +14,7 @@
 	import AnyPicker from "$lib/components/AnyPicker.svelte";
 	import OTP from "$lib/components/OTP.svelte";
 	import AnyCombobox from "$lib/components/AnyCombobox/AnyCombobox.svelte";
-	import FocusIcon from "../../sign-up/FocusIcon.svelte";
+	import FocusIcon from "../sign-up/FocusIcon.svelte";
 	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
 
 	//components - shadcn
@@ -27,6 +27,7 @@
 	import * as RadioGroup from "$lib/components/ui/radio-group/index.js";
 	import * as Table from "$lib/components/ui/table/index.js";
 	import * as Dialog from "$lib/components/ui/dialog/index.js";
+	import Spinner from "$lib/components/ui/spinner/spinner.svelte";
 
 	//icons
 	import {
@@ -39,10 +40,11 @@
 		Camera,
 		Circle,
 		RotateCcw,
+		BookSearch,
 	} from "@lucide/svelte";
 
 	//constants
-	import { nationalities, countries } from "../../sign-up/utils";
+	import { nationalities, countries } from "../sign-up/utils";
 	import tc from "$lib/tc";
 
 	//types
@@ -733,7 +735,7 @@
 	let endLayout = $state<boolean>(false);
 	let tcVal = $state<boolean>(false);
 
-	const openAccount = async () => {
+	const onboard = async () => {
 		toast.info("Onboarding...");
 		loading = true;
 
@@ -1116,102 +1118,86 @@
 			return;
 		}
 
-		await openAccount();
+		await onboard();
+	};
+
+	let checked = $state<boolean>(false);
+
+	const checkUser = async (luseId: number) => {
+		try {
+			const req = await fetch(`/api/admin/onbord?user=${luseId}`);
+		} catch (ex) {
+			toast.error(String(ex));
+		}
 	};
 </script>
 
 <Head
-	title="Sign Up | SBZ Digital"
-	ogTitle="Sign Up"
-	description="Create or link your account and begin your digital investing journey!"
-	ogDescription="Create or link your account and begin your digital investing journey!"
+	title="Onboard | SBZ Admin"
+	ogTitle="Onboard"
+	description="Onboard missed clients into the system... in like 1 minute! Not for new clients but existing ones."
+	ogDescription="Onboard missed clients into the system... in like 1 minute! Not for new clients but existing ones."
 />
 
 <div class="main-tainer">
-	<div class="img">
-		<img src="/img/kyc.png" alt="infographic" />
-		<h2>Sign Up</h2>
-		<p class="text-center">Create your Stockbrokers account and get started in just 5 minutes!</p>
-		<p class="mt-8 text-justify text-sm">
-			Already have an account? <span class="font-bold italic"><a href="/sign-in">Sign In.</a></span>
-		</p>
-		<p class="mt-8 text-justify text-sm">
-			Got Questions? <span class="font-bold italic"><a href="/contact">Contact Us.</a></span>
-		</p>
-	</div>
-
 	<div class="tainer">
-		{#if otpLayout}
-			<h3 class="tmid mb-2">Enter Your OTP</h3>
-			<p class="tmid mb-3">
-				Please check your <b>email inbox or spam</b> for an email coming from <b>app@sbz.com.zm</b>.
-			</p>
-			<div class="mx-auto mt-3">
-				<OTP handler={otpValueHandler} bind:disabled={loading} />
-			</div>
+		<h2 class="text-center">Onboard Client</h2>
 
-			<h3 class="tmid mt-10 mb-2">Enter Your Signature</h3>
-			<p class="tmid mb-3">
-				Please check your <b>authenticator app</b> for your <b>six digit code</b>.
-			</p>
-			<div class="mx-auto mt-3">
-				<OTP handler={totpValueHandler} bind:disabled={loading} />
-			</div>
-		{:else if endLayout}
-			<h3 class="tmid mb-2">Request Submitted!</h3>
-			<p class="tmid mb-3">
-				Your submission is being processed, you will receive notification via email within 24 hours.
-			</p>
-		{:else}
-			<h3 class="tmid mb-2">Account Type</h3>
-			<p class="tmid mb-3">
-				An <b>individual</b> account is for local and foreign individuals, as well as an
-				<i>in trust of</i> account for minors under 16 years old.
-			</p>
-			<p class="tmid mb-3">
-				A <b>joint</b> account is for local or foreign individuals who intend to co-own an account.
-			</p>
-			<p class="tmid mb-3">
-				An <b>institution</b> account is for local or foreign companies and institutions who intend to
-				invest under the company.
-			</p>
-			<p class="tmid mb-5"><u>Select an account type below:</u></p>
+		<h3 class="tmid my-2">Account Type</h3>
+		<p class="tmid mb-3">
+			An <b>individual</b> account is for local and foreign individuals, as well as an
+			<i>in trust of</i> account for minors under 16 years old.
+		</p>
+		<p class="tmid mb-3">
+			A <b>joint</b> account is for local or foreign individuals who intend to co-own an account.
+		</p>
+		<p class="tmid mb-3">
+			An <b>institution</b> account is for local or foreign companies and institutions who intend to
+			invest under the company.
+		</p>
+		<p class="tmid mb-5"><u>Select an account type below:</u></p>
 
-			<Tabs.Root bind:value={activeTab} class="mx-auto mb-5">
-				<Tabs.List>
-					<Tabs.Trigger class="cursor-pointer" value="individual">Individual</Tabs.Trigger>
-					<Tabs.Trigger class="cursor-pointer" value="joint">Joint</Tabs.Trigger>
-					<Tabs.Trigger class="cursor-pointer" value="institution">Institution</Tabs.Trigger>
-				</Tabs.List>
-			</Tabs.Root>
+		<Tabs.Root bind:value={activeTab} class="mx-auto mb-5">
+			<Tabs.List>
+				<Tabs.Trigger class="cursor-pointer" value="individual">Individual</Tabs.Trigger>
+				<Tabs.Trigger class="cursor-pointer" value="joint">Joint</Tabs.Trigger>
+				<Tabs.Trigger class="cursor-pointer" value="institution">Institution</Tabs.Trigger>
+			</Tabs.List>
+		</Tabs.Root>
 
-			<h3 class="mb-4">Existing Portfolio</h3>
-			<section class="inputs mb-5">
-				<div class="items tp flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>LuSE ID</Label>
-						<Input
-							class="my-2"
-							bind:value={luseId}
-							placeholder="465345"
-							disabled={loading}
-							oninput={(e) => {
-								//@ts-ignore
-								luseId = e.target.value.replace(/[^0-9]/g, "");
-							}}
-							inputmode="numeric"
-						/>
-						<p class="text-justify text-sm text-muted-foreground">
-							If you already have a LuSE ID, please enter it here. We will link the LuSE ID to
-							Stockbrokers, however, we will not transfer the shares.
-						</p>
-						<p class="mt-2 text-justify text-sm text-muted-foreground">
-							You can request a share transfer through your account dashboard.
-						</p>
-					</div>
+		<h3 class="mb-4">Pre-Check</h3>
+		<section class="inputs mb-5">
+			<div class="items tp flex">
+				<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
+					<Label>LuSE ID</Label>
+					<Input
+						class="my-2"
+						bind:value={luseId}
+						placeholder="465345"
+						disabled={loading}
+						oninput={(e) => {
+							//@ts-ignore
+							luseId = e.target.value.replace(/[^0-9]/g, "");
+						}}
+						inputmode="numeric"
+					/>
+					<p class="text-justify text-sm text-muted-foreground">
+						Enter the client's LuSE ID to see if we can retrieve their data for cleaning, or for
+						onboarding.
+					</p>
 				</div>
-			</section>
+			</div>
 
+			<Button
+				>Pre-Check{#if loading}
+					<Spinner />
+				{:else}
+					<BookSearch />
+				{/if}</Button
+			>
+		</section>
+
+		{#if checked}
 			{#if activeTab === "individual"}
 				<h3 class="mb-4">Account Owner Details</h3>
 				<section class="inputs">
@@ -3067,250 +3053,6 @@
 				</section>
 			{/if}
 
-			<!--
-			<h3 class="mt-7 mb-4">Photo ID</h3>
-			<section class="inputs mb-5">
-				<div class="items tp flex">
-					<div class="cntnt flex w-full max-w-sm flex-col gap-1.5">
-						{#if !kycBegin && !imgSrc}
-							<Label>Why We Need This</Label>
-							<p class="text-justify text-sm text-muted-foreground">
-								To both verify and protect your identity, we require you to upload a live selfie of
-								yourself to be processed.
-							</p>
-							<Button variant="outline" onclick={startCam}
-								>Open Camera<Camera class="ml-2 h-4 w-4" /></Button
-							>
-						{/if}
-
-						{#if kycBegin && !imgSrc}
-							<Label>What To Do</Label>
-							<p class="text-justify text-sm text-muted-foreground">
-								1. Ensure that the camera is clean with no glare.
-							</p>
-							<p class="text-justify text-sm text-muted-foreground">
-								2. Ensure that you have no glasses on.
-							</p>
-							<p class="text-justify text-sm text-muted-foreground">
-								3. Make sure to take the photo on a plain background.
-							</p>
-							<p class="text-justify text-sm text-muted-foreground">4. Keep a straight face.</p>
-							<p class="text-justify text-sm text-muted-foreground">
-								5. Take the photo when your face is in the white box.
-							</p>
-
-							<div class="selfie-tainer">
-								<video bind:this={videoEl} class="selfie-cam mt-4" autoplay playsinline>
-									<track kind="captions" />
-								</video>
-
-								<div class="focus-tainer"><FocusIcon size={260} stroke={1} /></div>
-							</div>
-
-							<p class="text-justify text-sm text-muted-foreground">
-								<b>Tip:</b> Press the button below to take the photo.
-							</p>
-
-							<button class="selfie-button" onclick={capturePhoto}
-								><Circle class="h-[35px] w-[35px]" /></button
-							>
-						{/if}
-
-						{#if kycBegin && imgSrc}
-							<Label>That's a Great Angle!</Label>
-							<img class="photo-id-taken" src={imgSrc} alt="foto-id" />
-							<Button variant="destructive" onclick={retakePhoto}
-								>Retake<RotateCcw class="ml-2 h-4 w-4" /></Button
-							>
-						{/if}
-					</div>
-				</div>
-			</section>
-			-->
-
-			<!--
-			<h3 class="mt-7 mb-4">Signature</h3>
-			<section class="inputs mb-5">
-				<div class="items tp flex">
-					{#if backupCodes && backupCodes.length}
-						<div class="cntnt flex w-full max-w-sm flex-col gap-1.5">
-							<div class="grid gap-2">
-								<img class="sig-img" src={qrUrl} alt="signature qr" />
-								<p class="max-w-[800px] text-sm text-muted-foreground">
-									Scan the QR Code above into any authenticator app, we recommend <a
-										href="https://www.google.com/search?q=google+authenticator"
-										target="_blank">Google Authenticar</a
-									>.
-								</p>
-								<p class="max-w-[800px] text-sm text-muted-foreground">
-									Or alternatively, enter the code below to set it up manually in your authenticator
-									app of your choice.
-								</p>
-								<div class="sig-check">
-									<p class="num">{signatureValue}</p>
-									<Button
-										class="ml-5"
-										variant="outline"
-										onclick={() => copyVal(signatureValue ?? "")}><Copy /></Button
-									>
-								</div>
-
-								<h3 class="mt-5">Backup Codes</h3>
-								<table class="sig-backups">
-									<tbody>
-										{#each backupCodes.slice(0, 4) as code, i}
-											<tr>
-												<td class="num">{code}</td>
-												{#if backupCodes[i + 4]}
-													<td class="num">{backupCodes[i + 4]}</td>
-												{/if}
-											</tr>
-										{/each}
-									</tbody>
-								</table>
-								<p class="max-w-[800px] text-sm text-muted-foreground">
-									These codes will only be shown once, and once you use them they cannot be reused.
-								</p>
-								<p class="max-w-[800px] text-sm text-muted-foreground">
-									Please keep them safe and <b>DO NOT</b> share them with anyone.
-								</p>
-								<Button
-									variant="outline"
-									onclick={() => copyVal(backupCodes ? backupCodes.join(" ") : "")}
-									>Copy Codes<Copy class="ml-2 h-4 w-4" /></Button
-								>
-							</div>
-						</div>
-					{:else}
-						<div class="cntnt flex w-full max-w-sm flex-col gap-1.5">
-							<Label>Create a Signature</Label>
-
-							<p class="max-w-[800px] text-sm text-muted-foreground">
-								This will act as your digital identity and enable you to securely "sign" on
-								instructions and other important actions
-							</p>
-							<p class="max-w-[800px] text-sm text-muted-foreground">
-								It will also secure your account from malicious actors
-							</p>
-							<p class="max-w-[800px] text-sm text-muted-foreground">
-								<b>NOTE</b> that you are responsible for keeping it only accessible to you.
-							</p>
-							<p class="max-w-[800px] text-sm text-muted-foreground">
-								You are required to use an <b>Authenticator App</b> to securely generate your signature
-								on demand.
-							</p>
-							<p class="max-w-[800px] text-sm text-muted-foreground">
-								We recommend
-								<a href="https://www.google.com/search?q=google+authenticator" target="_blank"
-									>Google Authenticator</a
-								>.
-							</p>
-
-							<Button variant="outline" onclick={genSignature} disabled={loading}
-								>Create Signature<Signature class="ml-2 h-4 w-4" /></Button
-							>
-						</div>
-					{/if}
-				</div>
-			</section>
-			-->
-
-			<h3 class="mt-7 mb-4">Questionnaire</h3>
-			<section class="inputs mb-5">
-				<div class="items tp flex">
-					<div class="cntnt-l flex w-full max-w-sm flex-col gap-1.5">
-						<Label>How Did You Hear About Us?</Label>
-
-						<AnyCombobox
-							handler={changeSanitisedReferral}
-							data={{
-								ungrouped: [{ label: "Other (Specify)", value: "Other" }],
-								grouped: [
-									{
-										title: "SBZ Sources",
-										group: [
-											{ value: "Facebook", label: "Facebook" },
-											{ value: "LinkedIn", label: "LinkedIn" },
-											{ value: "Web", label: "Web" },
-											{ value: "YouTube", label: "YouTube" },
-											{ value: "Spotify", label: "Spotify" },
-										],
-									},
-									{
-										title: "Institutions",
-										group: [
-											{ value: "LuSE", label: "Lusaka Securities Exchange" },
-											{ value: "Ventura", label: "Ventura Solutions" },
-											{ value: "ZBT", label: "Zambian Business Times" },
-											{ value: "Radio Phoenix", label: "Radio Phoenix" },
-										],
-									},
-									{
-										title: "Other Sources",
-										group: [
-											{ value: "Referral", label: "Referral" },
-											{ value: "News", label: "News" },
-											{ value: "Newspaper", label: "Newspaper" },
-										],
-									},
-								],
-							}}
-							dataTitle="Source"
-						/>
-
-						{#if sanitisedReferralValue === "Other"}
-							<Input
-								class="my-2"
-								bind:value={otherReferralValue}
-								placeholder="Type here..."
-								disabled={loading}
-								oninput={(e) => {
-									//@ts-ignore
-									otherReferralValue = toTitleCase(e.target.value);
-								}}
-							/>
-						{/if}
-					</div>
-				</div>
-			</section>
-
-			<!--
-			<h3 class="mt-7 mb-4">Terms and Conditions</h3>
-			<section class="inputs mb-5">
-				<div class="flex items-start gap-3">
-					<Checkbox onCheckedChange={(v) => (tcVal = !tcVal)} disabled={loading} />
-					<div class="grid gap-2">
-						<Label>Accept terms and conditions</Label>
-						<p class="max-w-[600px] text-sm text-muted-foreground">
-							By clicking this checkbox, you agree to our terms and conditions, and privacy policy.
-						</p>
-						<Dialog.Root>
-							<Dialog.Trigger disabled={loading}>
-								{#snippet child({ props })}
-									<Button {...props} variant="link" class="w-fit">
-										View Ts & Cs<Eye class="h-4 w-4" />
-									</Button>
-								{/snippet}
-							</Dialog.Trigger>
-
-							<Dialog.Content>
-								<Dialog.Header>
-									<Dialog.Title>Stockbrokers Zambia Ts & Cs</Dialog.Title>
-									<Dialog.Description>
-										In order to open an account an use our platform, you are required to read and
-										accept these.
-									</Dialog.Description>
-								</Dialog.Header>
-								<div class="tc">
-									{@html marked(tc)}
-								</div>
-							</Dialog.Content>
-						</Dialog.Root>
-					</div>
-				</div>
-			</section>
-			-->
-
 			<h3 class="mt-7 mb-4">Account Opening Document</h3>
 			<section class="inputs mb-5">
 				<div class="items tp mt-7 flex">
@@ -3333,7 +3075,7 @@
 
 		<div class="footer my-10">
 			<p>Built by <a href="https://www.neos.finance" target="_blank">Neos FinTech</a></p>
-			<p class="mb-10">© {year} OmniBot, All Rights Reserved</p>
+			<p class="mb-10">© {year} Broking Engine (c), All Rights Reserved</p>
 		</div>
 	</div>
 </div>

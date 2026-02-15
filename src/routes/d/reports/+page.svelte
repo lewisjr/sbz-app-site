@@ -69,6 +69,7 @@
 	};
 
 	let pdfData = $state<ArrayBuffer | null>(null);
+	let _pdfData = $state<ArrayBuffer | null>(null);
 
 	// Load PDF.js UMD once on mount
 	onMount(async () => {
@@ -118,6 +119,8 @@
 				const res = await req.blob();
 				openTrigger = Date.now();
 				src = URL.createObjectURL(res);
+				const temp = await res.arrayBuffer();
+				_pdfData = temp.slice(0);
 			}
 		} catch (ex) {
 			removeSpin();
@@ -252,7 +255,13 @@
 	};
 
 	const dld = async () => {
-		if (!pdfData) {
+		let __pdfData = pdfData;
+
+		if (!__pdfData) {
+			__pdfData = _pdfData;
+		}
+
+		if (!__pdfData) {
 			toast.error("Failed to download document.");
 			return;
 		}
@@ -277,7 +286,7 @@
 
 		await tick();
 
-		const blob = new Blob([pdfData], { type: "application/pdf" });
+		const blob = new Blob([__pdfData], { type: "application/pdf" });
 
 		// toast.info(`check = ${$isAppStore}`);
 
@@ -292,7 +301,7 @@
 		});
 
 		try {
-			if (navigator.canShare && navigator.canShare({ files: [file] })) {
+			if (navigator.canShare && navigator.canShare({ files: [file] }) && isMobile) {
 				downloading = false;
 				forceClose = Date.now();
 
@@ -397,7 +406,7 @@
 								class="m-0 flex w-[100%] items-center p-0"
 							>
 								{#if spinners[i]}
-									<Spinner class="m-0 h-3 w-3 p-0" />
+									<Spinner class="mx-auto h-3 w-3 p-0" />
 								{:else}
 									<Download class="mx-auto h-3 w-3" />
 								{/if}
@@ -447,7 +456,7 @@
 						<td
 							><button onclick={() => genCns(i, m.date)} class="m-0 flex w-[100%] items-center p-0">
 								{#if spinnersTwo[i]}
-									<Spinner class="m-0 h-3 w-3 p-0" />
+									<Spinner class="mx-auto h-3 w-3 p-0" />
 								{:else}
 									<Download class="mx-auto h-3 w-3" />
 								{/if}
@@ -469,7 +478,7 @@
 				<div id="pdfViewer"></div>
 			</div>
 		{:else}
-			<iframe title="Doc" style="border: 1px solid red;" {src} width="100%" height="800"></iframe>
+			<iframe title="Doc" src={`${src}#&navpanes=0&toolbar=0`} width="100%" height="800"></iframe>
 		{/if}
 	{/snippet}
 
