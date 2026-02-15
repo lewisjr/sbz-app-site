@@ -76,8 +76,7 @@
 		if (!browser) return;
 
 		// @ts-ignore
-		window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-			"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js";
+		window.pdfjsLib.GlobalWorkerOptions.workerSrc = "/workers/pdf.worker.min.js";
 
 		//console.log("[log] dependencies set");
 	});
