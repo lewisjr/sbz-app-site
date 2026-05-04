@@ -1,5 +1,5 @@
 import { writable } from "svelte/store";
-import type { NFHelp, ExpandedSymbol, Types } from "./types";
+import type { NFHelp, ExpandedSymbol, Types, PortfolioStandards } from "./types";
 
 export const screenWidthStore = writable<number>(0);
 
@@ -21,5 +21,9 @@ export const expandedStockCacheStore = writable<DataCache<ExpandedSymbol>>({});
 export const filesCacheStore = writable<DataCache<Types["ClientKyc"][]>>({});
 
 export const portfolioCacheStore = writable<DataCache<Types["YTDFolio"]>>({});
+
+export const portfolioCacheStoreV2 = writable<DataCache<PortfolioStandards["GenAnalysisV2Return"]>>(
+	{},
+);
 
 export const isAppStore = writable<boolean>(false);

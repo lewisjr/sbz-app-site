@@ -88,6 +88,7 @@ export type Database = {
 					comp_managers: Json[];
 					country: string;
 					created_at: string;
+					cross_commision: number;
 					cv_num: string;
 					dob: string;
 					email: string;
@@ -140,6 +141,7 @@ export type Database = {
 					comp_managers: Json[];
 					country: string;
 					created_at?: string;
+					cross_commision?: number;
 					cv_num: string;
 					dob: string;
 					email: string;
@@ -192,6 +194,7 @@ export type Database = {
 					comp_managers?: Json[];
 					country?: string;
 					created_at?: string;
+					cross_commision?: number;
 					cv_num?: string;
 					dob?: string;
 					email?: string;
@@ -462,6 +465,51 @@ export type Database = {
 					id?: string;
 					otp?: number;
 					updated_at?: string;
+				};
+				Relationships: [];
+			};
+			"pf-reqs": {
+				Row: {
+					created_at: string;
+					email: string;
+					fname: string;
+					id: number;
+				};
+				Insert: {
+					created_at?: string;
+					email: string;
+					fname: string;
+					id?: number;
+				};
+				Update: {
+					created_at?: string;
+					email?: string;
+					fname?: string;
+					id?: number;
+				};
+				Relationships: [];
+			};
+			pfs: {
+				Row: {
+					created_at: string;
+					id: number;
+					luse_id: number;
+					qty: number;
+					symbol: string;
+				};
+				Insert: {
+					created_at?: string;
+					id?: number;
+					luse_id: number;
+					qty: number;
+					symbol: string;
+				};
+				Update: {
+					created_at?: string;
+					id?: number;
+					luse_id?: number;
+					qty?: number;
+					symbol?: string;
 				};
 				Relationships: [];
 			};

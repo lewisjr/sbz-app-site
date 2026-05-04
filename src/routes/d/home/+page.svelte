@@ -6,9 +6,10 @@
 	import { TrendingUp, TrendingDown, Minus, ArrowUp, ArrowDown } from "@lucide/svelte";
 	import { toast } from "svelte-sonner";
 	import { onMount } from "svelte";
+	import { invalidateAll } from "$app/navigation";
 
 	// stores
-	import { portfolioCacheStore } from "$lib/stores";
+	import { portfolioCacheStoreV2 } from "$lib/stores";
 
 	//components - custom
 	import Head from "$lib/components/Head.svelte";
@@ -17,13 +18,19 @@
 	import AnyPicker from "$lib/components/AnyPicker.svelte";
 
 	//icons
-	import { Settings } from "@lucide/svelte";
+	import { RefreshCcw } from "@lucide/svelte";
 
 	//types
 	import type { PageProps } from "./$types";
-	import type { GenericResponseWData, Types } from "$lib/types";
+	import type {
+		GenericResponseWData,
+		PortfolioStandards,
+		GenericResponse,
+		Types,
+	} from "$lib/types";
+	import Spinner from "$lib/components/ui/spinner/spinner.svelte";
 
-	type YTDFolio = Types["YTDFolio"];
+	type YTDFolio = PortfolioStandards["GenAnalysisV2Return"];
 
 	let { data }: PageProps = $props();
 
@@ -45,45 +52,55 @@
 	});
 
 	const updatePortfolioCache = (_data: YTDFolio, _y: number) => {
-		const _cache = JSON.parse(JSON.stringify($portfolioCacheStore)) as typeof $portfolioCacheStore;
+		const _cache = JSON.parse(
+			JSON.stringify($portfolioCacheStoreV2),
+		) as typeof $portfolioCacheStoreV2;
 		_cache[year.toString()] = _data;
 
-		portfolioCacheStore.set(_cache);
-	};
-
-	const getFolio = async () => {
-		toast.info("Fetching portfolio...");
-		openTrigger = 0;
-
-		try {
-			const req = await fetch("/api/d/home", {
-				method: "POST",
-				body: JSON.stringify({ luseId: data.luseId, year, cfg: "ytd-folio" }),
-			});
-
-			const res: GenericResponseWData<YTDFolio | undefined> = await req.json();
-
-			if (!res.data) {
-				toast.error(res.message);
-				// @ts-ignore
-				year = data.year;
-				return;
-			}
-
-			updatePortfolioCache(res.data, year);
-		} catch (ex) {
-			toast.error(String(ex));
-		}
+		portfolioCacheStoreV2.set(_cache);
 	};
 
 	let openTrigger = $state<number>(0);
 
 	// initisalise year
 	$effect(() => {
-		// @ts-ignore
 		year = data.year;
 	});
 
+	let loading = $state<boolean>(false);
+
+	const requestUpdate = async () => {
+		if (data.updateDisabled) {
+			toast.error("Your update request is currently in the queue.");
+			return;
+		}
+
+		loading = true;
+		toast.info("Submitting your update request...");
+
+		try {
+			const req = await fetch("/api/d/home/v2", {
+				method: "PUT",
+				body: JSON.stringify({ cfg: "folio-update" }),
+			});
+
+			const { message, success }: GenericResponse = await req.json();
+
+			loading = false;
+
+			if (success) {
+				toast.success(message);
+				await invalidateAll();
+				return;
+			}
+
+			toast.error(message);
+		} catch (ex) {
+			toast.error("Failed to submit your request, please try again in a few minutes.");
+		}
+	};
+
+	/*
 	// update cache on every new year choice
 	$effect(() => {
 		(async () => {
@@ -93,13 +110,21 @@
 			}
 		})();
 	});
+    */
 
 	onMount(() => {
 		const _data: YTDFolio = {
-			macroAnalysis: data.macroAnalysis,
-			pdata: data.pdata,
+			dmr: data.dmr,
+			fxUsd: data.fxUsd,
 			portfolio: data.portfolio,
-			quickStats: data.quickStats,
+			macroAnalysis: data.macroAnalysis,
+			pOverall: data.pOverall,
+			pUsd: data.pUsd,
+			pZk: data.pZk,
+			year: data.year,
+			matched: data.matched,
+			screen: data.screen,
+			updateDisabled: data.updateDisabled,
 		};
 
 		// @ts-ignore
@@ -125,52 +150,30 @@
 	</p>
 </div>
 
-{#if $portfolioCacheStore[year.toString()]}
+{#if $portfolioCacheStoreV2[year.toString()]}
 	<button
 		class="mt-5 flex flex-row items-baseline"
 		style="padding: 0px;"
-		onclick={() => (openTrigger = Date.now())}
+		onclick={() => requestUpdate()}
 	>
 		<p class="m-0 p-0 text-[0.8em] opacity-70">Current Portfolio Value</p>
-		<Settings class="-mb-10 ml-2 h-3 w-3" />
+		{#if loading}
+			<Spinner class="-mb-10 ml-2 h-3 w-3" />
+		{:else}
+			<RefreshCcw class="-mb-10 ml-2 h-3 w-3" />
+		{/if}
 	</button>
 	<h1 class="num -mb-2">
-		ZMW {numParse($portfolioCacheStore[year.toString()].portfolio.overall.toFixed(2))}
+		ZMW {numParse($portfolioCacheStoreV2[year.toString()].pOverall.toFixed(2))}
 	</h1>
 
-	<p
-		class={$portfolioCacheStore[year.toString()].quickStats.pDelta > 0
-			? "gren flex flex-row items-center"
-			: $portfolioCacheStore[year.toString()].quickStats.pDelta === 0
-				? "flex flex-row items-center"
-				: "rd flex flex-row items-center"}
-	>
-		{#if $portfolioCacheStore[year.toString()].quickStats.pDelta === 0}
-			<Minus class="h-3 w-3" />
-		{:else if $portfolioCacheStore[year.toString()].quickStats.pDelta < 0}
-			<TrendingDown class="h-3 w-3" />{:else}<TrendingUp class="h-3 w-3" />
-		{/if}<span class="num ml-1 text-[0.9em]"
-			>{numParse(
-				percentageHandler(
-					Number.isNaN($portfolioCacheStore[year.toString()].quickStats.pDelta)
-						? 0
-						: $portfolioCacheStore[year.toString()].quickStats.pDelta /
-								$portfolioCacheStore[year.toString()].quickStats.overalInv,
-				).replace("%", ""),
-			)}%</span
-		>
-	</p>
 	<p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
 		Please note that the above value includes all USD holdings converted at the <i>Bank of Zambia</i
 		>
 		average buy rate of
-		<span class="num"
-			>{numParse($portfolioCacheStore[year.toString()].pdata.fxUsd.buy.toFixed(2))}</span
+		<span class="num">{numParse($portfolioCacheStoreV2[year.toString()].fxUsd.buy.toFixed(2))}</span
 		>
-		on {prettyDate($portfolioCacheStore[year.toString()].pdata.fxUsd.date)}.
-	</p>
-	<p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
-		Please note that the percentage above dictates your portfolio's <b>all time</b> ROI.
+		on {prettyDate($portfolioCacheStoreV2[year.toString()].fxUsd.date)}.
 	</p>
 
 	<table class="summary-table mt-5 w-full">
@@ -178,9 +181,7 @@
 			<tr>
 				<th colspan="5"
 					>Kwacha Holdings: <span
-						>{numParse(
-							$portfolioCacheStore[year.toString()].portfolio.portfolioTotalZmw.toFixed(2),
-						)}</span
+						>{numParse($portfolioCacheStoreV2[year.toString()].pZk.toFixed(2))}</span
 					></th
 				>
 			</tr>
@@ -193,50 +194,38 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each $portfolioCacheStore[year.toString()].portfolio.portfolioZmw[0] as entry}
-				<tr>
-					<td class="text-center">{entry.symbol}</td>
-					<td class="num text-center">{numParse(entry.price.toFixed(2))}</td>
-					<td class="num text-center">{numParse(entry.volume)}</td>
-					<td class="num text-center">{numParse(entry.value.toFixed(2))}</td>
-					<td class="text-center"
-						><span
-							class={$portfolioCacheStore[year.toString()].pdata.dmr.filter(
-								(item) => item.symbol === entry.symbol,
-							)[0].delta > 0
-								? "gren"
-								: $portfolioCacheStore[year.toString()].pdata.dmr.filter(
-											(item) => item.symbol === entry.symbol,
-									  )[0].delta < 0
-									? "rd"
-									: undefined}
-							>{#if $portfolioCacheStore[year.toString()].pdata.dmr.filter((item) => item.symbol === entry.symbol)[0].delta > 0}
-								<ArrowUp class="h-4 w-4" />
-							{:else if $portfolioCacheStore[year.toString()].pdata.dmr.filter((item) => item.symbol === entry.symbol)[0].delta < 0}
-								<ArrowDown class="h-4 w-4" />
-							{:else}
-								<Minus class="h-4 w-4" />
-							{/if}</span
-						></td
-					>
-				</tr>
+			{#each $portfolioCacheStoreV2[year.toString()].portfolio as entry}
+				{#if !entry.symbol.includes("USD")}
+					<tr>
+						<td class="text-center">{entry.symbol}</td>
+						<td class="num text-center">{numParse(entry.price.toFixed(2))}</td>
+						<td class="num text-center">{numParse(entry.qty)}</td>
+						<td class="num text-center">{numParse(entry.value.toFixed(2))}</td>
+						<td class="text-center"
+							><span class={entry.delta > 0 ? "gren" : entry.delta < 0 ? "rd" : undefined}
+								>{#if entry.delta > 0}
+									<ArrowUp class="h-4 w-4" />
+								{:else if entry.delta < 0}
+									<ArrowDown class="h-4 w-4" />
+								{:else}
+									<Minus class="h-4 w-4" />
+								{/if}</span
+							></td
+						>
+					</tr>
+				{/if}
 			{/each}
 		</tbody>
 	</table>
-	{#if !Number.isNaN($portfolioCacheStore[year.toString()].quickStats.pDelta)}
+	{#if !Number.isNaN($portfolioCacheStoreV2[year.toString()].fxUsd.date !== 20200101)}
 		<p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
-			You invested a total of <span class="num"
-				>K {numParse(
-					$portfolioCacheStore[year.toString()].quickStats.investmentValueZMW.toFixed(2),
-				)} ($ {numParse(
-					(
-						$portfolioCacheStore[year.toString()].quickStats.investmentValueZMW /
-						$portfolioCacheStore[year.toString()].pdata["fxUsd"]["sell"]
-					).toFixed(2),
-				)})</span
-			>
-			into your kwacha holdings. The above and below values are as at {prettyDate(
-				$portfolioCacheStore[year.toString()].pdata.dmr[0].date,
+			The above and below values are as at {prettyDate(
+				$portfolioCacheStoreV2[year.toString()].dmr[0].date,
+			)}; The USD value is roughly USD {numParse(
+				(
+					$portfolioCacheStoreV2[year.toString()].pZk /
+					$portfolioCacheStoreV2[year.toString()].fxUsd.sell
+				).toFixed(2),
 			)}.
 		</p>
 	{/if}
@@ -246,9 +235,7 @@
 			<tr>
 				<th colspan="5"
 					>Dollar Holdings: <span class="num"
-						>{numParse(
-							$portfolioCacheStore[year.toString()].portfolio.portfolioTotalUsd.toFixed(2),
-						)}</span
+						>{numParse($portfolioCacheStoreV2[year.toString()].pUsd.toFixed(2))}</span
 					></th
 				>
 			</tr>
@@ -261,226 +248,161 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each $portfolioCacheStore[year.toString()].portfolio.portfolioUsd[0] as entry}
-				<tr>
-					<td class="text-center">{entry.symbol}</td>
-					<td class="num text-center">{numParse(entry.price.toFixed(2))}</td>
-					<td class="num text-center">{numParse(entry.volume)}</td>
-					<td class="num text-center">{numParse(entry.value.toFixed(2))}</td>
-					<td class="text-center"
-						><span
-							class={$portfolioCacheStore[year.toString()].pdata.dmr.filter(
-								(item) => item.symbol === entry.symbol,
-							)[0].delta > 0
-								? "gren"
-								: $portfolioCacheStore[year.toString()].pdata.dmr.filter(
-											(item) => item.symbol === entry.symbol,
-									  )[0].delta < 0
-									? "rd"
-									: undefined}
-							>{#if $portfolioCacheStore[year.toString()].pdata.dmr.filter((item) => item.symbol === entry.symbol)[0].delta > 0}
-								<ArrowUp class="h-4 w-4" />
-							{:else if $portfolioCacheStore[year.toString()].pdata.dmr.filter((item) => item.symbol === entry.symbol)[0].delta < 0}
-								<ArrowDown class="h-4 w-4" />
-							{:else}
-								<Minus class="h-4 w-4" />
-							{/if}</span
-						></td
-					>
-				</tr>
+			{#each $portfolioCacheStoreV2[year.toString()].portfolio as entry}
+				{#if entry.symbol.includes("USD")}
+					<tr>
+						<td class="text-center">{entry.symbol}</td>
+						<td class="num text-center">{numParse(entry.price.toFixed(2))}</td>
+						<td class="num text-center">{numParse(entry.qty)}</td>
+						<td class="num text-center">{numParse(entry.value.toFixed(2))}</td>
+						<td class="text-center"
+							><span class={entry.delta > 0 ? "gren" : entry.delta < 0 ? "rd" : undefined}
+								>{#if entry.delta > 0}
+									<ArrowUp class="h-4 w-4" />
+								{:else if entry.delta < 0}
+									<ArrowDown class="h-4 w-4" />
+								{:else}
+									<Minus class="h-4 w-4" />
+								{/if}</span
+							></td
+						>
+					</tr>
+				{/if}
 			{/each}
 		</tbody>
 	</table>
-	{#if !Number.isNaN($portfolioCacheStore[year.toString()].quickStats.pDelta)}
+	{#if !Number.isNaN($portfolioCacheStoreV2[year.toString()].fxUsd.date)}
 		<p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
-			You invested a total of <span class="num"
-				>K {numParse(
-					$portfolioCacheStore[year.toString()].quickStats.investmentValueUSD.toFixed(2),
-				)} ($
-				{numParse(
-					(
-						$portfolioCacheStore[year.toString()].quickStats.investmentValueUSD /
-						$portfolioCacheStore[year.toString()].pdata["fxUsd"]["buy"]
-					).toFixed(2),
-				)})</span
-			>
-			into your dollar holdings. Your portfolio has an estimated kwacha value of
+			Your portfolio has an estimated kwacha value of
 			<span class="num"
 				>{numParse(
-					$portfolioCacheStore[year.toString()].portfolio["portfolioTotalUsd"].toFixed(2),
+					(
+						$portfolioCacheStoreV2[year.toString()].pUsd *
+						$portfolioCacheStoreV2[year.toString()].fxUsd.buy
+					).toFixed(2),
 				)}</span
 			>
-			at a <i>Bank of Zambia</i> average sell rate of
+			at a <i>Bank of Zambia</i> average buy rate of
 			<span class="num"
-				>{numParse($portfolioCacheStore[year.toString()].pdata.fxUsd.sell.toFixed(2))}</span
+				>{numParse($portfolioCacheStoreV2[year.toString()].fxUsd.buy.toFixed(2))}</span
 			>.
 		</p>
+	{/if}
 
-		<p class="mt-5 -mb-5 text-[0.8em] opacity-70">Trade History</p>
-		<div class="hisory-table">
-			<table class="summary-table mt-5 w-full">
-				<thead>
-					<tr>
-						<th></th>
-						<th>Date</th>
-						<th>Symbol</th>
-						<th>Price</th>
-						<th>Vol.</th>
-						<th>Value</th>
-					</tr>
-				</thead>
-				{#if $portfolioCacheStore[year.toString()].portfolio.matched}
-					<tbody>
-						{#each $portfolioCacheStore[year.toString()].portfolio.matched?.tradesRaw as entry}
-							<tr>
-								<td class="num text-center">{entry.trade_side === "buy" ? "B" : "S"}</td>
-								<td class="text-center">{miniDate(entry.trade_date)}</td>
-								<td class="text-center">{entry.symbol}</td>
-								<td class="text-center">{numParse(entry.price.toFixed(2))}</td>
-								<td class="num text-center">{numParse(entry.qty)}</td>
-								<td class="num text-center">{numParse((entry.price * entry.qty).toFixed(2))}</td>
-							</tr>
-						{/each}
-					</tbody>
-				{:else}
-					<tbody>
+	<p class="mt-5 -mb-5 text-[0.8em] opacity-70">Trade History</p>
+	<div class="hisory-table">
+		<table class="summary-table mt-5 w-full">
+			<thead>
+				<tr>
+					<th></th>
+					<th>Date</th>
+					<th>Symbol</th>
+					<th>Price</th>
+					<th>Vol.</th>
+					<th>Value</th>
+				</tr>
+			</thead>
+			{#if $portfolioCacheStoreV2[year.toString()].matched.length}
+				<tbody>
+					{#each $portfolioCacheStoreV2[year.toString()].matched as entry}
 						<tr>
-							<td>No trade history to show.</td>
+							<td class="num text-center">{entry.trade_side === "buy" ? "B" : "S"}</td>
+							<td class="text-center">{miniDate(entry.trade_date)}</td>
+							<td class="text-center">{entry.symbol}</td>
+							<td class="text-center">{numParse(entry.price.toFixed(2))}</td>
+							<td class="num text-center">{numParse(entry.qty)}</td>
+							<td class="num text-center">{numParse((entry.price * entry.qty).toFixed(2))}</td>
 						</tr>
-					</tbody>
-				{/if}
-			</table>
-		</div>
+					{/each}
+				</tbody>
+			{:else}
+				<tbody>
+					<tr>
+						<td>No trade history to show.</td>
+					</tr>
+				</tbody>
+			{/if}
+		</table>
+	</div>
+	{#if $portfolioCacheStoreV2[year.toString()].matched.length}
 		<p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
 			Please note that the above table is scrollable, and that settlemet of trades takes <b>T+3</b> days
 			from the match date (or date in the table above).
 		</p>
+	{/if}
 
-		<p class="mt-5 -mb-5 text-[0.8em] opacity-70">Pending Orders</p>
-		<div class="hisory-table">
-			<table class="summary-table mt-5 w-full">
-				<thead>
-					<tr>
-						<th></th>
-						<th>Date</th>
-						<th>Symbol</th>
-						<th>Price</th>
-						<th>Vol.</th>
-						<th>Value</th>
-					</tr>
-				</thead>
-				{#if $portfolioCacheStore[year.toString()].portfolio.screen}
-					<tbody>
-						{#each $portfolioCacheStore[year.toString()].portfolio.screen?.ordersRaw as entry}
-							<tr>
-								<td class="text-center">{miniDate(entry.date)}</td>
-								<td class="text-center">{entry.symbol}</td>
-								<td class="text-center">{numParse(entry.price.toFixed(2))}</td>
-								<td class="num text-center">{numParse(entry.qty)}</td>
-								<td class="num text-center">{numParse((entry.price * entry.qty).toFixed(2))}</td>
-							</tr>
-						{/each}
-					</tbody>
-				{:else}
-					<tbody>
+	<p class="mt-5 -mb-5 text-[0.8em] opacity-70">Pending Orders</p>
+	<div class="hisory-table">
+		<table class="summary-table mt-5 w-full">
+			<thead>
+				<tr>
+					<th></th>
+					<th>Date</th>
+					<th>Symbol</th>
+					<th>Price</th>
+					<th>Vol.</th>
+					<th>Value</th>
+				</tr>
+			</thead>
+			{#if $portfolioCacheStoreV2[year.toString()].screen.length}
+				<tbody>
+					{#each $portfolioCacheStoreV2[year.toString()].screen as entry}
 						<tr>
-							<td colspan="6" class="text-center">No pending orders to show.</td>
+							<td class="text-center">{miniDate(entry.date)}</td>
+							<td class="text-center">{entry.symbol}</td>
+							<td class="text-center">{numParse(entry.price.toFixed(2))}</td>
+							<td class="num text-center">{numParse(entry.qty)}</td>
+							<td class="num text-center">{numParse((entry.price * entry.qty).toFixed(2))}</td>
 						</tr>
-					</tbody>
-				{/if}
-			</table>
-		</div>
-		{#if $portfolioCacheStore[year.toString()].portfolio.screen?.ordersRaw}
-			<p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
-				Please note that the above table is scrollable.
-			</p>
-		{/if}
-
-		<p class="mt-5 text-[0.8em] opacity-70">Portfolio Analysis</p>
-
-		<p class="text-justify text-[0.8em] opacity-90">
-			{#each $portfolioCacheStore[year.toString()]["macroAnalysis"]["ytd"]["summary"] as txt}
-				{#if txt.substring(0, 2) === "--"}
-					<span class={txt.split("--")[1]}>{txt.replace(`--${txt.split("--")[1]}--`, "")}</span>
-				{:else if txt.substring(0, 2) === "=="}
-					<span class={txt.split("==")[1]}>{txt.replace(`==${txt.split("==")[1]}==`, "")}</span>
-				{:else}
-					{txt}
-				{/if}
-			{/each}
-		</p>
-		<AnyChart
-			data={$portfolioCacheStore[year.toString()].macroAnalysis.ytd.chart}
-			tipo="RangeColumn"
-			h={300}
-			minifyY
-		/>
-
-		<p class="mb-2 text-justify text-[0.8em] opacity-90">
-			{#each $portfolioCacheStore[year.toString()]["macroAnalysis"]["perf"]["summary"] as txt}
-				{#if txt.substring(0, 2) === "--"}
-					<span class={txt.split("--")[1]}>{txt.replace(`--${txt.split("--")[1]}--`, "")}</span>
-				{:else if txt.substring(0, 2) === "=="}
-					<span class={txt.split("==")[1]}>{txt.replace(`==${txt.split("==")[1]}==`, "")}</span>
-				{:else}
-					{txt}
-				{/if}
-			{/each}
-		</p>
-		<AnyChart
-			data={$portfolioCacheStore[year.toString()].macroAnalysis.comp.stock.chart}
-			tipo="TreeMapPercent"
-			h={400}
-			title="Portfolio Composition"
-			isPercent
-		/>
-
-		<p class="mb-2 text-justify text-[0.8em] opacity-90">
-			{#each $portfolioCacheStore[year.toString()]["macroAnalysis"]["comp"]["stock"]["summary"] as txt}
-				{#if txt.substring(0, 2) === "--"}
-					<span class={txt.split("--")[1]}>{txt.replace(`--${txt.split("--")[1]}--`, "")}</span>
-				{:else if txt.substring(0, 2) === "=="}
-					<span class={txt.split("==")[1]}>{txt.replace(`==${txt.split("==")[1]}==`, "")}</span>
-				{:else}
-					{txt}
-				{/if}
-			{/each}
+					{/each}
+				</tbody>
+			{:else}
+				<tbody>
+					<tr>
+						<td colspan="6" class="text-center">No pending orders to show.</td>
+					</tr>
+				</tbody>
+			{/if}
+		</table>
+	</div>
+	{#if $portfolioCacheStoreV2[year.toString()].screen.length}
+		<p class="mt-2 text-justify text-[0.7em] text-muted-foreground">
+			Please note that the above table is scrollable.
 		</p>
 	{/if}
 
-	{#if Number.isNaN($portfolioCacheStore[year.toString()].quickStats.pDelta)}
+	<p class="mt-5 mb-2 text-[0.8em] opacity-70">Portfolio Composition</p>
+
+	<AnyChart
+		data={$portfolioCacheStoreV2[year.toString()].macroAnalysis.comp.stock.chart}
+		tipo="TreeMapPercent"
+		h={400}
+		title="Portfolio Composition"
+		isPercent
+	/>
+
+	<p class="mb-2 text-justify text-[0.8em] opacity-90">
+		{#each $portfolioCacheStoreV2[year.toString()]["macroAnalysis"]["comp"]["stock"]["summary"] as txt}
+			{#if txt.substring(0, 2) === "--"}
+				<span class={txt.split("--")[1]}>{txt.replace(`--${txt.split("--")[1]}--`, "")}</span>
+			{:else if txt.substring(0, 2) === "=="}
+				<span class={txt.split("==")[1]}>{txt.replace(`==${txt.split("==")[1]}==`, "")}</span>
+			{:else}
+				{txt}
+			{/if}
+		{/each}
+	</p>
+
+	{#if !$portfolioCacheStoreV2[year.toString()].portfolio.length}
 		<p class="mb-2 text-justify text-[0.8em] opacity-90">
 			To begin, please use the menu button with a <span class="num">{'">"'}</span> on the left to read
 			market data and begin submitting trades (soon).
 		</p>
 	{/if}
-
-	<!--
-<p class="mt-2 text-justify text-[0.7em] text-muted-foreground underline">VS Market</p>
-<p class="mt-2 text-justify text-[0.7em] text-muted-foreground underline">VS FX</p>
-<p class="mt-2 text-justify text-[0.7em] text-muted-foreground underline">VS Inflation</p>
--->
-
-	<AnyDrawer {openTrigger} title="Portfolio Year">
-		{#snippet main()}
-			<p class="mb-5">
-				Select a year below for which to review your portfolio's perfomance and other related
-				analytics.
-			</p>
-			<AnyPicker
-				data={years.map((y) => {
-					return { label: y.toString(), value: y.toString() };
-				})}
-				value={year.toString()}
-				handler={(v) => (year = Number(v))}
-				pickerTitle="Analysis Year"
-			/>
-		{/snippet}
-	</AnyDrawer>
 {:else}
 	<button class="mt-5 flex w-fit flex-row items-baseline" style="padding: 0px;">
 		<p class="m-0 w-fit p-0 text-[0.8em] opacity-70">Current Portfolio Value</p>
-		<Settings class="-mb-10 ml-2 h-3 w-3" />
+		<RefreshCcw class="-mb-10 ml-2 h-3 w-3" />
 	</button>
 	<h1 class="num loading no-padding -mb-2 w-fit">ZMW 00000.00</h1>
 
@@ -545,59 +467,6 @@
 		at a <i>Bank of Zambia</i> average sell rate of
 		<span class="num">{numParse("00000.00")}</span>.
 	</p>
-
-	<!--
-		<p class="mt-5 text-[0.8em] opacity-70">Portfolio Analysis</p>
-
-		<p class="text-justify text-[0.8em] opacity-90">
-			{#each $portfolioCacheStore[year.toString()]["macroAnalysis"]["ytd"]["summary"] as txt}
-				{#if txt.substring(0, 2) === "--"}
-					<span class={txt.split("--")[1]}>{txt.replace(`--${txt.split("--")[1]}--`, "")}</span>
-				{:else if txt.substring(0, 2) === "=="}
-					<span class={txt.split("==")[1]}>{txt.replace(`==${txt.split("==")[1]}==`, "")}</span>
-				{:else}
-					{txt}
-				{/if}
-			{/each}
-		</p>
-		<AnyChart
-			data={$portfolioCacheStore[year.toString()].macroAnalysis.ytd.chart}
-			tipo="RangeColumn"
-			h={300}
-			minifyY
-		/>
-
-		<p class="mb-2 text-justify text-[0.8em] opacity-90">
-			{#each $portfolioCacheStore[year.toString()]["macroAnalysis"]["perf"]["summary"] as txt}
-				{#if txt.substring(0, 2) === "--"}
-					<span class={txt.split("--")[1]}>{txt.replace(`--${txt.split("--")[1]}--`, "")}</span>
-				{:else if txt.substring(0, 2) === "=="}
-					<span class={txt.split("==")[1]}>{txt.replace(`==${txt.split("==")[1]}==`, "")}</span>
-				{:else}
-					{txt}
-				{/if}
-			{/each}
-		</p>
-		<AnyChart
-			data={$portfolioCacheStore[year.toString()].macroAnalysis.comp.stock.chart}
-			tipo="TreeMapPercent"
-			h={400}
-			title="Portfolio Composition"
-			isPercent
-		/>
-
-		<p class="mb-2 text-justify text-[0.8em] opacity-90">
-			{#each $portfolioCacheStore[year.toString()]["macroAnalysis"]["comp"]["stock"]["summary"] as txt}
-				{#if txt.substring(0, 2) === "--"}
-					<span class={txt.split("--")[1]}>{txt.replace(`--${txt.split("--")[1]}--`, "")}</span>
-				{:else if txt.substring(0, 2) === "=="}
-					<span class={txt.split("==")[1]}>{txt.replace(`==${txt.split("==")[1]}==`, "")}</span>
-				{:else}
-					{txt}
-				{/if}
-			{/each}
-		</p>
-		-->
 {/if}
 
 <style lang="scss">

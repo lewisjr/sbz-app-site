@@ -145,6 +145,7 @@ export interface Types {
 	}>;
 	ClientSignature: { value: string; backups: { [key: string]: string[] } };
 	YTDFolio: YTDFolio;
+	UserData: SBZdb["public"]["Tables"]["clients"]["Row"];
 }
 
 export interface GenericResponse {
@@ -427,6 +428,40 @@ interface PortfolioMacroAnalysis {
 type CN = SBZdb["public"]["Tables"]["settled_trades"]["Row"][];
 type DMR = NFdb["public"]["Tables"]["sbz-dmb"]["Row"][];
 
+interface PortfolioV2 {
+	symbol: string;
+	price: number;
+	qty: number;
+	value: number;
+	/**For the symbol only */
+	delta: number;
+}
+interface GenAnalysisV2Return {
+	year: number;
+	portfolio: PortfolioV2[];
+	pOverall: number;
+	pZk: number;
+	pUsd: number;
+	dmr: DMR;
+	fxUsd: {
+		buy: number;
+		sell: number;
+		mid: number;
+		date: number;
+	};
+	macroAnalysis: {
+		comp: {
+			stock: {
+				summary: string[];
+				chart: ApexDataPresets["TreeMapPercent"];
+			};
+		};
+	};
+	updateDisabled: boolean;
+	matched: GetPortfolioData["matched"];
+	screen: GetPortfolioData["onScreen"];
+}
+
 export interface PortfolioStandards {
 	// SectionAnalysis: SectionAnalysis<SectionT>;
 	QuickStats: QuickStats;
@@ -439,4 +474,6 @@ export interface PortfolioStandards {
 	Matched: Matched;
 	Screen: Screen;
 	ClientTradeHistory: ClientTradeHistory;
+	GenAnalysisV2Return: GenAnalysisV2Return;
+	PortfolioV2: PortfolioV2;
 }

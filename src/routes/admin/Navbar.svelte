@@ -27,6 +27,7 @@
 		UserRoundCheck,
 		ScanEye,
 		HelpingHand,
+		FolderSyncIcon,
 	} from "@lucide/svelte";
 
 	//types
@@ -181,6 +182,11 @@
 		>
 			<HelpingHand class="h-8 w-8" />
 			<p>Support</p>
+		</a>
+
+		<a class={`link${path === "/admin/_onboard" ? " current" : ""}`} href="/admin/_onboard">
+			<FolderSyncIcon class="h-8 w-8" />
+			<p>Onboard</p>
 		</a>
 	{/if}
 

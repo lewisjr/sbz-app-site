@@ -122,12 +122,14 @@ export const PUT = async (event) => {
 
 		const names = await dbs.sbz.getClientNameById(luseIds);
 
+		/*
 		if (!names.length)
 			return json({
 				success: false,
 				message: "Failed to fetch client names, please contact the developer.",
 				data: undefined,
 			});
+		*/
 
 		const trades: SettledTradeInsert[] = [];
 

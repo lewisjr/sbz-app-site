@@ -67,7 +67,7 @@
 		class={buttonVariants({
 			variant: "outline",
 			size: "sm",
-			class: "w-[150px] justify-start",
+			class: "w-min justify-start",
 		})}
 	>
 		{#if selectedStatus}
