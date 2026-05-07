@@ -282,6 +282,54 @@ export type Database = {
 				};
 				Relationships: [];
 			};
+			"neo-chat-titles": {
+				Row: {
+					chat_id: string;
+					chat_title: string;
+					created_at: string;
+					id: number;
+					luse_id: number;
+				};
+				Insert: {
+					chat_id: string;
+					chat_title: string;
+					created_at?: string;
+					id?: number;
+					luse_id: number;
+				};
+				Update: {
+					chat_id?: string;
+					chat_title?: string;
+					created_at?: string;
+					id?: number;
+					luse_id?: number;
+				};
+				Relationships: [];
+			};
+			"neo-chats": {
+				Row: {
+					body: string;
+					chat_id: string;
+					created_at: string;
+					id: number;
+					sender: string;
+				};
+				Insert: {
+					body: string;
+					chat_id: string;
+					created_at?: string;
+					id?: number;
+					sender: string;
+				};
+				Update: {
+					body?: string;
+					chat_id?: string;
+					created_at?: string;
+					id?: number;
+					sender?: string;
+				};
+				Relationships: [];
+			};
 			"odyn-cache": {
 				Row: {
 					position: string;

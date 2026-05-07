@@ -15,7 +15,7 @@
 	import { portfolioCacheStore } from "$lib/stores";
 
 	//stores
-	import { isAppStore } from "$lib/stores";
+	import { isAppStore, screenWidthStore } from "$lib/stores";
 
 	// types
 	import type { PageProps } from "./$types";
@@ -160,6 +160,8 @@
 	onMount(() => {
 		portfolioCacheStore.set({});
 	});
+
+	// our tablets, landscape, 1280px width
 </script>
 
 <Head
@@ -189,11 +191,14 @@
 					{placeholder}
 					bind:value={inputValue}
 					disabled={loading}
+					type="text"
 					onkeypress={(e) => {
 						if (e.key === "#" && !inputValue.length) changeToAdmin();
 						if (e.key === "Enter") sendOtp();
 					}}
 					oninput={(e) => {
+						// @ts-ignore
+						if (e.target.value === "#") changeToAdmin();
 						//@ts-ignore
 						valueHandler(e.target.value);
 					}}
