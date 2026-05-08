@@ -100,9 +100,21 @@
 	<table class="fin-6 mt-3 max-w-[400px]">
 		<tbody>
 			<tr>
-				<td colspan="2"><h2 style="font-size: 14pt;">Useful Documents</h2></td>
+				<td colspan="2"><h2 style="font-size: 14pt;">Social Links</h2></td>
 			</tr>
 			<tr>
+				<td
+					><div class="flex flex-col items-center px-3 py-3">
+						<Button
+							target="_blank"
+							style="text-decoration: none;"
+							variant="outline"
+							href="https://whatsapp.com/channel/0029VbCnRFcLCoX0KLg9vG37"
+							><img class="h-7 w-7" src="/img/-_whatsapp.png" alt="whatsapp channel icon" />WhatsApp
+							Channel</Button
+						>
+					</div>
+				</td>
 				<td
 					><div class="flex flex-col items-center px-3 py-3">
 						<Button
@@ -114,6 +126,8 @@
 						>
 					</div>
 				</td>
+			</tr>
+			<tr>
 				<td
 					><div class="flex flex-col items-center px-3 py-3">
 						<Button
@@ -125,8 +139,6 @@
 						>
 					</div>
 				</td>
-			</tr>
-			<tr>
 				<td
 					><div class="flex flex-col items-center px-3 py-3">
 						<Button
@@ -138,6 +150,8 @@
 						>
 					</div>
 				</td>
+			</tr>
+			<tr>
 				<td
 					><div class="flex flex-col items-center px-3 py-3">
 						<Button
@@ -156,7 +170,7 @@
 	<table class="fin-7 mt-3 max-w-[400px]">
 		<tbody>
 			<tr>
-				<td colspan="2"><h2 style="font-size: 14pt;">Useful Documents</h2></td>
+				<td colspan="2"><h2 style="font-size: 14pt;">Useful Link</h2></td>
 			</tr>
 			<tr>
 				<td
