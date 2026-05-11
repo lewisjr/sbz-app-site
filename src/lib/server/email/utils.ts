@@ -21,9 +21,9 @@ const sendOtp = async (
 			From: "app@sbz.com.zm",
 			To: DEV === "y" ? "privatodato@gmail.com" : recipient,
 			Cc: cc,
-			Subject: subject,
-			HtmlBody: html,
-			TextBody: plain,
+			Subject: subject.replaceAll("SBZ Digital", ""),
+			HtmlBody: html.replaceAll("SBZ Digital", ""),
+			TextBody: plain.replaceAll("SBZ Digital", ""),
 			MessageStream: "outbound",
 		});
 
@@ -57,9 +57,9 @@ const sendUpdate = async (
 			From: "app@sbz.com.zm",
 			To: recipient,
 			Cc: cc,
-			Subject: subject,
-			HtmlBody: html,
-			TextBody: plain,
+			Subject: subject.replaceAll("SBZ Digital", ""),
+			HtmlBody: html.replaceAll("SBZ Digital", ""),
+			TextBody: plain.replaceAll("SBZ Digital", ""),
 			MessageStream: "outbound",
 		});
 
@@ -93,9 +93,9 @@ const sendLink = async (
 			From: "app@sbz.com.zm",
 			To: recipient,
 			Cc: cc,
-			Subject: subject,
-			HtmlBody: html,
-			TextBody: plain,
+			Subject: subject.replaceAll("SBZ Digital", ""),
+			HtmlBody: html.replaceAll("SBZ Digital", ""),
+			TextBody: plain.replaceAll("SBZ Digital", ""),
 			MessageStream: "outbound",
 		});
 
@@ -131,9 +131,9 @@ const sendNested = async (
 			From: "app@sbz.com.zm",
 			To: recipient,
 			Cc: cc,
-			Subject: subject,
-			HtmlBody: html,
-			TextBody: plain,
+			Subject: subject.replaceAll("SBZ Digital", ""),
+			HtmlBody: html.replaceAll("SBZ Digital", ""),
+			TextBody: plain.replaceAll("SBZ Digital", ""),
 			MessageStream: "outbound",
 			Headers: msgId
 				? [
@@ -174,9 +174,9 @@ const sendNestedNoButton = async (
 			From: "app@sbz.com.zm",
 			To: recipient,
 			Cc: cc,
-			Subject: subject,
-			HtmlBody: html,
-			TextBody: plain,
+			Subject: subject.replaceAll("SBZ Digital", ""),
+			HtmlBody: html.replaceAll("SBZ Digital", ""),
+			TextBody: plain.replaceAll("SBZ Digital", ""),
 			MessageStream: "outbound",
 			Headers: msgId
 				? [
@@ -216,8 +216,8 @@ const sendPortfolio = async (body: PortfolioEmailObj, recipient: string): Promis
 			To: /*DEV === "y" ? "privatodato@gmail.com" :*/ recipient,
 			Cc: cc,
 			Subject: `YTD ${year} Portfolio Valuation`,
-			HtmlBody: html,
-			TextBody: plain,
+			HtmlBody: html.replaceAll("SBZ Digital", ""),
+			TextBody: plain.replaceAll("SBZ Digital", ""),
 			MessageStream: "outbound",
 			Bcc: bcc,
 		});
