@@ -281,13 +281,15 @@
 			/>Kitwe, Zambia<br />+260 212 225984
 		</p>
 
-		<p class="mt-6 text-justify text-sm text-muted-foreground">
+		<p class="my-6 text-justify text-sm text-muted-foreground">
 			A licensed Stockbroking firm providing Corporate finance & Investment Advisory.
 		</p>
 
+		<!--
 		<p class="my-6 text-justify text-sm text-muted-foreground">
 			Powered by <a href="https://www.neos.finance" target="_blank" rel="noopener">Neos FinTech</a>
 		</p>
+		-->
 	</div>
 </section>
 
