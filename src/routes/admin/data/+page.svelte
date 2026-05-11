@@ -1001,7 +1001,7 @@
 				<div class="flex w-fit flex-row gap-1.5">
 					<Label class="loading no-padding text-right">Symbol</Label>
 					<AnyCombobox
-						handler={handleSelectedSymbol}
+						handler={(_) => null}
 						data={{ grouped: [{ title: "Symbol", group: [] }], ungrouped: [] }}
 						dataTitle="symbols"
 						forceValue="LASI"
@@ -1013,7 +1013,7 @@
 				<div class="ml-5 flex w-fit flex-row gap-1.5">
 					<Label class="loading no-padding text-right">Metric</Label>
 					<AnyCombobox
-						handler={handleSelectedKey}
+						handler={(_) => null}
 						data={{ grouped: [{ title: "Symbol", group: symbolMetrics }], ungrouped: [] }}
 						dataTitle="metrics"
 						forceValue="market_price"
@@ -1025,13 +1025,13 @@
 		{:else if !symbolsPicker}
 			<p>No data.</p>
 		{:else}
-			<StockChart key={selectedKey} {stockData} symbol={selectedSymbol} />
+			<StockChart key={selectedKey} {stockData} symbol={"LASI"} />
 
 			<div class="flex w-full flex-row">
 				<div class="flex w-fit flex-row gap-1.5">
 					<Label class="text-right">Symbol</Label>
 					<AnyCombobox
-						handler={handleSelectedSymbol}
+						handler={(_) => null}
 						data={{ grouped: [{ title: "Symbol", group: symbolsPicker }], ungrouped: [] }}
 						dataTitle="symbols"
 						forceValue="LASI"
@@ -1041,7 +1041,7 @@
 				<div class="ml-5 flex w-fit flex-row gap-1.5">
 					<Label class="text-right">Metric</Label>
 					<AnyCombobox
-						handler={handleSelectedKey}
+						handler={(_) => null}
 						data={{ grouped: [{ title: "Symbol", group: symbolMetrics }], ungrouped: [] }}
 						dataTitle="metrics"
 						forceValue="market_price"
@@ -1171,13 +1171,14 @@
 	{/snippet}
 </Summary>
 
+<!--
 <AnySheet title={`${selectedSymbol} Analysis`} description="" {openTrigger} width={undefined} big>
 	{#snippet main()}
 		<div class="holder">
 			{#if expandedLoading}
 				<h2 class="loading no-padding mb-5 w-fit">Market Data</h2>
 				<div class="flex flex-row">
-					<!-- Price Information -->
+					<!-- Price Information
 					<table class="loading no-padding table-fixed">
 						<thead>
 							<tr><th colspan="6">Price Information</th></tr>
@@ -1220,7 +1221,7 @@
 						</tbody>
 					</table>
 
-					<!-- Bid Ask -->
+					<!-- Bid Ask
 					<table class="loading no-padding ml-10 table-fixed">
 						<thead>
 							<tr><th colspan="4">Bid/Ask</th></tr>
@@ -1263,7 +1264,7 @@
 				</div>
 
 				<div class="mt-10 flex flex-row items-center">
-					<!-- Trading Activity -->
+					<!-- Trading Activity
 					<table class="loading no-padding table-fixed">
 						<thead>
 							<tr><th colspan="3">Trading Activity</th></tr>
@@ -1292,7 +1293,7 @@
 						</tbody>
 					</table>
 
-					<!-- Price Information -->
+					<!-- Price Information
 					<table class="loading no-padding ml-10 table-fixed">
 						<thead>
 							<tr><th colspan="2">Market Cap</th></tr>
@@ -1336,7 +1337,7 @@
 						</tbody>
 					</table>
 
-					<!-- Return Based -->
+					<!-- Return Based
 					<table class="loading no-padding ml-10 table-fixed">
 						<thead>
 							<tr><th colspan="3">Return Based</th></tr>
@@ -1416,7 +1417,7 @@
 			{:else}
 				<h2 class="mb-5">Market Data</h2>
 				<div class="flex flex-row">
-					<!-- Price Information -->
+					<!-- Price Information
 					<table class="summary-table table-fixed">
 						<thead>
 							<tr><th colspan="6">Price Information</th></tr>
@@ -1469,7 +1470,7 @@
 						</tbody>
 					</table>
 
-					<!-- Bid Ask -->
+					<!-- Bid Ask
 					<table class="summary-table ml-10 table-fixed">
 						<thead>
 							<tr><th colspan="4">Bid/Ask</th></tr>
@@ -1514,7 +1515,7 @@
 				</div>
 
 				<div class="mt-10 flex flex-row items-center">
-					<!-- Trading Activity -->
+					<!-- Trading Activity
 					<table class="summary-table table-fixed">
 						<thead>
 							<tr><th colspan="3">Trading Activity</th></tr>
@@ -1543,7 +1544,7 @@
 						</tbody>
 					</table>
 
-					<!-- Market Cap -->
+					<!-- Market Cap
 					<table class="summary-table ml-10 table-fixed">
 						<thead>
 							<tr><th colspan="2">Market Cap</th></tr>
@@ -1561,10 +1562,10 @@
 					</table>
 				</div>
 
-				<!-- Profitability -->
+				<!-- Profitability
 				<h2 class="mt-14 mb-5">Profitability Metrics</h2>
 				<div class="flex flex-row">
-					<!-- Cash Based -->
+					<!-- Cash Based
 					<table class="summary-table table-fixed">
 						<thead>
 							<tr><th colspan="2">Cash Based</th></tr>
@@ -1589,7 +1590,7 @@
 						</tbody>
 					</table>
 
-					<!-- Return Based -->
+					<!-- Return Based
 					<table class="summary-table ml-10 table-fixed">
 						<thead>
 							<tr><th colspan="3">Return Based</th></tr>
@@ -1622,7 +1623,7 @@
 				</div>
 
 				<div class="mt-10 flex flex-row">
-					<!-- Margins -->
+					<!-- Margins
 					<table class="summary-table table-fixed">
 						<thead>
 							<tr><th colspan="5">Margins</th></tr>
@@ -1666,10 +1667,10 @@
 					</table>
 				</div>
 
-				<!-- Liquidity -->
+				<!-- Liquidity
 				<h2 class="mt-14 mb-5">Liquidity Ratios</h2>
 				<div class="flex flex-row">
-					<!-- Ratios -->
+					<!-- Ratios
 					<table class="summary-table table-fixed">
 						<thead>
 							<tr>
@@ -1694,10 +1695,10 @@
 					</table>
 				</div>
 
-				<!-- Efficiency -->
+				<!-- Efficiency
 				<h2 class="mt-14 mb-5">Efficiency Ratios</h2>
 				<div class="flex flex-row">
-					<!-- Ratios -->
+					<!-- Ratios
 					<table class="summary-table table-fixed">
 						<thead>
 							<tr>
@@ -1728,10 +1729,10 @@
 					</table>
 				</div>
 
-				<!-- Valuation Metrics -->
+				<!-- Valuation Metrics
 				<h2 class="mt-14 mb-5">Valuation Metrics</h2>
 				<div class="flex flex-row">
-					<!-- Intrinsic -->
+					<!-- Intrinsic
 					<table class="summary-table table-fixed">
 						<thead>
 							<tr><th colspan="4">Intrinsic Value</th></tr>
@@ -1768,7 +1769,7 @@
 						</tbody>
 					</table>
 
-					<!-- Dividends -->
+					<!-- Dividends
 					<table class="summary-table ml-10 table-fixed">
 						<thead>
 							<tr><th colspan="2">Dividends</th></tr>
@@ -1792,10 +1793,10 @@
 					</table>
 				</div>
 
-				<!-- Risk -->
+				<!-- Risk
 				<h2 class="mt-14 mb-5">Risk</h2>
 				<div class="flex flex-row">
-					<!-- CAPM -->
+					<!-- CAPM
 					<table class="summary-table table-fixed">
 						<thead>
 							<tr>
@@ -1828,7 +1829,7 @@
 					</table>
 				</div>
 
-				<!-- Cash Flow -->
+				<!-- Cash Flow
 				{#if expandedSymbol.cashFlowYear !== 983}
 					<h2 class="mt-14 mb-5">Cash Flow Statements</h2>
 					<p class="mb-4 text-sm text-muted-foreground">In {expandedSymbol.currency} millions.</p>
@@ -1866,7 +1867,7 @@
 					</table>
 				{/if}
 
-				<!-- Income -->
+				<!-- Income
 				{#if expandedSymbol.incomeYear !== 983}
 					<h2 class="mt-14 mb-5">Income Statements</h2>
 					<p class="mb-4 text-sm text-muted-foreground">In {expandedSymbol.currency} millions.</p>
@@ -1904,7 +1905,7 @@
 					</table>
 				{/if}
 
-				<!-- Balance Sheets -->
+				<!-- Balance Sheets
 				{#if expandedSymbol.balanceYear !== 983}
 					<h2 class="mt-14 mb-5">Balance Sheets</h2>
 					<p class="mb-4 text-sm text-muted-foreground">In {expandedSymbol.currency} millions.</p>
@@ -1949,6 +1950,7 @@
 		<span></span>
 	{/snippet}
 </AnySheet>
+-->
 
 <style lang="scss">
 	.summary-table {

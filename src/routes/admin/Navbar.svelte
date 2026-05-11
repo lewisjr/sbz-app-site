@@ -150,32 +150,32 @@
 		<p>Data</p>
 	</a>
 
-	<a class={`link${path === "/admin/news" ? " current" : ""}`} href="/admin/news">
-		<NotebookText class="h-8 w-8" />
-		<p>News</p>
-	</a>
-
-	<!-- SBZ Specific -->
-	<div class="titl">
-		<p>Company</p>
-	</div>
-
-	<a class={`link${path === "/admin/clients" ? " current" : ""}`} href="/admin/clients">
-		<User class="h-8 w-8" />
-		<p>Clients</p>
-	</a>
-
-	<a class={`link${path === "/admin/requests" ? " current" : ""}`} href="/admin/requests">
-		<UserRoundCheck class="h-8 w-8" />
-		<p>Requests</p>
-	</a>
-
-	<a class={`link${path === "/admin/track" ? " current" : ""}`} href="/admin/track">
-		<ScanEye class="h-8 w-8" />
-		<p>Track</p>
-	</a>
-
 	{#if permissions.includes("master")}
+		<a class={`link${path === "/admin/news" ? " current" : ""}`} href="/admin/news">
+			<NotebookText class="h-8 w-8" />
+			<p>News</p>
+		</a>
+
+		<!-- SBZ Specific -->
+		<div class="titl">
+			<p>Company</p>
+		</div>
+
+		<a class={`link${path === "/admin/clients" ? " current" : ""}`} href="/admin/clients">
+			<User class="h-8 w-8" />
+			<p>Clients</p>
+		</a>
+
+		<a class={`link${path === "/admin/requests" ? " current" : ""}`} href="/admin/requests">
+			<UserRoundCheck class="h-8 w-8" />
+			<p>Requests</p>
+		</a>
+
+		<a class={`link${path === "/admin/track" ? " current" : ""}`} href="/admin/track">
+			<ScanEye class="h-8 w-8" />
+			<p>Track</p>
+		</a>
+
 		<a
 			class={`link${path === "/admin/_sign-up-extra" ? " current" : ""}`}
 			href="/admin/_sign-up-extra"
@@ -195,12 +195,12 @@
 		<p>Trades</p>
 	</a>
 
-	<a class={`link${path === "/admin/settle" ? " current" : ""}`} href="/admin/settle">
-		<GitCompareArrows class="h-8 w-8" />
-		<p>Settle</p>
-	</a>
-
 	{#if permissions.includes("master")}
+		<a class={`link${path === "/admin/settle" ? " current" : ""}`} href="/admin/settle">
+			<GitCompareArrows class="h-8 w-8" />
+			<p>Settle</p>
+		</a>
+
 		<a class={`link${path === "/admin/upload" ? " current" : ""}`} href="/admin/upload">
 			<Upload class="h-8 w-8" />
 			<p>Upload</p>
@@ -225,12 +225,12 @@
 		<p>Staff</p>
 	</a>
 
-	<a class={`link${path === "/admin/otps" ? " current" : ""}`} href="/admin/otps">
-		<RectangleEllipsis class="h-8 w-8" />
-		<p>OTPs</p>
-	</a>
-
 	{#if permissions.includes("master")}
+		<a class={`link${path === "/admin/otps" ? " current" : ""}`} href="/admin/otps">
+			<RectangleEllipsis class="h-8 w-8" />
+			<p>OTPs</p>
+		</a>
+
 		<a class={`link${path === "/admin/logs" ? " current" : ""}`} href="/admin/logs">
 			<Database class="h-8 w-8" />
 			<p>Logs</p>
