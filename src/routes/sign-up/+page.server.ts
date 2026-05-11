@@ -1,6 +1,9 @@
 import { redirect } from "@sveltejs/kit";
 
 export const load = (data) => {
+	redirect(307, "/access");
+
+	return;
 	const { cookies } = data;
 
 	const admin = cookies.get("sbz-admin");

@@ -1,4 +1,5 @@
 import { scourgeOfInvestor, userEmailFinder } from "$lib/server/jwt";
+import { redirect } from "@sveltejs/kit";
 
 import type { SBZdb, Types } from "$lib/types";
 
@@ -69,6 +70,10 @@ const _getId = (obj: SBZdb["public"]["Tables"]["clients"]["Row"], email: string)
 };
 
 export const load = (data) => {
+	redirect(307, "/access");
+
+	/*
+		return;
 	const client = scourgeOfInvestor(data);
 
 	const {
@@ -151,4 +156,5 @@ export const load = (data) => {
 		isLocal: nationality.toLowerCase() === "zambian",
 		forceApp,
 	};
+	*/
 };

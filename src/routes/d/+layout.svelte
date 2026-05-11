@@ -9,8 +9,9 @@
 </script>
 
 <section>
-	<Navbar />
-	<div class="content" style={data.forceApp ? "padding-top: 50px;" : undefined}>
+	<!-- <Navbar /> -->
+	<!-- <div class="content" style={data.forceApp ? "padding-top: 50px;" : undefined}> -->
+	<div class="content" style="padding-top: 50px;">
 		{@render children?.()}
 	</div>
 </section>

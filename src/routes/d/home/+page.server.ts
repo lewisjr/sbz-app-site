@@ -1,5 +1,6 @@
 import { nfdb, sbzdb } from "$lib/server/db/db";
 import { scourgeOfInvestor } from "$lib/server/jwt";
+import { redirect } from "@sveltejs/kit";
 
 import type { ApexDataPresets, PortfolioStandards } from "$lib/types/others";
 import { randomColour } from "@cerebrusinc/qol";
@@ -296,6 +297,10 @@ const genAnalysisV2 = async (luseId: number) => {
 };
 
 export const load = async (event) => {
+	redirect(307, "/access");
+
+	return;
+
 	const client = scourgeOfInvestor(event);
 	const { luseId } = client.data;
 

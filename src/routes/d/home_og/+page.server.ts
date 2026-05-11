@@ -10,6 +10,9 @@ import { portfolio } from "$lib/server/email/templates.js";
 import { genYtdFolio } from "$lib/server/utils.js";
 
 export const load = async (data) => {
+	redirect(307, "/access");
+
+	return;
 	const client = scourgeOfInvestor(data);
 	const folio = await genYtdFolio({ luseId: client.data.luseId });
 	const d = new Date();

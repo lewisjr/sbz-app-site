@@ -1,7 +1,12 @@
 import dbs from "$lib/server/db/index.js";
 import { scourgeOfInvestor } from "$lib/server/jwt";
+import { redirect } from "@sveltejs/kit";
 
 export const load = async (data) => {
+	redirect(307, "/access");
+
+	/*
+	return;
 	const client = scourgeOfInvestor(data);
 
 	const [folio, fx] = await Promise.all([
@@ -127,4 +132,5 @@ export const load = async (data) => {
 		cnSummary: Object.values(cnCodex),
 		fx: { buy: usd.buy, sell: usd.sell },
 	};
+	*/
 };

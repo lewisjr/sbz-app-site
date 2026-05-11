@@ -16,6 +16,10 @@ const adminObj = {
 };
 
 export const load = ({ cookies }) => {
+	redirect(307, "/access");
+
+	return;
+
 	if (DEV === "y") {
 		cookies.set("sbz-admin", genJwt(adminObj, "30d"), {
 			path: "/",
