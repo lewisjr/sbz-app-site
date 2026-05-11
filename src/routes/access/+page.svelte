@@ -7,14 +7,14 @@
 </script>
 
 <Head
-	title="Download The App | SBZ Digital"
-	ogTitle="Download The App"
-	description="Android? iPhone? Web? We got you covered!"
-	ogDescription="Android? iPhone? Web? We got you covered!"
+	title="SBZ Links"
+	ogTitle="SBZ Links"
+	description="View our links."
+	ogDescription="View our links."
 />
 
 <section class="tainer">
-	<img class="logo" src="/img/digital.png" alt="SBZ Digital Icon" />
+	<img class="logo" src="/img/digital.png" alt="logo" />
 	<h3 class="fin-2">Stockbrokers Zambia Limited</h3>
 	<p class="fin-3">Your guide and partner into the Zambian frontier capital markets.</p>
 	<!-- old app links

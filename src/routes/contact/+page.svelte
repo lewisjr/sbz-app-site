@@ -256,12 +256,14 @@
     */
 </script>
 
+<!--
 <Head
 	title="Speak To A Broker | SBZ Digital"
 	ogTitle="Speak To A Broker"
 	description="Speak directly to a broker and get answers to your queries!"
 	ogDescription="Speak directly to a broker and get answers to your queries!"
 />
+-->
 
 {#if data.isApp}
 	<div class="app"></div>
@@ -271,7 +273,7 @@
 		{#if !data.isApp}
 			<div class="flex flex-row items-center">
 				<img class="h-[60px] w-[60px]" src="/img/logo-bull.png" alt="sbz-logo" />
-				<h3 class="ml-2">SBZ Digital</h3>
+				<!-- <h3 class="ml-2">SBZ Digital</h3> -->
 			</div>
 
 			{#if !isMobile}
@@ -314,7 +316,7 @@
 				<Button variant="ghost" href="/sign-in"><MoveLeft class="h-8 w-8" /></Button>
 				<div class="flex flex-row items-center justify-between">
 					<img class="h-[60px] w-[60px]" src="/img/logo-bull.png" alt="sbz-logo" />
-					<h3 class="ml-2">SBZ Digital</h3>
+					<!-- <h3 class="ml-2">SBZ Digital</h3> -->
 				</div>
 			</div>
 		{/if}
@@ -533,12 +535,14 @@
 		</section>
 	</section>
 
+	<!--
 	<footer>
 		<p>
 			Built by <a href="https://www.neos.finance" target="_blank" rel="noopener">Neos FinTech</a>
 		</p>
 		<p class="mb-10">© {year} Broking Engine, All Rights Reserved</p>
 	</footer>
+	-->
 </div>
 
 <style lang="scss">

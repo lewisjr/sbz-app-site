@@ -1238,6 +1238,7 @@
 	};
 </script>
 
+<!--
 <Head
 	title="Sign Up | SBZ Digital"
 	ogTitle="Sign Up"
@@ -1245,6 +1246,7 @@
 	ogDescription="Create or link your account and begin your digital investing journey!"
 	token={$isAppStore}
 />
+-->
 
 {#if $isAppStore}
 	<div class="app"></div>
@@ -3449,12 +3451,14 @@
 			>
 		{/if}
 
+		<!--
 		<div class="footer my-10">
 			<p>
 				Built by <a href="https://www.neos.finance" target="_blank" rel="noopener">Neos FinTech</a>
 			</p>
 			<p class="mb-10">© {year} Broking Engine, All Rights Reserved</p>
 		</div>
+	-->
 	</div>
 </div>
 

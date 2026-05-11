@@ -164,6 +164,7 @@
 	// our tablets, landscape, 1280px width
 </script>
 
+<!--
 <Head
 	title="Sign In | SBZ Digital"
 	ogTitle="Sign In"
@@ -171,6 +172,7 @@
 	ogDescription="Sign in and take control of your portfolio!"
 	token={$isAppStore}
 />
+-->
 
 {#if data.isApp}
 	<div class="app"></div>
@@ -228,12 +230,14 @@
 			Got Questions? <span class="font-bold italic"><a href="/contact">Contact Us.</a></span>
 		</p>
 
+		<!--
 		<div class="footer">
 			<p>
 				Built by <a href="https://www.neos.finance" target="_blank" rel="noopener">Neos FinTech</a>
 			</p>
 			<p class="mb-10">© {year} Broking Engine, All Rights Reserved</p>
 		</div>
+		-->
 	</div>
 </div>
 {#if data.isApp}

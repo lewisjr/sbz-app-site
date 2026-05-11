@@ -141,12 +141,14 @@
 	});
 </script>
 
+<!--
 <Head
 	title="Sign In | SBZ Digital"
 	ogTitle="Sign In"
 	description="Sign in and take control of your portfolio!"
 	ogDescription="Sign in and take control of your portfolio!"
 />
+-->
 
 <div class="tainer">
 	<div class="img">
@@ -196,10 +198,12 @@
 			Got Questions? <span class="font-bold italic"><a href="/contact">Contact Us.</a></span>
 		</p>
 
+		<!--
 		<div class="footer">
 			<p>Built by <a href="https://www.neos.finance" target="_blank">Neos FinTech</a></p>
 			<p class="mb-10">© {year} OmniBot, All Rights Reserved</p>
 		</div>
+	-->
 	</div>
 </div>
 
