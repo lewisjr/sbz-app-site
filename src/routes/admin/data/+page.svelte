@@ -1027,6 +1027,7 @@
 		{:else}
 			<StockChart key={selectedKey} {stockData} symbol={"LASI"} />
 
+			<!--
 			<div class="flex w-full flex-row">
 				<div class="flex w-fit flex-row gap-1.5">
 					<Label class="text-right">Symbol</Label>
@@ -1054,6 +1055,7 @@
 					>
 				{/if}
 			</div>
+			-->
 		{/if}
 	{/snippet}
 
