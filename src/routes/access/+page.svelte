@@ -17,6 +17,7 @@
 	<img class="logo" src="/img/digital.png" alt="SBZ Digital Icon" />
 	<h3 class="fin-2">Stockbrokers Zambia Limited</h3>
 	<p class="fin-3">Your guide and partner into the Zambian frontier capital markets.</p>
+	<!-- old app links
 	<table class="fin-4 mt-3 max-w-[400px]">
 		<tbody>
 			<tr>
@@ -60,6 +61,73 @@
 			</tr>
 		</tbody>
 	</table>
+-->
+
+	<table class="fin-4 mt-3 max-w-[400px]">
+		<tbody>
+			<tr>
+				<td colspan="2"><h2 style="font-size: 14pt;">Useful Documents</h2></td>
+			</tr>
+			<tr>
+				<td
+					><div class="flex flex-col items-center px-3 py-3">
+						<Button
+							target="_blank"
+							style="text-decoration: none;"
+							variant="outline"
+							href="https://www.sbz.com.zm/download/broking-crash-course-account-opening"
+							>Account Opening</Button
+						>
+					</div>
+				</td>
+				<td
+					><div class="flex flex-col items-center px-3 py-3">
+						<Button
+							target="_blank"
+							style="text-decoration: none;"
+							variant="outline"
+							href="https://www.sbz.com.zm/download/broking-crash-course-trading">Trading</Button
+						>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td
+					><div class="flex flex-col items-center px-3 py-3">
+						<Button
+							style="text-decoration: none;"
+							target="_blank"
+							variant="outline"
+							href="https://www.sbz.com.zm/download/payment-details">ZMW Bank Details</Button
+						>
+					</div>
+				</td>
+				<td
+					><div class="flex flex-col items-center px-3 py-3">
+						<Button
+							style="text-decoration: none;"
+							target="_blank"
+							variant="outline"
+							href="https://www.sbz.com.zm/download/payment-details-usd">USD Bank Details</Button
+						>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td
+					><div class="flex flex-col items-center px-3 py-3">
+						<Button
+							style="text-decoration: none;"
+							target="_blank"
+							variant="outline"
+							href="https://www.sbz.com.zm/download/instruction-to-buy-sell-form"
+							>Instruction Form</Button
+						>
+					</div>
+				</td>
+			</tr>
+		</tbody>
+	</table>
 
 	<table class="fin-5 mt-3 max-w-[400px]">
 		<tbody>
@@ -88,8 +156,12 @@
 							target="_blank"
 							style="text-decoration: none;"
 							variant="outline"
-							href="https://app.sbz.com.zm/contact"
-							><img class="h-7 w-7" src="/img/-_chat.png" alt="chat icon" />Speak to a Broker</Button
+							href="mailto:trading@sbz.com.zm"
+							><img
+								class="h-7 w-7"
+								src="/img/-_mail.png"
+								alt="mail icon"
+							/>trading@sbz.com.zm</Button
 						>
 					</div>
 				</td>
