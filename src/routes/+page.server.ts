@@ -2,7 +2,7 @@ import { redirect } from "@sveltejs/kit";
 import { DEV } from "$env/static/private";
 
 export const load = (data) => {
-	redirect(307, "/access");
+	redirect(307, "/sign-in");
 
 	// kratosSafety(data);
 

@@ -68,6 +68,13 @@
 			return;
 		}
 
+		if (label !== "Admin Username") {
+			toast.info(
+				"This feature is no longer available, please get in touch with our WhatsApp or email us.",
+			);
+			return;
+		}
+
 		toast.info("Sending OTP...");
 
 		try {
