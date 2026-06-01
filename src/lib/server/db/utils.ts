@@ -1055,7 +1055,8 @@ const sbz = (): SBZutils => {
 				.select(
 					"assigned,close_date,created_at,email,id,id_num,is_closed,luse_id,names,phone,platform,query,query_type,referral_source,closed_by,email_vars,uid,assignee_email_vars,close_reason,read_status",
 				)
-				.order("created_at", { ascending: false });
+				.order("created_at", { ascending: false })
+				.limit(3000);
 
 			if (error) {
 				await _log({ message: error.message, title: "Get Tickets Error" });
