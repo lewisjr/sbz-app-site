@@ -36,12 +36,12 @@ export type AdminJwt = JWT<SBZdb["public"]["Tables"]["admins"]["Row"]>;
 
 export const scourgeOfClients = (event: ServerLoadEvent): AdminJwt => {
 	const user = event.cookies.get("sbz-admin");
-	if (!user) throw redirect(307, "/");
+	if (!user) throw redirect(307, "/sign-in");
 
 	const details = checkJwt(user);
 	if (!details) {
-		event.cookies.delete("sbz-admin", { path: "/" });
-		throw redirect(307, "/");
+		event.cookies.delete("sbz-admin", { path: "/sign-in" });
+		throw redirect(307, "/sign-in");
 	}
 
 	const userDetails = details as AdminJwt;
