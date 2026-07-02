@@ -182,7 +182,7 @@ interface SBZutils {
 	) => Promise<GenericResponseWData<string>>;
 	createCompliment: (obj: OdynInsert) => Promise<GenericResponse>;
 	createAIticket: (obj: OdynInsert) => Promise<GenericResponseWData<string>>;
-	getAllTickets: () => Promise<TicketRowLean[]>;
+	getAllTickets: (limit?: number) => Promise<TicketRowLean[]>;
 	closeTicket: (obj: CloseTicketObjInternal) => Promise<GenericResponseWData<CloseTicketReturnObj>>;
 	getOneTicket: (ticketId: string) => Promise<TicketRowLean>;
 	reassignWebTicket: (obj: ReassignByEmailObj, aiMode?: boolean) => Promise<GenericResponse>;
@@ -1048,7 +1048,7 @@ const sbz = (): SBZutils => {
 		}
 	};
 
-	const _getAllTickets = async (): Promise<TicketRowLean[]> => {
+	const _getAllTickets = async (limit: number = 3000): Promise<TicketRowLean[]> => {
 		try {
 			const { data, error } = await sbzdb
 				.from("odyn-tickets")
@@ -1056,7 +1056,7 @@ const sbz = (): SBZutils => {
 					"assigned,close_date,created_at,email,id,id_num,is_closed,luse_id,names,phone,platform,query,query_type,referral_source,closed_by,email_vars,uid,assignee_email_vars,close_reason,read_status",
 				)
 				.order("created_at", { ascending: false })
-				.limit(3000);
+				.limit(limit);
 
 			if (error) {
 				await _log({ message: error.message, title: "Get Tickets Error" });
