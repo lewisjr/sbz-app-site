@@ -23,11 +23,14 @@ export const POST = async (event) => {
 	try {
 		switch (action) {
 			case "fetch_extra":
-				const [_p2, _p3] = await Promise.all([
-					dbs.sbz.paginateTickets(2),
-					dbs.sbz.paginateTickets(3),
+				const [_p2, _p3, _p4, _p5, _p6] = await Promise.all([
+					dbs.sbz.paginateTickets(2, 500),
+					dbs.sbz.paginateTickets(3, 500),
+					dbs.sbz.paginateTickets(4, 500),
+					dbs.sbz.paginateTickets(5, 500),
+					dbs.sbz.paginateTickets(6, 500),
 				]);
-				const extra_tickets = [..._p2, ..._p3];
+				const extra_tickets = [..._p2, ..._p3, ..._p4, ..._p5, ..._p6];
 
 				data = extra_tickets;
 				success = true;

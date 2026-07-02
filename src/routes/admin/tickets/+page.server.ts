@@ -10,7 +10,7 @@ export const load = async (data) => {
 
 	return {
 		agents,
-		tickets: dbs.sbz.getAllTickets(1000),
+		tickets: dbs.sbz.getAllTickets(500),
 		dbUrl: DB_URL,
 		dbAuth: DB_ANON,
 	};
