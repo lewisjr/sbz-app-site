@@ -183,6 +183,7 @@ interface SBZutils {
 	createCompliment: (obj: OdynInsert) => Promise<GenericResponse>;
 	createAIticket: (obj: OdynInsert) => Promise<GenericResponseWData<string>>;
 	getAllTickets: (limit?: number) => Promise<TicketRowLean[]>;
+	paginateTickets: (page?: number, pageSize?: number) => Promise<TicketRowLean[]>;
 	closeTicket: (obj: CloseTicketObjInternal) => Promise<GenericResponseWData<CloseTicketReturnObj>>;
 	getOneTicket: (ticketId: string) => Promise<TicketRowLean>;
 	reassignWebTicket: (obj: ReassignByEmailObj, aiMode?: boolean) => Promise<GenericResponse>;
@@ -1073,6 +1074,41 @@ const sbz = (): SBZutils => {
 						: ex.message || JSON.stringify(ex);
 
 			_log({ message: error, title: "Get Tickets Exception" });
+			return [];
+		}
+	};
+
+	const _paginateTickets = async (
+		page: number = 1,
+		pageSize: number = 1000,
+	): Promise<TicketRowLean[]> => {
+		const from: number = (page - 1) * pageSize;
+		const to: number = from + pageSize - 1;
+
+		try {
+			const { data, error } = await sbzdb
+				.from("odyn-tickets")
+				.select(
+					"assigned,close_date,created_at,email,id,id_num,is_closed,luse_id,names,phone,platform,query,query_type,referral_source,closed_by,email_vars,uid,assignee_email_vars,close_reason,read_status",
+				)
+				.order("created_at", { ascending: false })
+				.range(from, to);
+
+			if (error) {
+				await _log({ message: error.message, title: "Paginate Tickets Error" });
+				return [];
+			}
+
+			return data;
+		} catch (ex: any) {
+			const error =
+				typeof ex === "string"
+					? ex
+					: ex instanceof Error
+						? ex.message
+						: ex.message || JSON.stringify(ex);
+
+			_log({ message: error, title: "Paginate Tickets Exception" });
 			return [];
 		}
 	};
@@ -2949,6 +2985,7 @@ const sbz = (): SBZutils => {
 		closeTicket: _closeTicket,
 		createCompliment: _createCompliment,
 		getAllTickets: _getAllTickets,
+		paginateTickets: _paginateTickets,
 		getOneTicket: _getOneTicket,
 		updateTicketCandidate: _updateTicketCandidate,
 		uploadKyc: _uploadKyc,

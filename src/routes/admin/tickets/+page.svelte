@@ -403,9 +403,38 @@
 	let strongFilterTwo = $state<StrongFilter>("none");
 	const updateStrongFilterTwo = (val: StrongFilter) => (strongFilterTwo = val);
 
+	let ticketState = $state<TicketRowLean[]>([]);
+
+	$effect(() => {
+		if (ticketData.length) ticketState = JSON.parse(JSON.stringify(ticketData));
+	});
+
+	const backgroundFetch = async () => {
+		try {
+			const req = await fetch("/api/admin/tickets/v2", {
+				method: "POST",
+				body: JSON.stringify({ action: "fetch_extra" }),
+			});
+
+			const res: GenericResponseWData<TicketRowLean[]> = await req.json();
+
+			if (!res.success) {
+				toast.error(res.message);
+				return;
+			}
+
+			const initTicketState: TicketRowLean[] = JSON.parse(JSON.stringify(ticketState));
+			const finTicketState = [...initTicketState, ...res.data];
+
+			ticketState = finTicketState;
+		} catch (ex) {
+			toast.error(String(ex));
+		}
+	};
+
 	let cleanedTickets = $derived.by(() => {
-		const _open = ticketData.filter((item) => !item.is_closed);
-		const _closed = ticketData.filter((item) => item.is_closed);
+		const _open = ticketState.filter((item) => !item.is_closed);
+		const _closed = ticketState.filter((item) => item.is_closed);
 
 		let _ticketData: TicketRowLean[] = [..._open, ..._closed];
 
@@ -905,6 +934,10 @@
 		if (q) globalFilterValue = q;
 
 		const chat = page.url.searchParams.get("chat");
+
+		setTimeout(() => {
+			backgroundFetch();
+		}, 200);
 
 		if (chat) {
 			setTimeout(() => {
