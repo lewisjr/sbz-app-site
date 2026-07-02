@@ -937,7 +937,7 @@
 
 		setTimeout(() => {
 			backgroundFetch();
-		}, 200);
+		}, 50);
 
 		if (chat) {
 			setTimeout(() => {
