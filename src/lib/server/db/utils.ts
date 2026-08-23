@@ -31,6 +31,7 @@ import type {
 import type { StorageError } from "@supabase/storage-js";
 
 import { DEV, SERVER_BASE_URL } from "$env/static/private";
+import dbs from ".";
 
 const IS_DEV = DEV === "y";
 
@@ -2195,6 +2196,76 @@ const sbz = (): SBZutils => {
 		}
 	};
 
+	const _normaliseAgents = async (): Promise<boolean> => {
+		/**First day of the current month */
+		const fdm = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+
+		/**First day of the next month */
+		const fdnm = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString();
+
+		try {
+			/**Order in terms of descending value */
+			const { data, error: ticketedAdminsRes } = await sbzdb
+				.from("system-vars")
+				.select()
+				.ilike("key", "%tickets%")
+				.gte("created_at", fdm)
+				.lt("created_at", fdnm)
+				.order("value", { ascending: false });
+
+			if (ticketedAdminsRes) {
+				await _log({
+					message: ticketedAdminsRes.message,
+					title: "Get Ticketed Admins Error",
+				});
+
+				return false;
+			}
+
+			type DbData = {
+				created_at: string;
+				id: number;
+				key: string;
+				value: string;
+			};
+
+			const objs: DbData[] = [];
+
+			data.forEach((a) => {
+				const { created_at, id, key, value } = a;
+
+				const obj: DbData = {
+					created_at,
+					id,
+					key,
+					value: "1",
+				};
+
+				objs.push(obj);
+			});
+
+			const { error } = await sbzdb.from("system-vars").upsert(objs);
+
+			if (error) {
+				await _log({
+					message: error.message,
+					title: "Normalise Agents Error",
+				});
+
+				return false;
+			}
+
+			return true;
+		} catch (ex: any) {
+			await _log({
+				message: String(ex),
+				title: "Get Ticketed Admins Exception",
+			});
+
+			return false;
+		}
+	};
+
 	const _pauseOdyn = async (username: string, sender: string): Promise<GenericResponse> => {
 		try {
 			const { error } = await sbzdb
@@ -2207,10 +2278,19 @@ const sbz = (): SBZutils => {
 				return { message: error.message, success: false };
 			}
 
-			await _log({
-				title: "Odyn Paused",
-				message: `${toTitleCase(sender)} paused Odyn for ${toTitleCase(username)}'s account.`,
-			});
+			const [_, normalised] = await Promise.all([
+				_log({
+					title: "Odyn Paused",
+					message: `${toTitleCase(sender)} paused Odyn for ${toTitleCase(username)}'s account.`,
+				}),
+				_normaliseAgents(),
+			]);
+
+			if (!normalised)
+				return {
+					message: `${toTitleCase(username)}'s is now marked as on leave, but normalisation failed.`,
+					success: true,
+				};
 
 			return {
 				message: `${toTitleCase(username)}'s is now marked as on leave!`,
@@ -2241,10 +2321,19 @@ const sbz = (): SBZutils => {
 				return { message: error.message, success: false };
 			}
 
-			await _log({
-				title: "Odyn Unpaused",
-				message: `${toTitleCase(sender)} unpaused Odyn for ${toTitleCase(username)}'s account.`,
-			});
+			const [_, normalised] = await Promise.all([
+				_log({
+					title: "Odyn Unpaused",
+					message: `${toTitleCase(sender)} unpaused Odyn for ${toTitleCase(username)}'s account.`,
+				}),
+				_normaliseAgents(),
+			]);
+
+			if (!normalised)
+				return {
+					message: `${toTitleCase(username)}'s is now marked as on duty, but normalisation failed.`,
+					success: true,
+				};
 
 			return {
 				message: `${toTitleCase(username)}'s is now marked as on duty!`,

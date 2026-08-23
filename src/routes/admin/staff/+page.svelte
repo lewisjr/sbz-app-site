@@ -879,9 +879,9 @@
 					disabled={loading}
 					onclick={blockUnblockStaff}
 					>{#if sheetConfig === "on-leave"}
-						Mark<Pause class="ml-2 h-4 w-4" />
-					{:else if sheetConfig === "on-duty"}
 						Unmark<Play class="ml-2 h-4 w-4" />
+					{:else if sheetConfig === "on-duty"}
+						Mark<Pause class="ml-2 h-4 w-4" />
 					{/if}
 				</Button>
 			{/if}
